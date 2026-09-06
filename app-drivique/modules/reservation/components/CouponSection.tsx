@@ -296,7 +296,7 @@ export default function CouponSection({ vehiculo }: Props) {
         <View style={styles.modalOverlay}>
           {/* Backdrop que cierra al presionar afuera */}
           <TouchableOpacity 
-            style={StyleSheet.absoluteFill} 
+            style={styles.modalBackdropTop} 
             activeOpacity={1} 
             onPress={handleCerrarModal} 
           />
@@ -621,6 +621,7 @@ const styles = StyleSheet.create({
   },
   
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
+  modalBackdropTop: { flex: 1, width: "100%" },
   keyboardAvoidContainer: { width: "100%", justifyContent: "flex-end" },
   modalContent: { width: "100%", borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 12, overflow: "hidden" },
   modalHeader: { paddingHorizontal: 16, paddingBottom: 16, alignItems: "center" },

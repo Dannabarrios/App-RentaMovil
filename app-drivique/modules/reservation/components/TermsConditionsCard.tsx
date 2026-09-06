@@ -153,7 +153,8 @@ export default function TarjetaTerminosCondiciones() {
       {/* ── Modal: Términos y condiciones con scroll obligatorio ── */}
       <Modal visible={modalTerminos} transparent animationType="slide" onRequestClose={() => setModalTerminos(false)} statusBarTranslucent>
         <View style={styles.modalOverlay}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setModalTerminos(false)} />
+          {/* Backdrop superior que no se solapa con el contenedor */}
+          <TouchableOpacity style={styles.modalBackdropTop} activeOpacity={1} onPress={() => setModalTerminos(false)} />
           <View style={[styles.modalContenedor, { backgroundColor: c.bgCard }]}>
             <View style={[styles.modalHandle, { backgroundColor: c.border }]} />
             <View style={[styles.modalEncabezado, { borderBottomColor: c.border }]}>
@@ -170,7 +171,7 @@ export default function TarjetaTerminosCondiciones() {
 
             <ScrollView
               style={styles.modalScroll}
-              contentContainerStyle={{ paddingBottom: 28, flexGrow: 1 }}
+              contentContainerStyle={{ paddingBottom: 28 }}
               showsVerticalScrollIndicator={true}
               nestedScrollEnabled={true}
               keyboardShouldPersistTaps="handled"
@@ -318,13 +319,17 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "flex-end",
   },
+  modalBackdropTop: {
+    flex: 1,
+    width: "100%",
+  },
   modalContenedor: {
     width: "100%",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    height: height * 0.85,
+    height: "82%",
+    maxHeight: "85%",
     paddingBottom: 24,
-    overflow: "hidden",
   },
   modalHandle: {
     width: 40,
