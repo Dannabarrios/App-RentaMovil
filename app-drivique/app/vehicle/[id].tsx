@@ -38,6 +38,7 @@ import {
 } from "@/modules/catalog/constants/catalog.constants";
 import { VehicleGallery } from "@/modules/catalog/components/VehicleGallery";
 import { VehicleReviews } from "@/modules/catalog/components/VehicleReviews";
+import { useVehiculosReservados } from "@/modules/catalog/hooks/useVehiculosReservados";
 
 function getSafeImages(vehiculo: (typeof VEHICULOS_MOCK)[number]): string[] {
   const imgs = vehiculo.imagenes ?? [];
@@ -68,7 +69,9 @@ export default function VehiculoDetallePage() {
     Animated.timing(opacidad, { toValue: 1, duration: 380, useNativeDriver: true }).start();
   }, [opacidad]);
 
+  const { esVehiculoReservado } = useVehiculosReservados();
   const vehiculo = VEHICULOS_MOCK.find((v) => v.id === Number(id));
+  const estaReservado = vehiculo ? esVehiculoReservado(vehiculo.id) : false;
 
   const volverCatalogo = () =>
     router.canGoBack() ? router.back() : router.replace("/(tabs)/catalog");
@@ -85,7 +88,7 @@ export default function VehiculoDetallePage() {
     );
   }
 
-  const disponible = vehiculo.disponible !== false;
+  const disponible = vehiculo.disponible !== false && !estaReservado;
   const tarifas = vehiculo.tarifas ?? {};
   const seguros = vehiculo.seguros ?? [];
   const direccionSucursal = vehiculo.sucursal ? getDireccionSucursal(vehiculo.sucursal) : null;
@@ -191,11 +194,26 @@ export default function VehiculoDetallePage() {
                 })}
               </Text>
             </View>
-            {!disponible && (
+            {estaReservado ? (
+              <View
+                style={[
+                  s.tagReservado,
+                  {
+                    backgroundColor: c.oscuro ? "#78350F" : "#FEF3C7",
+                    borderColor: c.oscuro ? "#b45309" : "#FDE68A",
+                  },
+                ]}
+              >
+                <Ionicons name="bookmark-outline" size={11} color={c.oscuro ? "#FCD34D" : "#B45309"} />
+                <Text style={[s.tagReservadoText, { color: c.oscuro ? "#FCD34D" : "#B45309" }]}>
+                  {t("catalogo.estados.reservado", { defaultValue: "Reservado" })}
+                </Text>
+              </View>
+            ) : !disponible ? (
               <View style={s.tagNoDisponible}>
                 <Text style={s.tagNoDisponibleText}>{t("vehiculo.noDisponible")}</Text>
               </View>
-            )}
+            ) : null}
           </View>
           <Text style={[s.nombre, { color: c.textPrimary }]}>{vehiculo.nombre}</Text>
 
@@ -419,20 +437,53 @@ export default function VehiculoDetallePage() {
           )}
         </View>
         <TouchableOpacity
-          style={[s.reservarBtnWrap, !disponible && { opacity: 0.5 }]}
+          style={[
+            s.reservarBtnWrap,
+            (!disponible || estaReservado) && {
+              opacity: estaReservado ? 0.95 : 0.5,
+            },
+          ]}
           onPress={handleReservar}
-          disabled={!disponible}
+          disabled={!disponible || estaReservado}
           activeOpacity={0.85}
         >
-          <LinearGradient
-            colors={GRADIENTES.boton.colors}
-            start={GRADIENTES.boton.start}
-            end={GRADIENTES.boton.end}
-            style={s.reservarBtn}
-          >
-            <Ionicons name="car-sport-outline" size={17} color="#fff" />
-            <Text style={s.reservarBtnText}>{t("vehiculo.reservarAhora")}</Text>
-          </LinearGradient>
+          {estaReservado ? (
+            <View
+              style={[
+                s.reservarBtn,
+                {
+                  backgroundColor: c.oscuro ? "#451A03" : "#FEF3C7",
+                  borderColor: c.oscuro ? "#78350F" : "#FDE68A",
+                  borderWidth: 1,
+                },
+              ]}
+            >
+              <Ionicons name="bookmark-outline" size={17} color={c.oscuro ? "#FCD34D" : "#B45309"} />
+              <Text
+                style={[
+                  s.reservarBtnText,
+                  { color: c.oscuro ? "#FCD34D" : "#B45309", fontWeight: "800" },
+                ]}
+              >
+                {t("catalogo.estados.reservado", { defaultValue: "Reservado" }).toUpperCase()}
+              </Text>
+            </View>
+          ) : disponible ? (
+            <LinearGradient
+              colors={GRADIENTES.boton.colors}
+              start={GRADIENTES.boton.start}
+              end={GRADIENTES.boton.end}
+              style={s.reservarBtn}
+            >
+              <Ionicons name="car-sport-outline" size={17} color="#fff" />
+              <Text style={s.reservarBtnText}>{t("vehiculo.reservarAhora")}</Text>
+            </LinearGradient>
+          ) : (
+            <View style={s.reservarBtn}>
+              <Ionicons name="car-sport-outline" size={17} color="#fff" />
+              <Text style={s.reservarBtnText}>{t("vehiculo.noDisponible")}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -486,6 +537,20 @@ const s = StyleSheet.create({
   tagCategoriaText: { fontSize: 12, fontWeight: "700" },
   tagNoDisponible: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, backgroundColor: "#FCE8E6" },
   tagNoDisponibleText: { fontSize: 12, fontWeight: "700", color: "#C5221F" },
+  tagReservado: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  tagReservadoText: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
   nombre: { fontSize: 22, fontWeight: "900", marginBottom: 10 },
 
   quickRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 },
