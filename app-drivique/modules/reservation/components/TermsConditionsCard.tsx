@@ -151,9 +151,10 @@ export default function TarjetaTerminosCondiciones() {
       </View>
 
       {/* ── Modal: Términos y condiciones con scroll obligatorio ── */}
-      <Modal visible={modalTerminos} transparent animationType="slide" onRequestClose={() => setModalTerminos(false)}>
+      <Modal visible={modalTerminos} transparent animationType="slide" onRequestClose={() => setModalTerminos(false)} statusBarTranslucent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContenedor, { backgroundColor: c.bgCard }]}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setModalTerminos(false)} />
+          <View style={[styles.modalContenedor, { backgroundColor: c.bgCard }]} onStartShouldSetResponder={() => true}>
             <View style={[styles.modalHandle, { backgroundColor: c.border }]} />
             <View style={[styles.modalEncabezado, { borderBottomColor: c.border }]}>
               <Text style={[styles.modalTitulo, { color: c.textPrimary }]}>
@@ -169,8 +170,11 @@ export default function TarjetaTerminosCondiciones() {
 
             <ScrollView
               style={styles.modalScroll}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              contentContainerStyle={{ paddingBottom: 24 }}
               showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+              bounces={true}
+              overScrollMode="always"
               onScroll={handleScrollTerminos}
               scrollEventThrottle={16}
             >
@@ -239,32 +243,21 @@ export default function TarjetaTerminosCondiciones() {
                 </Text>
               </TouchableOpacity>
 
-              {/* Botón Aceptar con degradado Drivique */}
+              {/* Botón Entendido con degradado Drivique */}
               <View style={styles.modalBotonAceptarWrap}>
                 <TouchableOpacity
-                  onPress={terminosLeidos ? handleAceptarTerminos : undefined}
-                  activeOpacity={terminosLeidos ? 0.85 : 1}
+                  onPress={handleAceptarTerminos}
+                  activeOpacity={0.85}
                   style={{ width: "100%" }}
                 >
                   <LinearGradient
-                    colors={
-                      terminosLeidos
-                        ? GRADIENTES.boton.colors
-                        : c.oscuro
-                          ? ["#374151", "#1F2937"]
-                          : ["#E5E7EB", "#D1D5DB"]
-                    }
+                    colors={GRADIENTES.boton.colors}
                     start={GRADIENTES.boton.start}
                     end={GRADIENTES.boton.end}
                     style={styles.modalBotonAceptar}
                   >
-                    <Text
-                      style={[
-                        styles.modalBotonAceptarTexto,
-                        !terminosLeidos && { color: c.oscuro ? "#6B7280" : "#9CA3AF" },
-                      ]}
-                    >
-                      {t("auth.registro.modalAceptar", { defaultValue: "Acepto los términos" })}
+                    <Text style={styles.modalBotonAceptarTexto}>
+                      {t("reserva.terminos.modalAceptar", { defaultValue: "Entendido" })}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -321,14 +314,16 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "flex-end",
   },
   modalContenedor: {
+    width: "100%",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: height * 0.85,
-    paddingBottom: 32,
+    height: height * 0.85,
+    paddingBottom: 24,
+    overflow: "hidden",
   },
   modalHandle: {
     width: 40,
@@ -360,6 +355,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   modalScroll: {
+    flex: 1,
     paddingHorizontal: 16,
     paddingTop: 14,
   },
