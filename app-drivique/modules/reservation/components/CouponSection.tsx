@@ -159,6 +159,18 @@ export default function CouponSection({ vehiculo }: Props) {
       setErrorMsg(t("coupon.errorInvalid"));
     }
   };
+
+  const handleOpenConditions = (cpx: any) => {
+    setSelectedConditionsCoupon(cpx);
+    setModalVisible(false);
+  };
+
+  const handleCloseConditions = (volverALista: boolean = true) => {
+    setSelectedConditionsCoupon(null);
+    if (volverALista) {
+      setModalVisible(true);
+    }
+  };
   
   return (
     <View style={[styles.cardForm, { backgroundColor: c.oscuro ? c.bgCard : "#FFFFFF", borderColor: cuponAplicado ? primaryAccent : c.border }]}>
@@ -189,23 +201,30 @@ export default function CouponSection({ vehiculo }: Props) {
               </Text>
             </View>
           </View>
-          <TouchableOpacity onPress={removerCupon} style={{ padding: 6 }}>
-            <Ionicons name="trash-outline" size={16} color={c.oscuro ? "#9CA3AF" : "#6B7280"} />
+          <TouchableOpacity onPress={removerCupon}>
+            <Ionicons name="trash-outline" size={18} color="#EF4444" />
           </TouchableOpacity>
         </View>
       ) : (
         <View>
           <View style={styles.inputRow}>
             <TextInput
-              style={[styles.input, { backgroundColor: c.bgInput, borderColor: errorMsg ? (c.oscuro ? "#ef4444" : "#EF4444") : c.border, color: c.textPrimary }]}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF",
+                  borderColor: c.border,
+                  color: c.textPrimary,
+                },
+              ]}
               placeholder={t("coupon.placeholder", "Ingresa un código")}
               placeholderTextColor={c.textMuted}
               value={codigoManual}
-              onChangeText={(t) => { setCodigoManual(t); setErrorMsg(""); }}
+              onChangeText={setCodigoManual}
               autoCapitalize="characters"
             />
-            <TouchableOpacity 
-              style={[styles.aplicarBtn, { backgroundColor: codigoManual.length > 0 ? primaryAccent : c.textMuted }]}
+            <TouchableOpacity
+              style={[styles.aplicarBtn, { backgroundColor: primaryAccent }, codigoManual.length === 0 && { opacity: 0.5 }]}
               disabled={codigoManual.length === 0}
               onPress={handleAplicarManual}
             >
@@ -322,7 +341,7 @@ export default function CouponSection({ vehiculo }: Props) {
                               </Text>
                             )}
                           </View>
-                          <TouchableOpacity onPress={() => setSelectedConditionsCoupon(cpx)}>
+                          <TouchableOpacity onPress={() => handleOpenConditions(cpx)}>
                             <Text style={[styles.codeSubtitle, { color: primaryAccent }]}>{t("coupon.conditionsBtn", "Condiciones")}</Text>
                           </TouchableOpacity>
                         </View>
@@ -367,19 +386,19 @@ export default function CouponSection({ vehiculo }: Props) {
         visible={selectedConditionsCoupon !== null}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setSelectedConditionsCoupon(null)}
+        onRequestClose={() => handleCloseConditions(true)}
       >
         <View style={styles.modalOverlayCenter}>
           <View style={[styles.modalCardCenter, { backgroundColor: c.bgCard, borderColor: c.border }]}>
             <View style={styles.modalHeaderRowCenter}>
               <Text style={[styles.modalTitleCenter, { color: c.textPrimary }]}>{t("coupon.conditionsTitle", "Condiciones del Cupón")}</Text>
-              <TouchableOpacity onPress={() => setSelectedConditionsCoupon(null)}>
+              <TouchableOpacity onPress={() => handleCloseConditions(true)}>
                 <Ionicons name="close" size={24} color={c.textPrimary} />
               </TouchableOpacity>
             </View>
             
             {selectedConditionsCoupon && (
-              <ScrollView style={styles.modalScrollCenter}>
+              <ScrollView style={styles.modalScrollCenter} showsVerticalScrollIndicator={false}>
                 <Text style={[styles.modalSubtitleCenter, { color: primaryAccent, fontWeight: "800", fontSize: 16, marginBottom: 4 }]}>
                   {t(selectedConditionsCoupon.tituloPremio || selectedConditionsCoupon.descripcion)}
                 </Text>
@@ -399,7 +418,7 @@ export default function CouponSection({ vehiculo }: Props) {
                   {t("coupon.term2", "• No transferible a otros usuarios.")}{"\n"}
                   {t("coupon.term3", "• Solo se puede aplicar un cupón por reserva.")}
                   {selectedConditionsCoupon.reglas?.minimoDias ? `\n• ${t("coupon.minDays", "Mínimo de días:")} ${selectedConditionsCoupon.reglas.minimoDias} días` : ''}
-                  {selectedConditionsCoupon.reglas?.categoriasValidas?.length ? `\n• ${t("coupon.validCategories", "Categorías válidas:")} ${selectedConditionsCoupon.reglas.categoriasValidas.join(", ")}` : ''}
+                  {`\n• ${t("coupon.validCategories", "Categorías válidas:")} ${selectedConditionsCoupon.reglas?.categoriasValidas?.length ? selectedConditionsCoupon.reglas.categoriasValidas.join(", ") : "TODOS"}`}
                   {selectedConditionsCoupon.condicionesDetalladas ? `\n• ${t(selectedConditionsCoupon.condicionesDetalladas, { defaultValue: selectedConditionsCoupon.condicionesDetalladas })}` : ''}
                   {selectedConditionsCoupon.expiracion ? `\n• ${t("coupon.expires", "Vence:")} ${formatDateShort(selectedConditionsCoupon.expiracion)}` : `\n• ${t("coupon.validAllMonth", "Válido durante todo el mes.")}`}
                 </Text>
@@ -408,9 +427,16 @@ export default function CouponSection({ vehiculo }: Props) {
 
             <TouchableOpacity
               style={[styles.modalCloseBtnCenter, { backgroundColor: primaryAccent, marginTop: 16 }]}
-              onPress={() => setSelectedConditionsCoupon(null)}
+              onPress={() => handleCloseConditions(false)}
             >
               <Text style={styles.modalCloseBtnTextCenter}>{t("coupon.understoodBtn", "Entendido")}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalVolverBtnCenter, { backgroundColor: c.oscuro ? "#1e293b" : "#F8FAFC", borderColor: c.border }]}
+              onPress={() => handleCloseConditions(true)}
+            >
+              <Text style={[styles.modalVolverBtnTextCenter, { color: c.textPrimary }]}>{t("common.back", "Volver")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -526,6 +552,8 @@ const styles = StyleSheet.create({
   infoDividerCenter: { height: 1, marginVertical: 14 },
   conditionSectionHeaderCenter: { fontSize: 13.5, fontWeight: "700", marginBottom: 8 },
   conditionTextCenter: { fontSize: 12.5, lineHeight: 18 },
-  modalCloseBtnCenter: { paddingVertical: 10, borderRadius: 8, alignItems: "center", marginTop: 10 },
+  modalCloseBtnCenter: { paddingVertical: 12, borderRadius: 10, alignItems: "center", marginTop: 14 },
   modalCloseBtnTextCenter: { color: "#FFFFFF", fontSize: 13.5, fontWeight: "800" },
+  modalVolverBtnCenter: { paddingVertical: 12, borderRadius: 10, alignItems: "center", marginTop: 8, borderWidth: 1 },
+  modalVolverBtnTextCenter: { fontSize: 13.5, fontWeight: "800" },
 });
