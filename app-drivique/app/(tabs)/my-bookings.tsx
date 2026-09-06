@@ -433,7 +433,7 @@ function TarjetaReserva({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.88}
+      activeOpacity={0.9}
       style={[
         styles.tarjeta,
         {
@@ -443,138 +443,144 @@ function TarjetaReserva({
       ]}
       onPress={onPress}
     >
-      {/* Fila Superior: Referencia a la izquierda y Total a la derecha */}
+      {/* Cabecera Superior: Estado Badge (izq) y Total (der) */}
       <View style={styles.tarjetaTopHeader}>
-        <Text style={[styles.tarjetaRefTexto, { color: primaryAccent }]} numberOfLines={1}>
-          RESERVA #{reserva.referencia}
-        </Text>
+        <View
+          style={[
+            styles.badgeEstado,
+            {
+              backgroundColor:
+                grupo === "pendiente"
+                  ? c.oscuro ? "#2E2004" : "#FEFCE8"
+                  : grupo === "en_curso"
+                  ? c.oscuro ? "#052E16" : "#F0FDF4"
+                  : grupo === "confirmada"
+                  ? c.oscuro ? "#172554" : "#EFF6FF"
+                  : grupo === "cancelada"
+                  ? c.oscuro ? "#450A0A" : "#FEF2F2"
+                  : c.oscuro ? "#1E293B" : "#F8FAFC",
+              borderColor:
+                grupo === "pendiente"
+                  ? c.oscuro ? "#854D0E" : "#FDE047"
+                  : grupo === "en_curso"
+                  ? c.oscuro ? "#166534" : "#86EFAC"
+                  : grupo === "confirmada"
+                  ? c.oscuro ? "#1E40AF" : "#93C5FD"
+                  : grupo === "cancelada"
+                  ? c.oscuro ? "#991B1B" : "#FCA5A5"
+                  : c.oscuro ? "#475569" : "#CBD5E1",
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.badgeEstadoTexto,
+              {
+                color:
+                  grupo === "pendiente"
+                    ? c.oscuro ? "#FCD34D" : "#B45309"
+                    : grupo === "en_curso"
+                    ? c.oscuro ? "#4ADE80" : "#16A34A"
+                    : grupo === "confirmada"
+                    ? c.oscuro ? "#60A5FA" : "#2563EB"
+                    : grupo === "cancelada"
+                    ? c.oscuro ? "#F87171" : "#DC2626"
+                    : c.oscuro ? "#94A3B8" : "#64748B",
+              },
+            ]}
+            numberOfLines={1}
+          >
+            {t(`misReservas.grupos.${grupo}`, { defaultValue: grupo.toUpperCase() }).toUpperCase()}
+          </Text>
+        </View>
+
         <Text style={[styles.tarjetaTotalTexto, { color: primaryAccent }]}>
           {fmt(reserva.total)}
         </Text>
       </View>
 
-      {/* Título del Vehículo */}
-      <Text style={[styles.tarjetaVehiculoTitulo, { color: c.textPrimary }]} numberOfLines={1}>
-        {reserva.vehiculoNombre}
-      </Text>
-
-      {/* Cuerpo de la Tarjeta: Imagen a la izquierda + Detalles a la derecha */}
-      <View style={styles.tarjetaCuerpoFila}>
-        {/* Columna Izquierda: Badge de Estado + Foto del Auto */}
-        <View style={styles.tarjetaFotoColumna}>
-          <View
-            style={[
-              styles.badgeEstado,
-              {
-                backgroundColor:
-                  grupo === "pendiente"
-                    ? c.oscuro ? "#2E2004" : "#FEFCE8"
-                    : grupo === "en_curso"
-                    ? c.oscuro ? "#052E16" : "#F0FDF4"
-                    : grupo === "confirmada"
-                    ? c.oscuro ? "#172554" : "#EFF6FF"
-                    : grupo === "cancelada"
-                    ? c.oscuro ? "#450A0A" : "#FEF2F2"
-                    : c.oscuro ? "#1E293B" : "#F8FAFC",
-                borderColor:
-                  grupo === "pendiente"
-                    ? c.oscuro ? "#854D0E" : "#FDE047"
-                    : grupo === "en_curso"
-                    ? c.oscuro ? "#166534" : "#86EFAC"
-                    : grupo === "confirmada"
-                    ? c.oscuro ? "#1E40AF" : "#93C5FD"
-                    : grupo === "cancelada"
-                    ? c.oscuro ? "#991B1B" : "#FCA5A5"
-                    : c.oscuro ? "#475569" : "#CBD5E1",
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.badgeEstadoTexto,
-                {
-                  color:
-                    grupo === "pendiente"
-                      ? c.oscuro ? "#FCD34D" : "#B45309"
-                      : grupo === "en_curso"
-                      ? c.oscuro ? "#4ADE80" : "#16A34A"
-                      : grupo === "confirmada"
-                      ? c.oscuro ? "#60A5FA" : "#2563EB"
-                      : grupo === "cancelada"
-                      ? c.oscuro ? "#F87171" : "#DC2626"
-                      : c.oscuro ? "#94A3B8" : "#64748B",
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {t(`misReservas.grupos.${grupo}`, { defaultValue: grupo.toUpperCase() }).toUpperCase()}
-            </Text>
+      {/* Sección Vehículo: Foto + Referencia y Nombre */}
+      <View style={styles.tarjetaVehiculoFila}>
+        {foto ? (
+          <Image source={{ uri: foto }} style={[styles.tarjetaFoto, { backgroundColor: c.bgInput }]} />
+        ) : (
+          <View style={[styles.tarjetaFotoVacia, { backgroundColor: c.bgInput }]}>
+            <Ionicons name="car-sport-outline" size={26} color={c.textMuted} />
           </View>
+        )}
 
-          {foto ? (
-            <Image source={{ uri: foto }} style={styles.tarjetaFoto} />
-          ) : (
-            <View style={[styles.tarjetaFotoVacia, { backgroundColor: c.bgInput }]}>
-              <Ionicons name="car-sport-outline" size={24} color={c.textMuted} />
-            </View>
-          )}
-        </View>
-
-        {/* Columna Derecha: Bloques de Información */}
-        <View style={styles.tarjetaDetallesColumna}>
-          {/* Fila: Recogida y Devolución */}
-          <View style={styles.fechasFila}>
-            {/* Recogida */}
-            <View style={styles.bloqueDato}>
-              <View style={styles.bloqueDatoHeader}>
-                <Ionicons name="calendar-outline" size={13} color={primaryAccent} />
-                <Text style={[styles.bloqueDatoLabel, { color: c.textMuted }]}>
-                  {t("misReservas.card.recogida", { defaultValue: "RECOGIDA" })}
-                </Text>
-              </View>
-              <Text style={[styles.bloqueDatoValor, { color: c.textPrimary }]} numberOfLines={1}>
-                {formatFechaCard(reserva.fechaRetiro ? String(reserva.fechaRetiro) : null, locale)}
-              </Text>
-            </View>
-
-            {/* Separador sutil */}
-            <View style={[styles.fechasSeparador, { backgroundColor: c.border }]} />
-
-            {/* Devolución */}
-            <View style={styles.bloqueDato}>
-              <View style={styles.bloqueDatoHeader}>
-                <Ionicons name="calendar-outline" size={13} color={primaryAccent} />
-                <Text style={[styles.bloqueDatoLabel, { color: c.textMuted }]}>
-                  {t("misReservas.card.devolucion", { defaultValue: "DEVOLUCIÓN" })}
-                </Text>
-              </View>
-              <Text style={[styles.bloqueDatoValor, { color: c.textPrimary }]} numberOfLines={1}>
-                {formatFechaCard(reserva.fechaDevolucion ? String(reserva.fechaDevolucion) : null, locale)}
-              </Text>
-            </View>
-          </View>
-
-          {/* Sucursal */}
-          <View style={styles.sucursalBloque}>
-            <View style={styles.bloqueDatoHeader}>
-              <Ionicons name="location-outline" size={13} color={primaryAccent} />
-              <Text style={[styles.bloqueDatoLabel, { color: c.textMuted }]}>
-                {t("misReservas.card.sucursal", { defaultValue: "SUCURSAL" })}
-              </Text>
-            </View>
-            <Text style={[styles.bloqueDatoValor, { color: c.textPrimary }]} numberOfLines={2}>
-              {sucursalNombre}
-            </Text>
-          </View>
+        <View style={styles.tarjetaVehiculoInfo}>
+          <Text style={[styles.tarjetaRefTexto, { color: primaryAccent }]} numberOfLines={1}>
+            RESERVA #{reserva.referencia}
+          </Text>
+          <Text style={[styles.tarjetaVehiculoTitulo, { color: c.textPrimary }]} numberOfLines={2}>
+            {reserva.vehiculoNombre}
+          </Text>
         </View>
       </View>
 
-      {/* Fila Inferior de Botones / Acciones */}
+      {/* Contenedor de Fechas y Sucursal */}
+      <View style={[styles.infoCardBox, { backgroundColor: c.bgInput, borderColor: c.border }]}>
+        {/* Fila Fechas Recogida -> Devolución */}
+        <View style={styles.fechasRow}>
+          <View style={styles.fechaCol}>
+            <View style={styles.infoLabelRow}>
+              <Ionicons name="calendar-outline" size={12} color={primaryAccent} />
+              <Text style={[styles.infoLabelText, { color: c.textMuted }]}>
+                {t("misReservas.card.recogida", { defaultValue: "RECOGIDA" })}
+              </Text>
+            </View>
+            <Text style={[styles.infoValorText, { color: c.textPrimary }]} numberOfLines={1}>
+              {formatFechaCard(reserva.fechaRetiro ? String(reserva.fechaRetiro) : null, locale)}
+            </Text>
+          </View>
+
+          <View style={styles.fechaFlechaCol}>
+            <Ionicons name="arrow-forward" size={14} color={c.textMuted} />
+          </View>
+
+          <View style={styles.fechaCol}>
+            <View style={styles.infoLabelRow}>
+              <Ionicons name="calendar-outline" size={12} color={primaryAccent} />
+              <Text style={[styles.infoLabelText, { color: c.textMuted }]}>
+                {t("misReservas.card.devolucion", { defaultValue: "DEVOLUCIÓN" })}
+              </Text>
+            </View>
+            <Text style={[styles.infoValorText, { color: c.textPrimary }]} numberOfLines={1}>
+              {formatFechaCard(reserva.fechaDevolucion ? String(reserva.fechaDevolucion) : null, locale)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Separador sutil */}
+        <View style={[styles.infoBoxDivider, { backgroundColor: c.border }]} />
+
+        {/* Sucursal */}
+        <View style={styles.sucursalRow}>
+          <View style={styles.infoLabelRow}>
+            <Ionicons name="location-outline" size={12} color={primaryAccent} />
+            <Text style={[styles.infoLabelText, { color: c.textMuted }]}>
+              {t("misReservas.card.sucursal", { defaultValue: "SUCURSAL" })}
+            </Text>
+          </View>
+          <Text style={[styles.infoValorText, { color: c.textPrimary, marginTop: 2 }]} numberOfLines={2}>
+            {sucursalNombre}
+          </Text>
+        </View>
+      </View>
+
+      {/* Fila Inferior de Acciones */}
       <View style={styles.tarjetaAccionesFila}>
         {/* Botón para reportar incidencia */}
         {(grupo === "confirmada" || grupo === "en_curso") && (
           <TouchableOpacity
-            style={[styles.reportarBtn, { backgroundColor: c.oscuro ? c.bgInput : "#FEF2F2", borderColor: c.oscuro ? "#7F1D1D" : "#FECACA" }]}
+            style={[
+              styles.reportarBtn,
+              {
+                backgroundColor: c.oscuro ? "rgba(220, 38, 38, 0.15)" : "#FEF2F2",
+                borderColor: c.oscuro ? "#991B1B" : "#FECACA",
+              },
+            ]}
             onPress={(e) => {
               e.stopPropagation();
               router.push({
@@ -647,6 +653,7 @@ function TarjetaReserva({
             <Text style={styles.verDetalleBtnTexto}>
               {t("catalogo.verDetalles", { defaultValue: "Ver detalle" })}
             </Text>
+            <Ionicons name="chevron-forward" size={13} color="#FFFFFF" style={{ marginLeft: 3 }} />
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -765,126 +772,131 @@ const styles = StyleSheet.create({
 
   lista: { padding: 16, paddingBottom: 40 },
   tarjeta: {
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    padding: 14,
-    marginBottom: 14,
+    padding: 16,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
     elevation: 2,
   },
   tarjetaTopHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
-  },
-  tarjetaRefTexto: {
-    fontSize: 11.5,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-  },
-  tarjetaTotalTexto: {
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  tarjetaVehiculoTitulo: {
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 10,
-  },
-  tarjetaCuerpoFila: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  tarjetaFotoColumna: {
-    alignItems: "flex-start",
-    width: 115,
+    marginBottom: 12,
   },
   badgeEstado: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
     borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 6,
     alignSelf: "flex-start",
   },
   badgeEstadoTexto: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: "800",
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
+  },
+  tarjetaTotalTexto: {
+    fontSize: 17,
+    fontWeight: "800",
+    letterSpacing: 0.2,
+  },
+  tarjetaVehiculoFila: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 14,
   },
   tarjetaFoto: {
-    width: 115,
-    height: 80,
+    width: 105,
+    height: 70,
     borderRadius: 10,
     resizeMode: "cover",
   },
   tarjetaFotoVacia: {
-    width: 115,
-    height: 80,
+    width: 105,
+    height: 70,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  tarjetaDetallesColumna: {
+  tarjetaVehiculoInfo: {
     flex: 1,
-    justifyContent: "space-between",
-    gap: 8,
+    justifyContent: "center",
   },
-  fechasFila: {
+  tarjetaRefTexto: {
+    fontSize: 10.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+    marginBottom: 2,
+  },
+  tarjetaVehiculoTitulo: {
+    fontSize: 16,
+    fontWeight: "800",
+    lineHeight: 20,
+  },
+
+  infoCardBox: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 11,
+    marginBottom: 14,
+  },
+  fechasRow: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 6,
   },
-  fechasSeparador: {
-    width: 1,
-    height: "100%",
-    minHeight: 24,
-  },
-  bloqueDato: {
+  fechaCol: {
     flex: 1,
   },
-  bloqueDatoHeader: {
+  fechaFlechaCol: {
+    paddingHorizontal: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoLabelRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     marginBottom: 2,
   },
-  bloqueDatoLabel: {
-    fontSize: 9,
-    fontWeight: "700",
-    letterSpacing: 0.3,
+  infoLabelText: {
+    fontSize: 9.5,
+    fontWeight: "800",
+    letterSpacing: 0.4,
     textTransform: "uppercase",
   },
-  bloqueDatoValor: {
-    fontSize: 11.5,
+  infoValorText: {
+    fontSize: 12,
     fontWeight: "700",
   },
-  sucursalBloque: {
-    marginTop: 2,
+  infoBoxDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 9,
   },
+  sucursalRow: {
+    marginTop: 1,
+  },
+
   tarjetaAccionesFila: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
     gap: 8,
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(148, 163, 184, 0.2)",
   },
   reportarBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingVertical: 7,
+    paddingVertical: 7.5,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 9,
     borderWidth: 1,
   },
   reportarBtnText: {
@@ -892,14 +904,15 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   verDetalleBtnWrap: {
-    borderRadius: 8,
+    borderRadius: 9,
     overflow: "hidden",
   },
   verDetalleBtn: {
-    paddingVertical: 7,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 9,
     justifyContent: "center",
   },
   verDetalleBtnTexto: {
