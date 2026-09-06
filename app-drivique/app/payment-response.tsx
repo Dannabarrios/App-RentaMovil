@@ -55,6 +55,7 @@ export default function PagoRespuestaScreen() {
   const c = useTemaColores();
   const { t } = useTranslation();
   const { ref } = useLocalSearchParams<{ ref?: string }>();
+  const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
 
   const [cargando, setCargando] = useState(true);
   const [reserva, setReserva] = useState<ReservaGuardada | null>(null);
@@ -399,137 +400,130 @@ export default function PagoRespuestaScreen() {
       </View>
 
       {reserva.estado === "PENDIENTE_EFECTIVO" && (
-        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-          {reserva.metodoPago === "wompi" ? (
-            // Caso: Pago en Corresponsal Bancolombia (Wompi)
-            <>
-              <Text style={[styles.instruccionesTitulo, { color: c.textPrimary, textAlign: "center", marginBottom: 6 }]}>
-                {t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "Reserva registrada" })}
-              </Text>
-              <Text style={[styles.instruccionesTexto, { color: c.textSecondary, textAlign: "center", marginBottom: 16 }]}>
-                {t("reserva.confirmacion.wompiEfectivoMensaje", { defaultValue: "Tienes 72 horas para acercarte a cualquier Corresponsal Bancolombia y realizar el pago en efectivo. Si no te presentas a tiempo, la reserva se cancelará automáticamente." })}
-              </Text>
+        <View style={[styles.card, styles.cardEfectivo, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+          {/* Logo Circular Superior */}
+          <View
+            style={[
+              styles.logoCircle,
+              {
+                backgroundColor: "#FFFFFF",
+                borderColor: c.oscuro ? "#334155" : "#F1F5F9",
+              },
+            ]}
+          >
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={styles.logoImg}
+              resizeMode="contain"
+            />
+          </View>
 
-              <View style={[styles.instruccionesCaja, { backgroundColor: c.primaryBg, borderColor: c.border }]}>
-                <Text style={[styles.sucursalNombre, { color: c.textPrimary, textAlign: "center", marginBottom: 12 }]}>
-                  {t("reserva.confirmacion.wompiEfectivoTitulo", { defaultValue: "Pago en efectivo: Corresponsal Bancolombia" })}
+          {/* Título */}
+          <Text style={[styles.tituloEfectivo, { color: c.textPrimary }]}>
+            {t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "Reserva Registrada" })}
+          </Text>
+
+          {/* Mensaje descriptivo */}
+          <Text style={[styles.descripcionEfectivo, { color: c.textSecondary }]}>
+            {t("reserva.confirmacion.efectivoConfirmadaSub", {
+              defaultValue: sucursalNombre
+                ? `Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en el punto autorizado ${sucursalNombre}.`
+                : "Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en la sucursal seleccionada.",
+              sucursal: sucursalNombre,
+            })}
+          </Text>
+
+          {/* Caja de Referencia y Total */}
+          <View style={[styles.cajaReferencia, { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.border }]}>
+            <View style={styles.filaInfoEfectivo}>
+              <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia de reserva" })}:
+              </Text>
+              <Text style={[styles.valorRefEfectivo, { color: primaryAccent }]}>{reserva.referencia}</Text>
+            </View>
+
+            {!!sucursalNombre && (
+              <View style={styles.filaInfoEfectivo}>
+                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                  {t("reserva.confirmacion.sucursal", { defaultValue: "Sucursal" })}:
                 </Text>
-
-                <View style={styles.instruccionesFila}>
-                  <Text style={[styles.instruccionesEtiqueta, { color: c.textSecondary }]}>
-                    {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia" })}:
-                  </Text>
-                  <Text style={[styles.instruccionesValor, { color: c.textPrimary, fontWeight: "800" }]}>
-                    {reserva.referencia}
-                  </Text>
-                </View>
-
-                <View style={styles.instruccionesFila}>
-                  <Text style={[styles.instruccionesEtiqueta, { color: c.textSecondary }]}>
-                    {t("reserva.confirmacion.puntoPago", { defaultValue: "Punto de Pago" })}:
-                  </Text>
-                  <Text style={[styles.instruccionesValor, { color: c.textPrimary }]}>
-                    {t("reserva.confirmacion.puntoPagoValor", { defaultValue: "Corresponsales Bancolombia" })}
-                  </Text>
-                </View>
-
-                <View style={styles.instruccionesFila}>
-                  <Text style={[styles.instruccionesEtiqueta, { color: c.textSecondary }]}>
-                    {t("reserva.confirmacion.sucursalRetiro", { defaultValue: "Sucursal de Retiro" })}:
-                  </Text>
-                  <Text style={[styles.instruccionesValor, { color: c.textPrimary }]}>
-                    {sucursalNombre}
-                  </Text>
-                </View>
-
-                <View style={[styles.instruccionesDivisor, { backgroundColor: c.border }]} />
-
-                <View style={styles.instruccionesFila}>
-                  <Text style={[styles.instruccionesEtiqueta, { color: c.textSecondary }]}>
-                    {t("reserva.confirmacion.totalAPagar", { defaultValue: "TOTAL A PAGAR" })}:
-                  </Text>
-                  <Text style={[styles.instruccionesTotalValor, { color: c.primary }]}>
-                    {fmt(reserva.total)}
-                  </Text>
-                </View>
-
-                <Text style={[styles.instruccionesNota, { color: c.textMuted }]}>
-                  {t("reserva.confirmacion.notaWompiEfectivo", { defaultValue: "*Presenta la referencia anterior en la caja del corresponsal." })}
+                <Text style={[styles.valorEfectivo, { color: c.textPrimary }]} numberOfLines={1}>
+                  {sucursalNombre}
                 </Text>
               </View>
-            </>
-          ) : (
-            // Caso: Pago en Sucursal Drivique (Físico en caja de la oficina)
-            <>
-              <Text style={[styles.instruccionesTitulo, { color: c.textPrimary, textAlign: "center", marginBottom: 6 }]}>
-                {t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "Reserva registrada" })}
-              </Text>
-              <Text style={[styles.instruccionesTexto, { color: c.textSecondary, textAlign: "center", marginBottom: 16 }]}>
-                {t("reserva.confirmacion.efectivoConfirmadaMensaje", { horas: 72 })}
-              </Text>
+            )}
 
-              <View style={[styles.instruccionesCaja, { backgroundColor: c.primaryBg, borderColor: c.border }]}>
-                <Text style={[styles.sucursalNombre, { color: c.textPrimary, textAlign: "center", marginBottom: 12 }]}>
-                  {t("reserva.confirmacion.pagoEfectivoTitulo", { defaultValue: "Pago en efectivo: retiro en sucursal" })}
+            {!!ciudadSucursal && (
+              <View style={styles.filaInfoEfectivo}>
+                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                  {t("reserva.confirmacion.ciudad", { defaultValue: "Ciudad" })}:
                 </Text>
+                <Text style={[styles.valorEfectivo, { color: c.textPrimary }]}>{ciudadSucursal}</Text>
+              </View>
+            )}
 
-                <View style={styles.instruccionesFila}>
-                  <Text style={[styles.instruccionesEtiqueta, { color: c.textSecondary }]}>
-                    {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia" })}:
-                  </Text>
-                  <Text style={[styles.instruccionesValor, { color: c.textPrimary, fontWeight: "800" }]}>
-                    {reserva.referencia}
-                  </Text>
-                </View>
-
-                <View style={styles.instruccionesFila}>
-                  <Text style={[styles.instruccionesEtiqueta, { color: c.textSecondary }]}>
-                    {t("reserva.confirmacion.sucursal", { defaultValue: "Sucursal" })}:
-                  </Text>
-                  <Text style={[styles.instruccionesValor, { color: c.textPrimary }]}>
-                    {sucursalNombre}
-                  </Text>
-                </View>
-
-                <View style={styles.instruccionesFila}>
-                  <Text style={[styles.instruccionesEtiqueta, { color: c.textSecondary }]}>
-                    {t("reserva.confirmacion.ciudad", { defaultValue: "Ciudad" })}
-                  </Text>
-                  <Text style={[styles.instruccionesValor, { color: c.textPrimary }]}>
-                    {ciudadSucursal || t("reserva.confirmacion.sinDefinir")}
-                  </Text>
-                </View>
-
-                <View style={styles.instruccionesFila}>
-                  <Text style={[styles.instruccionesEtiqueta, { color: c.textSecondary }]}>
-                    {t("reserva.confirmacion.direccion", { defaultValue: "Dirección" })}
-                  </Text>
-                  <Text style={[styles.instruccionesValor, { color: c.textPrimary }]} numberOfLines={2}>
-                    {direccionSucursal || t("reserva.confirmacion.sinDefinir")}
-                  </Text>
-                </View>
-
-                <View style={[styles.instruccionesDivisor, { backgroundColor: c.border }]} />
-
-                <View style={styles.instruccionesFila}>
-                  <Text style={[styles.instruccionesEtiqueta, { color: c.textSecondary }]}>
-                    {t("reserva.confirmacion.totalAPagar", { defaultValue: "TOTAL A PAGAR" })}:
-                  </Text>
-                  <Text style={[styles.instruccionesTotalValor, { color: c.primary }]}>
-                    {fmt(reserva.total)}
-                  </Text>
-                </View>
-
-                <Text style={[styles.instruccionesNota, { color: c.textMuted }]}>
-                  {t("reserva.confirmacion.notaTotalPagar", { defaultValue: "*Incluye impuestos y cargos administrativos" })}
+            {!!direccionSucursal && (
+              <View style={styles.filaInfoEfectivo}>
+                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                  {t("reserva.confirmacion.direccion", { defaultValue: "Dirección" })}:
+                </Text>
+                <Text style={[styles.valorEfectivo, { color: c.textPrimary }]} numberOfLines={2}>
+                  {direccionSucursal}
                 </Text>
               </View>
-            </>
-          )}
+            )}
+
+            <View style={[styles.divisorEfectivo, { backgroundColor: c.border }]} />
+
+            <View style={styles.filaInfoEfectivo}>
+              <Text style={[styles.etiquetaTotalEfectivo, { color: c.textSecondary }]}>
+                {t("reserva.confirmacion.totalAPagar", { defaultValue: "TOTAL A PAGAR" })}:
+              </Text>
+              <Text style={[styles.valorTotalEfectivo, { color: primaryAccent }]}>{fmt(reserva.total)}</Text>
+            </View>
+          </View>
+
+          {/* Tarjeta Amarilla: PLAZO PARA PAGAR */}
+          <View
+            style={[
+              styles.plazoCardEfectivo,
+              {
+                backgroundColor: c.oscuro ? "#261C08" : "#FEFCE8",
+                borderColor: c.oscuro ? "#785C15" : "#FDE047",
+              },
+            ]}
+          >
+            <Text style={[styles.plazoTituloEfectivo, { color: c.oscuro ? "#FCD34D" : "#854D0E" }]}>
+              {t("reserva.confirmacion.plazoParaPagarTitulo", { defaultValue: "PLAZO PARA PAGAR" })}
+            </Text>
+            <Text style={[styles.plazoTextoEfectivo, { color: c.oscuro ? "#FDE68A" : "#713F12" }]}>
+              {t("reserva.confirmacion.efectivoConfirmadaMensaje", {
+                defaultValue:
+                  "Tienes 72 horas desde ahora para acercarte a la sucursal y pagar. Si no pagas dentro de este plazo, la reserva se cancelará automáticamente.",
+                horas: 72,
+              })}
+            </Text>
+          </View>
 
           {/* Banner de Simulación para Sandbox (SOLO PARA PAGO EN SUCURSAL) */}
           {reserva.metodoPago === "efectivo" && (
-            <View style={[styles.simuladorCaja, { backgroundColor: c.oscuro ? "#1E293B" : "#FEF3C7", borderColor: "#F59E0B", marginTop: 16 }]}>
+            <View style={[styles.simuladorCaja, { backgroundColor: c.oscuro ? "#1E293B" : "#FEF3C7", borderColor: "#F59E0B", width: "100%", marginTop: 8 }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <Ionicons name="construct-outline" size={16} color="#D97706" />
+                <Text style={[styles.simuladorTitulo, { color: c.oscuro ? "#FBBF24" : "#B45309" }]}>
+                  {t("simulator.title", "[Simulador] Confirmación de Pago (Cajero)")}
+                </Text>
+              </View>
+              <Text style={[styles.simuladorTexto, { color: c.textSecondary }]}>
+                {t("simulator.desc", "Simula que el cliente se presenta en la caja de la sucursal y realiza el pago. Al confirmar, el estado cambiará a CONFIRMADA y se habilitará la firma del contrato.")}
+              </Text>
+              <TouchableOpacity style={styles.simuladorBtn} onPress={handleSimularPagoCaja}>
+                <Text style={styles.simuladorBtnTexto}>{t("simulator.btn", "Confirmar Recepción de Pago")}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      )}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <Ionicons name="construct-outline" size={16} color="#D97706" />
               <Text style={[styles.simuladorTitulo, { color: c.oscuro ? "#FBBF24" : "#B45309" }]}>
@@ -763,62 +757,103 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: 12,
   },
-  btnDescargarTexto: { fontSize: 14, fontWeight: "700" },
-  instruccionesTitulo: {
-    fontSize: 16,
+  cardEfectivo: {
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    paddingBottom: 20,
+    alignItems: "center",
+  },
+  logoCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  logoImg: {
+    width: 44,
+    height: 28,
+  },
+  tituloEfectivo: {
+    fontSize: 20,
     fontWeight: "800",
-    color: "#1F2937",
+    marginBottom: 6,
+    textAlign: "center",
   },
-  instruccionesTexto: {
-    fontSize: 13,
-    color: "#4B5563",
-    lineHeight: 18,
+  descripcionEfectivo: {
+    fontSize: 12.5,
+    textAlign: "center",
+    lineHeight: 17,
+    marginBottom: 14,
+    paddingHorizontal: 4,
   },
-  instruccionesCaja: {
+  cajaReferencia: {
     width: "100%",
     borderRadius: 12,
     borderWidth: 1,
-    padding: 14,
-    marginBottom: 16,
-  },
-  sucursalNombre: {
-    fontSize: 14,
-    fontWeight: "800",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     marginBottom: 12,
   },
-  instruccionesFila: {
+  filaInfoEfectivo: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingVertical: 5,
-    gap: 8,
+    alignItems: "center",
+    paddingVertical: 2.5,
   },
-  instruccionesEtiqueta: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    flexShrink: 0,
-  },
-  instruccionesValor: {
+  etiquetaEfectivo: {
     fontSize: 11.5,
     fontWeight: "600",
-    flex: 1,
+  },
+  etiquetaTotalEfectivo: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+  valorEfectivo: {
+    fontSize: 11.5,
+    fontWeight: "600",
+    maxWidth: "55%",
     textAlign: "right",
   },
-  instruccionesDivisor: {
-    height: 1,
-    marginVertical: 10,
+  valorRefEfectivo: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.4,
   },
-  instruccionesTotalValor: {
+  valorTotalEfectivo: {
     fontSize: 14.5,
     fontWeight: "800",
-    flex: 1,
-    textAlign: "right",
   },
-  instruccionesNota: {
-    fontSize: 9.5,
-    fontStyle: "italic",
-    marginTop: 8,
-    textAlign: "center",
+  divisorEfectivo: {
+    height: 1,
+    marginVertical: 6,
+  },
+  plazoCardEfectivo: {
+    width: "100%",
+    borderRadius: 14,
+    borderWidth: 1.2,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  plazoTituloEfectivo: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+    marginBottom: 4,
+  },
+  plazoTextoEfectivo: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontWeight: "500",
   },
   simuladorCaja: {
     borderWidth: 1,
