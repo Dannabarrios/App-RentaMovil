@@ -706,6 +706,7 @@ export default {
       totalAPagar: 'TOTAL A PAGAR',
       notaTotalPagar: '*Inclui impostos e encargos administrativos',
       confirmarReserva: 'Confirmar reserva',
+      cancelarReserva: 'Cancelar reserva',
       reservaRegistradaTitulo: 'Reserva Registada',
       reservaRegistradaDescripcion: 'A sua reserva ficou guardada como pendente. Para a confirmar, complete o pagamento digital seguro com a Wompi (Testes).',
       redirigidoWompi: 'Será redirecionado para o checkout oficial da Wompi.',

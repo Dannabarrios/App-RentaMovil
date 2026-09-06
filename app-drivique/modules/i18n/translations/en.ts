@@ -708,6 +708,7 @@ export default {
       totalAPagar: 'TOTAL TO PAY',
       notaTotalPagar: '*Includes taxes and administrative fees',
       confirmarReserva: 'Confirm booking',
+      cancelarReserva: 'Cancel booking',
       reservaRegistradaTitulo: 'Booking Registered',
       reservaRegistradaDescripcion: 'Your booking has been saved as pending. To confirm it, complete secure digital payment with Wompi (Test).',
       redirigidoWompi: "You'll be redirected to Wompi's official checkout.",

@@ -12,9 +12,10 @@ import { formatCurrency } from "@/utils/currencyUtils";
 interface Props {
   total: number;
   onConfirmar: () => void;
+  onCancelar?: () => void;
 }
 
-export default function BarraTotalConfirmar({ total, onConfirmar }: Props) {
+export default function BarraTotalConfirmar({ total, onConfirmar, onCancelar }: Props) {
   const c = useTemaColores();
   const { t } = useTranslation();
   const monedaActual = useMonedaStore((s) => s.monedaActual);
@@ -46,6 +47,18 @@ export default function BarraTotalConfirmar({ total, onConfirmar }: Props) {
           {t("reserva.confirmacion.confirmarReserva", { defaultValue: "Confirmar reserva" })}
         </Text>
       </TouchableOpacity>
+
+      {onCancelar && (
+        <TouchableOpacity
+          style={styles.botonCancelarInterno}
+          onPress={onCancelar}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.botonCancelarInternoTexto}>
+            {t("reserva.confirmacion.cancelarReserva", { defaultValue: "Cancelar reserva" })}
+          </Text>
+        </TouchableOpacity>
+      )}
     </LinearGradient>
   );
 }
@@ -96,6 +109,24 @@ const styles = StyleSheet.create({
   botonTexto: {
     fontSize: 13.5,
     fontWeight: "800",
+    letterSpacing: 0.2,
+    textAlign: "center",
+  },
+  botonCancelarInterno: {
+    width: "100%",
+    borderRadius: 12,
+    paddingVertical: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.4)",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+  },
+  botonCancelarInternoTexto: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
     letterSpacing: 0.2,
     textAlign: "center",
   },

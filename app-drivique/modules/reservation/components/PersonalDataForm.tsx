@@ -567,25 +567,11 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         </Text>
       </View>
 
-      <BarraTotalConfirmar total={total} onConfirmar={handleConfirmarReserva} />
-
-      {/* Botón secundario para cancelar el proceso antes de confirmar */}
-      <TouchableOpacity
-        style={[
-          styles.botonCancelarProceso,
-          {
-            borderColor: c.oscuro ? "#334155" : "#E2E8F0",
-            backgroundColor: c.oscuro ? "#1E293B" : "#F8FAFC",
-          },
-        ]}
-        onPress={() => setAlertaCancelarProcesoVisible(true)}
-        activeOpacity={0.75}
-      >
-        <Ionicons name="close-circle-outline" size={15} color={c.textMuted} />
-        <Text style={[styles.botonCancelarProcesoTexto, { color: c.textSecondary }]}>
-          {t("reserva.confirmacion.cancelarProcesoReserva", { defaultValue: "Cancelar proceso de reserva" })}
-        </Text>
-      </TouchableOpacity>
+      <BarraTotalConfirmar
+        total={total}
+        onConfirmar={handleConfirmarReserva}
+        onCancelar={() => setAlertaCancelarProcesoVisible(true)}
+      />
 
       <ModalReservaRegistrada
         visible={modalReservaVisible}
@@ -750,20 +736,5 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     lineHeight: 16,
     fontWeight: "500",
-  },
-  botonCancelarProceso: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 18,
-  },
-  botonCancelarProcesoTexto: {
-    fontSize: 12.5,
-    fontWeight: "600",
   },
 });

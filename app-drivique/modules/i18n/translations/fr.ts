@@ -706,6 +706,7 @@ export default {
       totalAPagar: 'TOTAL À PAYER',
       notaTotalPagar: '*Inclut les taxes et frais administratifs',
       confirmarReserva: 'Confirmer la réservation',
+      cancelarReserva: 'Annuler la réservation',
       reservaRegistradaTitulo: 'Réservation enregistrée',
       reservaRegistradaDescripcion: "Votre réservation a été enregistrée comme en attente. Pour la confirmer, finalisez le paiement numérique sécurisé avec Wompi (Test).",
       redirigidoWompi: 'Vous serez redirigé vers le paiement officiel de Wompi.',
