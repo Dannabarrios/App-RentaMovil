@@ -3,7 +3,7 @@ import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { useReservaStore } from "@/store/reservationStore";
 import { useUsuarioStore } from "@/store/userStore";
 import React, { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
@@ -100,6 +100,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
   const [alertaFaltantesVisible, setAlertaFaltantesVisible] = useState(false);
   const [alertaEfectivoVisible, setAlertaEfectivoVisible] = useState(false);
   const [alertaErrorPagoVisible, setAlertaErrorPagoVisible] = useState(false);
+  const [alertaCancelarProcesoVisible, setAlertaCancelarProcesoVisible] = useState(false);
   const [procesandoPago, setProcesandoPago] = useState(false);
   const [referenciaActual, setReferenciaActual] = useState<string | null>(null);
   const [mostrarContrato, setMostrarContrato] = useState(false);
@@ -268,11 +269,16 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     router.replace("/(tabs)");
   };
 
-  const handleCancelarModalReserva = async () => {
+  const handlePagarMasTarde = () => {
     setModalReservaVisible(false);
-    if (referenciaActual) {
-      await reservaPersistService.eliminarReserva(referenciaActual);
-    }
+    limpiarReserva();
+    router.replace("/(tabs)/my-bookings");
+  };
+
+  const handleConfirmarCancelarProceso = () => {
+    setAlertaCancelarProcesoVisible(false);
+    limpiarReserva();
+    router.replace("/(tabs)");
   };
 
   const handleContratoFirmado = async () => {
@@ -542,12 +548,49 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         <TarjetaTerminosCondiciones />
       </View>
 
+      {/* Aviso informativo previo a la confirmación */}
+      <View
+        style={[
+          styles.bannerAviso,
+          {
+            backgroundColor: c.oscuro ? "#17255433" : "#EFF6FF",
+            borderColor: c.oscuro ? "#1D4ED8" : "#BFDBFE",
+          },
+        ]}
+      >
+        <Ionicons name="information-circle-outline" size={17} color={primaryAccent} style={{ marginTop: 1 }} />
+        <Text style={[styles.bannerAvisoTexto, { color: c.oscuro ? "#93C5FD" : "#1E40AF" }]}>
+          {t("reserva.confirmacion.avisoGuardadoAutomatico", {
+            defaultValue:
+              "Al confirmar la reserva, quedará guardada automáticamente en tu cuenta. Tendrás un plazo de 72 horas para completar el pago antes de su cancelación automática.",
+          })}
+        </Text>
+      </View>
+
       <BarraTotalConfirmar total={total} onConfirmar={handleConfirmarReserva} />
+
+      {/* Botón secundario para cancelar el proceso antes de confirmar */}
+      <TouchableOpacity
+        style={[
+          styles.botonCancelarProceso,
+          {
+            borderColor: c.oscuro ? "#334155" : "#E2E8F0",
+            backgroundColor: c.oscuro ? "#1E293B" : "#F8FAFC",
+          },
+        ]}
+        onPress={() => setAlertaCancelarProcesoVisible(true)}
+        activeOpacity={0.75}
+      >
+        <Ionicons name="close-circle-outline" size={15} color={c.textMuted} />
+        <Text style={[styles.botonCancelarProcesoTexto, { color: c.textSecondary }]}>
+          {t("reserva.confirmacion.cancelarProcesoReserva", { defaultValue: "Cancelar proceso de reserva" })}
+        </Text>
+      </TouchableOpacity>
 
       <ModalReservaRegistrada
         visible={modalReservaVisible}
         onPagarWompi={handlePagarWompi}
-        onCerrar={handleCancelarModalReserva}
+        onCerrar={handlePagarMasTarde}
       />
 
       <BranchCashPaymentModal
@@ -557,6 +600,28 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         total={total}
         onIrAMisReservas={handleIrAMisReservas}
         onVolverAlInicio={handleVolverAlInicio}
+      />
+
+      <AlertModal
+        visible={alertaCancelarProcesoVisible}
+        icono="alert-circle-outline"
+        titulo={t("reserva.confirmacion.cancelarProcesoTitulo", { defaultValue: "¿Cancelar proceso de reserva?" })}
+        mensaje={t("reserva.confirmacion.cancelarProcesoMensaje", {
+          defaultValue: "Se descartarán los datos ingresados en este proceso y regresarás al catálogo de vehículos.",
+        })}
+        botones={[
+          {
+            texto: t("comun.no", { defaultValue: "No, continuar" }),
+            variante: "secundario",
+            onPress: () => setAlertaCancelarProcesoVisible(false),
+          },
+          {
+            texto: t("reserva.confirmacion.siCancelar", { defaultValue: "Sí, cancelar reserva" }),
+            variante: "primario",
+            onPress: handleConfirmarCancelarProceso,
+          },
+        ]}
+        onCerrar={() => setAlertaCancelarProcesoVisible(false)}
       />
 
       <AlertModal
@@ -670,5 +735,35 @@ const styles = StyleSheet.create({
   },
   inputCelular: {
     flex: 1,
+  },
+  bannerAviso: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  bannerAvisoTexto: {
+    flex: 1,
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontWeight: "500",
+  },
+  botonCancelarProceso: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 18,
+  },
+  botonCancelarProcesoTexto: {
+    fontSize: 12.5,
+    fontWeight: "600",
   },
 });

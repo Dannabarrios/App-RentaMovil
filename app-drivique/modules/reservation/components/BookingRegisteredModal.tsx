@@ -67,14 +67,14 @@ export default function ModalReservaRegistrada({ visible, onPagarWompi, onCerrar
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* Botón Secundario: Cancelar */}
+          {/* Botón Secundario: Pagar más tarde */}
           <TouchableOpacity
             style={[styles.botonCancelar, { borderColor: c.border, backgroundColor: "transparent" }]}
             onPress={onCerrar}
             activeOpacity={0.8}
           >
             <Text style={[styles.botonCancelarTexto, { color: c.textSecondary }]}>
-              {t("comun.cancelar", { defaultValue: "Cancelar" })}
+              {t("reserva.confirmacion.pagarMasTarde", { defaultValue: "Pagar más tarde" })}
             </Text>
           </TouchableOpacity>
         </View>
