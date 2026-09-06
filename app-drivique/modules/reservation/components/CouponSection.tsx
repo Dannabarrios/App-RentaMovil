@@ -47,17 +47,21 @@ export default function CouponSection({ vehiculo }: Props) {
         agotandose: c.estado === "a_punto_de_agotar",
       }))
       .filter((cpx: any) => {
-        // 1. Filtrar para que solo aparezcan cupones compatibles con la categoría del vehículo actual
+        // 1. Filtrar por vehículo específico si aplica
+        if (cpx.reglas?.vehiculoId && vehiculo.id !== cpx.reglas.vehiculoId) {
+          return false;
+        }
+        // 2. Filtrar para que solo aparezcan cupones compatibles con la categoría del vehículo actual
         if (cpx.reglas?.categoriasValidas && cpx.reglas.categoriasValidas.length > 0 && vehiculo.categoria) {
           const vehCatNorm = normalizeStr(vehiculo.categoria);
           const esValida = cpx.reglas.categoriasValidas.some((cat: string) => normalizeStr(cat) === vehCatNorm);
           if (!esValida) return false;
         }
-        // 2. Filtrar por mínimo de días si ya están seleccionados
+        // 3. Filtrar por mínimo de días si ya están seleccionados
         if (cpx.reglas?.minimoDias && dias > 0 && dias < cpx.reglas.minimoDias) {
           return false;
         }
-        // 3. Filtrar por método de pago si ya está seleccionado
+        // 4. Filtrar por método de pago si ya está seleccionado
         if (cpx.reglas?.metodosPagoValidos && fechasLugar.metodoPago) {
           if (!cpx.reglas.metodosPagoValidos.includes(fechasLugar.metodoPago)) {
             return false;
@@ -65,7 +69,7 @@ export default function CouponSection({ vehiculo }: Props) {
         }
         return true;
       });
-  }, [vehiculo.categoria, fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion, fechasLugar.metodoPago]);
+  }, [vehiculo.id, vehiculo.categoria, fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion, fechasLugar.metodoPago]);
   
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
 
@@ -95,6 +99,11 @@ export default function CouponSection({ vehiculo }: Props) {
     setErrorMsgModal("");
     
     if (cupon.reglas) {
+      if (cupon.reglas.vehiculoId && vehiculo.id !== cupon.reglas.vehiculoId) {
+        const msg = "Este cupón solo es válido para otro modelo de vehículo.";
+        fromModal ? setErrorMsgModal(msg) : setErrorMsg(msg);
+        return;
+      }
       const dias = diasEntre(fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion);
       if (cupon.reglas.minimoDias && dias < cupon.reglas.minimoDias) {
         const msg = t("coupon.errorMinDays", { days: cupon.reglas.minimoDias });
@@ -259,7 +268,10 @@ export default function CouponSection({ vehiculo }: Props) {
               
               {cuponesDisponibles.map((cpx) => {
                 const esActivo = cuponAplicado?.codigo === cpx.codigo;
-                const carImages = getVehicleImagesByCategory(cpx.reglas?.categoriasValidas?.[0] || "");
+                const specificCar = cpx.reglas?.vehiculoId ? VEHICULOS_MOCK.find(v => v.id === cpx.reglas.vehiculoId) : null;
+                const carImages = specificCar 
+                  ? [specificCar.imagen || (specificCar.imagenes && specificCar.imagenes[0]) || ""].filter(Boolean)
+                  : getVehicleImagesByCategory(cpx.reglas?.categoriasValidas?.[0] || "");
 
                 let discountLabel = "";
                 if (cpx.descuentoPorcentaje) {
@@ -270,7 +282,7 @@ export default function CouponSection({ vehiculo }: Props) {
                   discountLabel = t(cpx.descripcion || "Descuento");
                 }
 
-                const ruleLabel = cpx.reglas?.minimoDias ? `Min ${cpx.reglas.minimoDias} días` : "Descuento en tu reserva";
+                const ruleLabel = cpx.regla || (cpx.reglas?.minimoDias ? `Min ${cpx.reglas.minimoDias} días` : "Todos los vehículos");
 
                 return (
                   <View key={cpx.codigo} style={styles.ticketWrapper}>
