@@ -4,7 +4,6 @@ import FiltrosCatalogo from "@/modules/catalog/components/CatalogFilters";
 import VehiculoCard from "@/modules/catalog/components/VehicleCard";
 import { useCatalogo } from "@/modules/catalog/hooks/useCatalog";
 import { useFavoritos } from "@/modules/catalog/hooks/useFavorites";
-import { useVehiculosReservados } from "@/modules/catalog/hooks/useVehiculosReservados";
 import { useAuthStore } from "@/store/authStore";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { ConfiguracionModal } from "@/modules/i18n/components/ConfiguracionModal";
@@ -219,8 +218,6 @@ export default function Catalogo() {
     paginaAnterior,
     setPagina,
   } = useCatalogo({ soloFavoritos, esFavorito, textoBusqueda: textBusqueda });
-
-  const { esVehiculoReservado } = useVehiculosReservados();
 
   const [filtrosVisible, setFiltrosVisible] = useState(false);
   const [ordenVisible, setOrdenVisible] = useState(false);
@@ -471,7 +468,6 @@ export default function Catalogo() {
               vehiculo={item as any}
               invitado={!usuario}
               esFavorito={esFavorito(item.id)}
-              estaReservado={esVehiculoReservado(item.id)}
               onAccionRestringida={!usuario ? abrirSweetAlert : undefined}
               onToggleFavorito={usuario ? toggleFavorito : undefined}
               datosPrecarga={datosPrecargaReserva}

@@ -25,6 +25,7 @@ interface Props {
   onCerrar: () => void;
   mostrarPlanes?: boolean;
   seccionFechasCompleta?: boolean;
+  permitirEditar?: boolean;
   onEditarSeccion?: (seccion: "fechas" | "planes" | "servicios") => void;
 }
 
@@ -32,6 +33,7 @@ export default function ResumenReservaModal({
   visible,
   vehiculo,
   onCerrar,
+  permitirEditar = false,
   onEditarSeccion,
 }: Props) {
   const insets = useSafeAreaInsets();
@@ -252,17 +254,19 @@ export default function ResumenReservaModal({
                 <Text style={[styles.seccionTituloAzul, { color: primaryAccent }]}>
                   {t("reserva.resumen.fechasYLugares", { defaultValue: "FECHAS Y LUGARES" })}
                 </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    onEditarSeccion ? onEditarSeccion("fechas") : setSeccionEditando("fechas");
-                  }}
-                  hitSlop={8}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.seccionEditarTexto, { color: primaryAccent }]}>
-                    {t("reserva.resumen.editar", { defaultValue: "Editar" })}
-                  </Text>
-                </TouchableOpacity>
+                {permitirEditar && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      onEditarSeccion ? onEditarSeccion("fechas") : setSeccionEditando("fechas");
+                    }}
+                    hitSlop={8}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.seccionEditarTexto, { color: primaryAccent }]}>
+                      {t("reserva.resumen.editar", { defaultValue: "Editar" })}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* LUGAR DE ENTREGA */}
@@ -310,17 +314,19 @@ export default function ResumenReservaModal({
                 <Text style={[styles.seccionTituloAzul, { color: primaryAccent }]}>
                   {t("reserva.resumen.tuProteccionYExtras", { defaultValue: "TU PROTECCIÓN Y EXTRAS" })}
                 </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    onEditarSeccion ? onEditarSeccion("planes") : setSeccionEditando("planes");
-                  }}
-                  hitSlop={8}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.seccionEditarTexto, { color: primaryAccent }]}>
-                    {t("reserva.resumen.editar", { defaultValue: "Editar" })}
-                  </Text>
-                </TouchableOpacity>
+                {permitirEditar && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      onEditarSeccion ? onEditarSeccion("planes") : setSeccionEditando("planes");
+                    }}
+                    hitSlop={8}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.seccionEditarTexto, { color: primaryAccent }]}>
+                      {t("reserva.resumen.editar", { defaultValue: "Editar" })}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* PROTECCIONES */}
@@ -345,17 +351,19 @@ export default function ResumenReservaModal({
                   <Text style={[styles.sublabel, { color: c.textMuted }]}>
                     {t("reserva.resumen.serviciosAdicionalesMayus", { defaultValue: "SERVICIOS ADICIONALES" })}
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      onEditarSeccion ? onEditarSeccion("servicios") : setSeccionEditando("servicios");
-                    }}
-                    hitSlop={8}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.seccionEditarTexto, { color: primaryAccent }]}>
-                      {t("reserva.resumen.editar", { defaultValue: "Editar" })}
-                    </Text>
-                  </TouchableOpacity>
+                  {permitirEditar && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        onEditarSeccion ? onEditarSeccion("servicios") : setSeccionEditando("servicios");
+                      }}
+                      hitSlop={8}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.seccionEditarTexto, { color: primaryAccent }]}>
+                        {t("reserva.resumen.editar", { defaultValue: "Editar" })}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
                 <Text style={[styles.valorPrincipal, { color: c.textPrimary }]}>
                   {desglose.servAdic > 0 ? fmt(desglose.servAdic) : "$0"}

@@ -161,12 +161,13 @@ export default function FlujoReserva({ vehiculo }: Props) {
       </View>
 
       <ResumenReservaModal
-  visible={modalResumenVisible}
-  vehiculo={vehiculo}
-  mostrarPlanes={seccionesAlcanzadas.planes}
-  seccionFechasCompleta={puedeContinuarAPlanes}
-  onCerrar={() => setModalResumenVisible(false)}
-/>
+        visible={modalResumenVisible}
+        vehiculo={vehiculo}
+        mostrarPlanes={seccionesAlcanzadas.planes}
+        seccionFechasCompleta={puedeContinuarAPlanes}
+        permitirEditar={seccionActiva === "datos"}
+        onCerrar={() => setModalResumenVisible(false)}
+      />
 
       <AlertModal
         visible={alertaFaltantesVisible}

@@ -28,7 +28,6 @@ interface Props {
   vehiculo: Vehiculo;
   invitado?: boolean;
   esFavorito?: boolean;
-  estaReservado?: boolean;
   onAccionRestringida?: (accion: "reservar" | "favorito") => void;
   onToggleFavorito?: (id: number) => void;
   // Viene de una búsqueda previa en "Consultar disponibilidad". Si el
@@ -59,7 +58,6 @@ function VehiculoCard({
   vehiculo,
   invitado = true,
   esFavorito = false,
-  estaReservado = false,
   onAccionRestringida,
   onToggleFavorito,
   datosPrecarga,
@@ -75,7 +73,7 @@ function VehiculoCard({
   const [cardWidth, setCardWidth] = useState(0);
 
   const imagenes = getSafeImages(vehiculo);
-  const estadoDisponible = vehiculo.disponible !== false && !estaReservado;
+  const estadoDisponible = vehiculo.disponible !== false;
   const rating = Number(vehiculo.calificacion ?? 0);
   const tieneResenas = (vehiculo.comentarios && vehiculo.comentarios.length > 0) || rating > 0;
   const estrellas = Array.from(
@@ -90,7 +88,7 @@ function VehiculoCard({
   };
 
   const handleReservar = () => {
-    if (!estadoDisponible || estaReservado) return;
+    if (!estadoDisponible) return;
     if (invitado) {
       onAccionRestringida?.("reservar");
       return;
@@ -145,44 +143,22 @@ function VehiculoCard({
         <View
           style={[
             styles.badge,
-            {
-              backgroundColor: estaReservado
-                ? (c.oscuro ? "#78350F" : "#FEF3C7")
-                : estadoDisponible
-                  ? "#e6f4ea"
-                  : "#fce8e6",
-            },
+            { backgroundColor: estadoDisponible ? "#e6f4ea" : "#fce8e6" },
           ]}
         >
           <View
             style={[
               styles.badgeDot,
-              {
-                backgroundColor: estaReservado
-                  ? "#F59E0B"
-                  : estadoDisponible
-                    ? "#137333"
-                    : "#c5221f",
-              },
+              { backgroundColor: estadoDisponible ? "#137333" : "#c5221f" },
             ]}
           />
           <Text
             style={[
               styles.badgeText,
-              {
-                color: estaReservado
-                  ? (c.oscuro ? "#FCD34D" : "#B45309")
-                  : estadoDisponible
-                    ? "#137333"
-                    : "#c5221f",
-              },
+              { color: estadoDisponible ? "#137333" : "#c5221f" },
             ]}
           >
-            {estaReservado
-              ? t("catalogo.estados.reservado", { defaultValue: "Reservado" })
-              : estadoDisponible
-                ? t("catalogo.estados.disponible")
-                : t("catalogo.noDisponible")}
+            {estadoDisponible ? t("catalogo.estados.disponible") : t("catalogo.noDisponible")}
           </Text>
         </View>
 
@@ -277,40 +253,13 @@ function VehiculoCard({
         <TouchableOpacity
           style={[
             styles.reservarBtnWrap,
-            (!estadoDisponible || estaReservado) && [
-              styles.reservarBtnDisabled,
-              {
-                backgroundColor: estaReservado
-                  ? (c.oscuro ? "#451A03" : "#FEF3C7")
-                  : c.bgInput,
-                borderColor: estaReservado
-                  ? (c.oscuro ? "#78350F" : "#FDE68A")
-                  : "transparent",
-                borderWidth: estaReservado ? 1 : 0,
-              },
-            ],
+            !estadoDisponible && [styles.reservarBtnDisabled, { backgroundColor: c.bgInput }],
           ]}
           onPress={handleReservar}
-          disabled={!estadoDisponible || estaReservado}
+          disabled={!estadoDisponible}
           activeOpacity={0.85}
         >
-          {estaReservado ? (
-            <View style={styles.reservarBtn}>
-              <Ionicons
-                name="bookmark-outline"
-                size={16}
-                color={c.oscuro ? "#FCD34D" : "#B45309"}
-              />
-              <Text
-                style={[
-                  styles.reservarBtnText,
-                  { color: c.oscuro ? "#FCD34D" : "#B45309", fontWeight: "700" },
-                ]}
-              >
-                {t("catalogo.estados.reservado", { defaultValue: "Reservado" }).toUpperCase()}
-              </Text>
-            </View>
-          ) : estadoDisponible ? (
+          {estadoDisponible ? (
             <LinearGradient
               colors={GRADIENTES.boton.colors}
               start={GRADIENTES.boton.start}
