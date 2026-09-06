@@ -1239,7 +1239,7 @@ export default {
     title: 'Cupón de descuento (Opcional)',
     placeholder: 'Ingresa un código',
     applyBtn: 'APLICAR',
-    viewAvailable: 'VER CUPONES DISPONIBLES',
+    viewAvailable: 'Ver cupones disponibles',
     modalTitle: 'Cupones Disponibles',
     empty: 'No tienes cupones disponibles en este momento.',
     conditionsBtn: 'Condiciones',

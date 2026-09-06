@@ -1201,7 +1201,7 @@ export default {
     title: 'Discount coupon (Optional)',
     placeholder: 'Enter a code',
     applyBtn: 'APPLY',
-    viewAvailable: 'VIEW AVAILABLE COUPONS',
+    viewAvailable: 'View available coupons',
     modalTitle: 'Available Coupons',
     empty: 'You have no available coupons at this time.',
     conditionsBtn: 'Conditions',

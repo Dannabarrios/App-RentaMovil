@@ -1199,7 +1199,7 @@ export default {
     title: 'Cupom de desconto (Opcional)',
     placeholder: 'Insira um código',
     applyBtn: 'APLICAR',
-    viewAvailable: 'VER CUPONS DISPONÍVEIS',
+    viewAvailable: 'Ver cupons disponíveis',
     modalTitle: 'Cupons Disponíveis',
     empty: 'Você não tem cupons disponíveis no momento.',
     conditionsBtn: 'Condições',
