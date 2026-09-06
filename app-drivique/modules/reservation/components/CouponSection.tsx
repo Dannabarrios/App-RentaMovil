@@ -564,9 +564,10 @@ export default function CouponSection({ vehiculo }: Props) {
             )}
           </View>
         </KeyboardAvoidingView>
-      </Modal>
-    </View>
-  );
+      </View>
+    </Modal>
+  </View>
+);
 }
 
 const styles = StyleSheet.create({
