@@ -100,7 +100,10 @@ export default function ResumenReservaModal({
   const seguros = vehiculo.seguros ?? [];
   const kmLimitado = vehiculo.tarifas?.kmLimitado;
   const kmIlimitado = vehiculo.tarifas?.kmIlimitado;
-  const servicios = vehiculo.servicios ?? [];
+  const servicios = useMemo(
+    () => (vehiculo.servicios ?? []).filter((s) => !s.nombre.toLowerCase().includes("otra ciudad")),
+    [vehiculo.servicios]
+  );
 
   const seguroElegido = useMemo(
     () => seguros.find((s) => s.nombre === planes.proteccion) ?? null,

@@ -50,7 +50,10 @@ export default function EditAdditionalServicesSection({
   const [draftServicios, setDraftServicios] = useState<string[]>([...storeServicios]);
 
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
-  const todosLosServicios = vehiculo.servicios ?? [];
+  const todosLosServicios = useMemo(
+    () => (vehiculo.servicios ?? []).filter((s) => !s.nombre.toLowerCase().includes("otra ciudad")),
+    [vehiculo.servicios]
+  );
 
   const dias = useMemo(() => {
     const d = diasEntre(fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion);

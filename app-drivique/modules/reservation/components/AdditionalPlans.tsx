@@ -107,7 +107,10 @@ export default function PlanesAdicionales({ vehiculo, onContinuar }: Props) {
 
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
 
-  const todosLosServicios = vehiculo.servicios ?? [];
+  const todosLosServicios = useMemo(
+    () => (vehiculo.servicios ?? []).filter((s) => !s.nombre.toLowerCase().includes("otra ciudad")),
+    [vehiculo.servicios]
+  );
   const kmLimitado = vehiculo.tarifas?.kmLimitado;
   const kmIlimitado = vehiculo.tarifas?.kmIlimitado;
   const seguros = vehiculo.seguros ?? [];

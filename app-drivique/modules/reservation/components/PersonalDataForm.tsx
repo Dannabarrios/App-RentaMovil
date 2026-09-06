@@ -159,7 +159,9 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     const seguros = vehiculo.seguros ?? [];
     const kmLimitado = vehiculo.tarifas?.kmLimitado;
     const kmIlimitado = vehiculo.tarifas?.kmIlimitado;
-    const servicios = vehiculo.servicios ?? [];
+    const servicios = (vehiculo.servicios ?? []).filter(
+      (s) => !s.nombre.toLowerCase().includes("otra ciudad")
+    );
 
     const seguroElegido =
       seguros.find((s) => s.nombre === planes.proteccion) ?? null;
