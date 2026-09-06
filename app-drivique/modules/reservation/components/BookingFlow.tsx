@@ -133,10 +133,10 @@ export default function FlujoReserva({ vehiculo }: Props) {
         >
           {seccionActiva === "fechas" && (
             <>
-              <Text style={[styles.seccionLabel, { color: c.textMuted }]}>{t("reserva.flujo.datosVehiculo")}</Text>
               <VehiculoResumenCard vehiculo={vehiculo} />
 
-              <Text style={[styles.seccionLabel, { color: c.textMuted, marginTop: 20 }]}>{t("reserva.flujo.seleccionarFechasLugar")}</Text>
+              <View style={[styles.separadorTarjetas, { backgroundColor: c.border }]} />
+
               <FormFechasLugar vehiculo={vehiculo} />
 
               <TouchableOpacity style={styles.continuarBtnWrap} onPress={handleVerPlanes} activeOpacity={0.85}>
@@ -217,6 +217,11 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 16, flexGrow: 1 },
 
+  separadorTarjetas: {
+    height: 1,
+    width: "100%",
+    marginVertical: 16,
+  },
   seccionLabel: {
     fontSize: 12,
     fontWeight: "800",

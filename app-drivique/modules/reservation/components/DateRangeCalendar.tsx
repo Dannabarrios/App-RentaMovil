@@ -1,13 +1,58 @@
 import React, { useMemo } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Calendar, DateData } from "react-native-calendars";
-import { LinearGradient } from "expo-linear-gradient";
+import { Calendar, DateData, LocaleConfig } from "react-native-calendars";
+import { Ionicons } from "@expo/vector-icons";
 import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { getDisponibilidadVehiculo } from "@/modules/catalog/constants/catalog.constants";
 import { COLOR_MARCA } from "../constants/reservation.constants";
-import { GRADIENTES } from "@/constants/gradients";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { useTranslation } from "react-i18next";
+
+LocaleConfig.locales["es"] = {
+  monthNames: [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ],
+  monthNamesShort: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+  dayNames: ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"],
+  dayNamesShort: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"],
+  today: "Hoy",
+};
+
+LocaleConfig.locales["en"] = {
+  monthNames: [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ],
+  monthNamesShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  dayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+  dayNamesShort: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"],
+  today: "Today",
+};
+
+LocaleConfig.locales["pt"] = {
+  monthNames: [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ],
+  monthNamesShort: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
+  dayNames: ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"],
+  dayNamesShort: ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"],
+  today: "Hoje",
+};
+
+LocaleConfig.locales["fr"] = {
+  monthNames: [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+  ],
+  monthNamesShort: ["Janv", "Févr", "Mars", "Avr", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"],
+  dayNames: ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"],
+  dayNamesShort: ["DIM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM"],
+  today: "Aujourd'hui",
+};
+
+LocaleConfig.defaultLocale = "es";
 
 interface Props {
   vehiculo: Vehiculo;
@@ -16,9 +61,10 @@ interface Props {
   onCambiarFechas: (fechaRetiro: string | null, fechaDevolucion: string | null) => void;
 }
 
-const COLOR_DISPONIBLE = "#16a34a";
-const COLOR_RESERVADO = "#dc2626";
-const COLOR_MANTENIMIENTO = "#64748b";
+const COLOR_DISPONIBLE = "#10B981";
+const COLOR_RESERVADO = "#EF4444";
+const COLOR_MANTENIMIENTO = "#64748B";
+const COLOR_SELECCIONADO = COLOR_MARCA;
 
 function getDiasEnRango(inicio: string, fin: string): string[] {
   const dias: string[] = [];
@@ -31,10 +77,6 @@ function getDiasEnRango(inicio: string, fin: string): string[] {
   return dias;
 }
 
-// Marca de un día en el calendario. Reemplaza el `dayComponent` por defecto
-// de react-native-calendars para poder pintar el rango seleccionado con un
-// degradado (en vez del color plano de antes) y un puntito de estado
-// (disponible / ocupado) debajo del número, al estilo de la referencia.
 interface MarcaDia {
   ocupado?: boolean;
   dotColor?: string;
@@ -47,12 +89,16 @@ function DiaCalendario({
   date,
   state,
   marking,
+  fechaRetiro,
+  fechaDevolucion,
   onPress,
   c,
 }: {
   date?: DateData;
   state?: string;
   marking?: MarcaDia;
+  fechaRetiro: string | null;
+  fechaDevolucion: string | null;
   onPress?: (date?: DateData) => void;
   c: ReturnType<typeof useTemaColores>;
 }) {
@@ -61,7 +107,9 @@ function DiaCalendario({
   const deshabilitado = state === "disabled";
   const hoy = state === "today";
   const seleccionado = !!marking?.seleccionado;
-  const enExtremoRango = marking?.inicioRango || marking?.finRango;
+  const esInicio = !!marking?.inicioRango;
+  const esFin = !!marking?.finRango;
+  const enExtremoRango = esInicio || esFin;
   const esRangoContinuo = seleccionado && !enExtremoRango;
 
   const numero = (
@@ -70,8 +118,9 @@ function DiaCalendario({
         diaStyles.texto,
         { color: c.textPrimary },
         deshabilitado && [diaStyles.textoDeshabilitado, { color: c.textMuted }],
-        hoy && !seleccionado && { color: COLOR_MARCA, fontWeight: "800" as const },
-        seleccionado && diaStyles.textoSeleccionado,
+        hoy && !seleccionado && { color: COLOR_MARCA, fontWeight: "600" as const },
+        enExtremoRango && diaStyles.textoExtremo,
+        esRangoContinuo && diaStyles.textoContinuo,
       ]}
     >
       {date.day}
@@ -82,6 +131,16 @@ function DiaCalendario({
   if (marking?.ocupado) colorPunto = marking.dotColor ?? COLOR_RESERVADO;
   else if (!deshabilitado) colorPunto = COLOR_DISPONIBLE;
 
+  let estiloCirculo: any = diaStyles.circulo;
+  if (enExtremoRango) {
+    estiloCirculo = diaStyles.circuloExtremo;
+  } else if (hoy && !seleccionado) {
+    estiloCirculo = [
+      diaStyles.circuloHoy,
+      { borderColor: c.oscuro ? "rgba(47, 78, 162, 0.45)" : "rgba(47, 78, 162, 0.28)" },
+    ];
+  }
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -89,32 +148,29 @@ function DiaCalendario({
       onPress={() => onPress?.(date)}
       style={diaStyles.celda}
     >
-      {/* Fondo continuo suave para los días intermedios de un rango */}
+      {/* Fondo continuo plano sin solapamientos para días intermedios */}
       {esRangoContinuo && (
-        <View style={[diaStyles.fondoRango, { backgroundColor: "rgba(37,99,235,0.14)" }]} />
-      )}
-
-      {enExtremoRango ? (
-        <LinearGradient
-          colors={GRADIENTES.boton.colors}
-          start={GRADIENTES.boton.start}
-          end={GRADIENTES.boton.end}
-          style={diaStyles.circulo}
-        >
-          {numero}
-        </LinearGradient>
-      ) : (
-        <View style={diaStyles.circulo}>{numero}</View>
-      )}
-
-      {colorPunto && (
         <View
           style={[
-            diaStyles.punto,
-            { backgroundColor: seleccionado ? "#fff" : colorPunto },
+            diaStyles.fondoRango,
+            { backgroundColor: c.oscuro ? "rgba(47, 78, 162, 0.22)" : "rgba(47, 78, 162, 0.08)" },
           ]}
         />
       )}
+
+      <View style={estiloCirculo}>
+        {numero}
+        {colorPunto ? (
+          <View
+            style={[
+              diaStyles.punto,
+              { backgroundColor: enExtremoRango ? "#FFFFFF" : colorPunto },
+            ]}
+          />
+        ) : (
+          <View style={diaStyles.puntoVacio} />
+        )}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -126,9 +182,18 @@ export default function CalendarioRango({
   onCambiarFechas,
 }: Props) {
   const c = useTemaColores();
-  const { t } = useTranslation();
-  // La disponibilidad ya no viene embebida en el vehículo — se calcula
-  // a partir de RESERVAS_MOCK (mocks/reservas.json) según su id.
+  const { t, i18n } = useTranslation();
+
+  const langKey = i18n.language?.startsWith("fr")
+    ? "fr"
+    : i18n.language?.startsWith("pt") || i18n.language?.startsWith("br")
+    ? "pt"
+    : i18n.language?.startsWith("en")
+    ? "en"
+    : "es";
+
+  LocaleConfig.defaultLocale = langKey;
+
   const ocupados = useMemo(() => {
     const mapa = new Map<string, "reservado" | "mantenimiento">();
     getDisponibilidadVehiculo(vehiculo.id).ocupados.forEach((item) => {
@@ -221,48 +286,76 @@ export default function CalendarioRango({
   return (
     <View style={[styles.container, { borderColor: c.border, backgroundColor: c.bgCard }]}>
       <Calendar
+        key={`${c.oscuro ? "dark" : "light"}_${langKey}`}
         current={hoy}
         minDate={hoy}
         markedDates={markedDates}
+        firstDay={1}
+        hideExtraDays={true}
         onDayPress={handleDayPress}
-        dayComponent={(props: any) => <DiaCalendario {...props} c={c} />}
+        dayComponent={(props: any) => (
+          <DiaCalendario
+            {...props}
+            fechaRetiro={fechaRetiro}
+            fechaDevolucion={fechaDevolucion}
+            c={c}
+            onPress={(d?: DateData) => {
+              if (d) handleDayPress(d);
+            }}
+          />
+        )}
+        renderArrow={(direction: "left" | "right") => (
+          <View style={[styles.arrowBtn, { backgroundColor: c.bgInput }]}>
+            <Ionicons
+              name={direction === "left" ? "chevron-back" : "chevron-forward"}
+              size={14}
+              color={c.textPrimary}
+            />
+          </View>
+        )}
         theme={{
           calendarBackground: c.bgCard,
           dayTextColor: c.textPrimary,
           monthTextColor: c.textPrimary,
           textDisabledColor: c.textMuted,
           todayTextColor: COLOR_MARCA,
-          arrowColor: c.textSecondary,
+          arrowColor: c.textPrimary,
           textSectionTitleColor: c.textMuted,
-          textDayFontSize: 13,
-          textMonthFontSize: 14,
-          textMonthFontWeight: "700",
-          textDayHeaderFontSize: 11,
+          textDayFontSize: 12,
+          textMonthFontSize: 14.5,
+          textMonthFontWeight: "800",
+          textDayHeaderFontSize: 9.5,
+          textDayHeaderFontWeight: "600",
         }}
-        style={styles.calendar}
+        style={[styles.calendar, { backgroundColor: c.bgCard }]}
       />
+
+      <View style={[styles.divider, { backgroundColor: c.border }]} />
 
       <View style={styles.leyenda}>
         <View style={styles.leyendaItem}>
           <View style={[styles.dot, { backgroundColor: COLOR_DISPONIBLE }]} />
-          <Text style={[styles.leyendaText, { color: c.textSecondary }]}>Disponible</Text>
+          <Text style={[styles.leyendaText, { color: c.textSecondary }]}>
+            {t("reserva.fechasLugar.leyendaDisponible", { defaultValue: "Disponible" })}
+          </Text>
         </View>
         <View style={styles.leyendaItem}>
           <View style={[styles.dot, { backgroundColor: COLOR_RESERVADO }]} />
-          <Text style={[styles.leyendaText, { color: c.textSecondary }]}>Reservado</Text>
+          <Text style={[styles.leyendaText, { color: c.textSecondary }]}>
+            {t("reserva.fechasLugar.leyendaReservado", { defaultValue: "Reservado" })}
+          </Text>
         </View>
         <View style={styles.leyendaItem}>
           <View style={[styles.dot, { backgroundColor: COLOR_MANTENIMIENTO }]} />
-          <Text style={[styles.leyendaText, { color: c.textSecondary }]}>Mantenimiento</Text>
+          <Text style={[styles.leyendaText, { color: c.textSecondary }]}>
+            {t("reserva.fechasLugar.leyendaMantenimiento", { defaultValue: "Mantenimiento" })}
+          </Text>
         </View>
         <View style={styles.leyendaItem}>
-          <LinearGradient
-            colors={GRADIENTES.boton.colors}
-            start={GRADIENTES.boton.start}
-            end={GRADIENTES.boton.end}
-            style={styles.dotGradiente}
-          />
-          <Text style={[styles.leyendaText, { color: c.textSecondary }]}>Seleccionado</Text>
+          <View style={[styles.dot, { backgroundColor: COLOR_SELECCIONADO }]} />
+          <Text style={[styles.leyendaText, { color: c.textSecondary }]}>
+            {t("reserva.fechasLugar.leyendaSeleccionado", { defaultValue: "Seleccionado" })}
+          </Text>
         </View>
       </View>
     </View>
@@ -271,17 +364,19 @@ export default function CalendarioRango({
 
 const diaStyles = StyleSheet.create({
   celda: {
-    width: 32,
-    height: 40,
+    width: "100%",
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
   fondoRango: {
     position: "absolute",
-    left: -2,
-    right: -2,
-    top: 3,
-    height: 28,
+    left: 0,
+    right: 0,
+    top: 4,
+    bottom: 4,
+    zIndex: 1,
   },
   circulo: {
     width: 28,
@@ -289,44 +384,90 @@ const diaStyles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
+  },
+  circuloHoy: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  circuloExtremo: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLOR_MARCA,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
   },
   texto: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "400",
+  },
+  textoExtremo: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 11.5,
+  },
+  textoContinuo: {
+    color: "#334155",
+    fontWeight: "400",
   },
   textoDeshabilitado: {
-    textDecorationLine: "line-through",
-  },
-  textoSeleccionado: {
-    color: "#fff",
-    fontWeight: "800",
+    color: "#CBD5E1",
   },
   punto: {
-    position: "absolute",
-    bottom: 2,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 2.5,
+    height: 2.5,
+    borderRadius: 1.5,
+    marginTop: 2,
+    zIndex: 3,
+  },
+  puntoVacio: {
+    width: 2.5,
+    height: 2.5,
+    marginTop: 2,
   },
 });
 
 const styles = StyleSheet.create({
   container: {
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 8,
+    borderRadius: 16,
+    padding: 6,
+    paddingBottom: 10,
   },
-  calendar: { borderRadius: 10 },
+  calendar: {
+    borderRadius: 12,
+  },
+  arrowBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  divider: {
+    height: 1,
+    width: "100%",
+    backgroundColor: "#F1F5F9",
+    marginTop: 6,
+    marginBottom: 6,
+  },
   leyenda: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
-    gap: 14,
-    marginTop: 4,
-    marginBottom: 6,
+    gap: 12,
+    marginTop: 2,
+    marginBottom: 2,
   },
   leyendaItem: { flexDirection: "row", alignItems: "center", gap: 5 },
-  dot: { width: 7, height: 7, borderRadius: 4 },
-  dotGradiente: { width: 10, height: 10, borderRadius: 5 },
-  leyendaText: { fontSize: 10 },
+  dot: { width: 5.5, height: 5.5, borderRadius: 3 },
+  leyendaText: { fontSize: 9.5, fontWeight: "500" },
 });

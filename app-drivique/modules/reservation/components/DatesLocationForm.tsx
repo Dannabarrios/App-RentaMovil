@@ -136,9 +136,51 @@ export default function FormFechasLugar({ vehiculo }: Props) {
   const mostrarDomicilioRetiro = fechasLugar.lugarRetiro === "domicilio";
   const mostrarDomicilioDevolucion = fechasLugar.lugarDevolucion === "domicilio";
 
+  const textoDuracion = useMemo(() => {
+    if (!fechasLugar.fechaRetiro || !fechasLugar.fechaDevolucion) return null;
+
+    const diaTexto = (n: number) =>
+      n === 1
+        ? t("reserva.fechasLugar.diaSingular", { defaultValue: "día" })
+        : t("reserva.fechasLugar.diaPlural", { defaultValue: "días" });
+    const horaTexto = (n: number) =>
+      n === 1
+        ? t("reserva.fechasLugar.horaSingular", { defaultValue: "hora" })
+        : t("reserva.fechasLugar.horaPlural", { defaultValue: "horas" });
+
+    if (fechasLugar.horaRetiro && fechasLugar.horaDevolucion) {
+      const inicio = new Date(`${fechasLugar.fechaRetiro}T${fechasLugar.horaRetiro}:00`).getTime();
+      const fin = new Date(`${fechasLugar.fechaDevolucion}T${fechasLugar.horaDevolucion}:00`).getTime();
+      const diffMs = Math.max(fin - inicio, 0);
+      const totalHoras = Math.floor(diffMs / (1000 * 60 * 60));
+      const dias = Math.floor(totalHoras / 24);
+      const horas = totalHoras % 24;
+
+      if (dias > 0 && horas > 0) {
+        return `${dias} ${diaTexto(dias)} - ${horas} ${horaTexto(horas)}`;
+      }
+      if (dias > 0 && horas === 0) {
+        return `${dias} ${diaTexto(dias)}`;
+      }
+      if (dias === 0 && horas > 0) {
+        return `${horas} ${horaTexto(horas)}`;
+      }
+    }
+
+    const d1 = new Date(fechasLugar.fechaRetiro + "T00:00:00").getTime();
+    const d2 = new Date(fechasLugar.fechaDevolucion + "T00:00:00").getTime();
+    const dias = Math.max(Math.round((d2 - d1) / 86400000), 1);
+    return `${dias} ${diaTexto(dias)}`;
+  }, [fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion, fechasLugar.horaRetiro, fechasLugar.horaDevolucion, t]);
+
   return (
     <View style={[styles.card, { backgroundColor: c.bgCard }]}>
-      <Text style={[styles.tituloSeccion, styles.primerLabel, { color: c.textSecondary }]}>{t("reserva.fechasLugar.metodoPagoPreferido")}</Text>
+      <View style={styles.headerConIcono}>
+        <Ionicons name="card" size={14} color={COLOR_MARCA} />
+        <Text style={styles.tituloHeaderConIcono}>
+          {t("reserva.fechasLugar.metodoPagoPreferido")}
+        </Text>
+      </View>
       <View style={styles.filaDosCols}>
         {METODOS_PAGO.map((metodo) => {
           const activo = fechasLugar.metodoPago === metodo.id;
@@ -172,26 +214,76 @@ export default function FormFechasLugar({ vehiculo }: Props) {
         })}
       </View>
 
-      <Text style={[styles.tituloSeccion, { color: c.textSecondary }]}>{t("reserva.fechasLugar.lugarHoraEntrega")}</Text>
+      {fechasLugar.metodoPago === "efectivo" && (
+        <View style={styles.puntoAutorizadoContainer}>
+          <View style={styles.headerConIcono}>
+            <Ionicons name="location" size={14} color={COLOR_MARCA} />
+            <Text style={styles.tituloHeaderConIcono}>
+              {t("reserva.fechasLugar.puntoAutorizadoEfectivo", { defaultValue: "Punto autorizado para pago en efectivo" })}
+            </Text>
+          </View>
+          <View style={[styles.puntoAutorizadoBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}>
+            <Text style={[styles.puntoAutorizadoTexto, { color: c.textPrimary }]} numberOfLines={1}>
+              {`${nombreSucursal}${ciudadEntregaNombre ? ` · ${ciudadEntregaNombre}` : ""}`}
+            </Text>
+          </View>
+        </View>
+      )}
+
       <View style={styles.filaDosCols}>
-        <TouchableOpacity style={[styles.selectBox, { borderColor: c.border }]} onPress={() => setModalTipo("retiro")}>
-          <View style={styles.selectLabelRow}>
-            <Ionicons name="location-outline" size={12} color={c.textMuted} />
-            <Text style={[styles.selectLabel, { color: c.textMuted }]}>{t("reserva.fechasLugar.lugarDeRetiro")}</Text>
+        <View style={styles.columnaMedia}>
+          <View style={styles.headerConIcono}>
+            <Ionicons name="location" size={14} color={COLOR_MARCA} />
+            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
+              {t("reserva.fechasLugar.lugarDeRetiro")}
+            </Text>
           </View>
-          <Text style={[styles.selectValue, { color: c.textPrimary }]} numberOfLines={1}>
-            {labelLugarRetiro}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.selectBox, { borderColor: c.border }]} onPress={() => setModalTipo("devolucion")}>
-          <View style={styles.selectLabelRow}>
-            <Ionicons name="location-outline" size={12} color={c.textMuted} />
-            <Text style={[styles.selectLabel, { color: c.textMuted }]}>{t("reserva.fechasLugar.lugarDeDevolucion")}</Text>
+          <TouchableOpacity
+            style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+            onPress={() => setModalTipo("retiro")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.selectValorRow}>
+              <Text
+                style={[
+                  styles.selectValue,
+                  { color: fechasLugar.lugarRetiro ? c.textPrimary : c.textMuted },
+                ]}
+                numberOfLines={1}
+              >
+                {labelLugarRetiro}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={c.textMuted} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.columnaMedia}>
+          <View style={styles.headerConIcono}>
+            <Ionicons name="location" size={14} color={COLOR_MARCA} />
+            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
+              {t("reserva.fechasLugar.lugarDeDevolucion")}
+            </Text>
           </View>
-          <Text style={[styles.selectValue, { color: c.textPrimary }]} numberOfLines={1}>
-            {labelLugarDevolucion}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+            onPress={() => setModalTipo("devolucion")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.selectValorRow}>
+              <Text
+                style={[
+                  styles.selectValue,
+                  { color: fechasLugar.lugarDevolucion ? c.textPrimary : c.textMuted },
+                ]}
+                numberOfLines={1}
+              >
+                {labelLugarDevolucion}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={c.textMuted} />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* --- INFO DE ENTREGA A DOMICILIO (solo si lugarRetiro === "domicilio") --- */}
@@ -212,7 +304,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
 
           <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.fechasLugar.barrio")}</Text>
           <TextInput
-            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.bgInput }]}
+            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
             placeholder={t("reserva.fechasLugar.placeholderBarrio")}
             placeholderTextColor={c.textMuted}
             value={fechasLugar.barrioRetiro ?? ""}
@@ -221,7 +313,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
 
           <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.fechasLugar.direccion")}</Text>
           <TextInput
-            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.bgInput }]}
+            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
             placeholder={t("reserva.fechasLugar.placeholderDireccion")}
             placeholderTextColor={c.textMuted}
             value={fechasLugar.direccionRetiro ?? ""}
@@ -230,7 +322,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
 
           <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.fechasLugar.referenciasEntrega")}</Text>
           <TextInput
-            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.bgInput }]}
+            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
             placeholder={t("reserva.fechasLugar.placeholderReferencias")}
             placeholderTextColor={c.textMuted}
             value={fechasLugar.referenciasRetiro ?? ""}
@@ -257,7 +349,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
 
           <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.fechasLugar.barrio")}</Text>
           <TextInput
-            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.bgInput }]}
+            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
             placeholder={t("reserva.fechasLugar.placeholderBarrio")}
             placeholderTextColor={c.textMuted}
             value={fechasLugar.barrioDevolucion ?? ""}
@@ -266,7 +358,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
 
           <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.fechasLugar.direccion")}</Text>
           <TextInput
-            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.bgInput }]}
+            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
             placeholder={t("reserva.fechasLugar.placeholderDireccion")}
             placeholderTextColor={c.textMuted}
             value={fechasLugar.direccionDevolucion ?? ""}
@@ -275,7 +367,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
 
           <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.fechasLugar.referenciasDevolucion")}</Text>
           <TextInput
-            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.bgInput }]}
+            style={[styles.input, { borderColor: c.border, color: c.textPrimary, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
             placeholder={t("reserva.fechasLugar.placeholderReferencias")}
             placeholderTextColor={c.textMuted}
             value={fechasLugar.referenciasDevolucion ?? ""}
@@ -284,33 +376,70 @@ export default function FormFechasLugar({ vehiculo }: Props) {
         </View>
       )}
 
-      <View style={[styles.filaDosCols, { marginTop: 8 }]}>
-        <TouchableOpacity style={[styles.selectBox, { borderColor: c.border }]} onPress={() => setHoraVisible("retiro")}>
-          <View style={styles.selectLabelRow}>
-            <Ionicons name="time-outline" size={12} color={c.textMuted} />
-            <Text style={[styles.selectLabel, { color: c.textMuted }]}>{t("reserva.fechasLugar.horaDeRetiro")}</Text>
+      <View style={[styles.filaDosCols, { marginTop: 4 }]}>
+        <View style={styles.columnaMedia}>
+          <View style={styles.headerConIcono}>
+            <Ionicons name="time" size={14} color={COLOR_MARCA} />
+            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
+              {t("reserva.fechasLugar.horaDeRetiro")}
+            </Text>
           </View>
-          <View style={styles.selectValorRow}>
-            <Text style={[styles.selectValue, { color: c.textPrimary }]}>{fechasLugar.horaRetiro || t("reserva.fechasLugar.seleccionar")}</Text>
-            <Ionicons name="chevron-down" size={14} color={c.textMuted} />
+          <TouchableOpacity
+            style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+            onPress={() => setHoraVisible("retiro")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.selectValorRow}>
+              <Text
+                style={[
+                  styles.selectValue,
+                  { color: fechasLugar.horaRetiro ? c.textPrimary : c.textMuted },
+                ]}
+                numberOfLines={1}
+              >
+                {fechasLugar.horaRetiro || t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={c.textMuted} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.columnaMedia}>
+          <View style={styles.headerConIcono}>
+            <Ionicons name="time" size={14} color={COLOR_MARCA} />
+            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
+              {t("reserva.fechasLugar.horaDeDevolucion")}
+            </Text>
           </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.selectBox, { borderColor: c.border }]} onPress={() => setHoraVisible("devolucion")}>
-          <View style={styles.selectLabelRow}>
-            <Ionicons name="time-outline" size={12} color={c.textMuted} />
-            <Text style={[styles.selectLabel, { color: c.textMuted }]}>{t("reserva.fechasLugar.horaDeDevolucion")}</Text>
-          </View>
-          <View style={styles.selectValorRow}>
-            <Text style={[styles.selectValue, { color: c.textPrimary }]}>{fechasLugar.horaDevolucion || t("reserva.fechasLugar.seleccionar")}</Text>
-            <Ionicons name="chevron-down" size={14} color={c.textMuted} />
-          </View>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+            onPress={() => setHoraVisible("devolucion")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.selectValorRow}>
+              <Text
+                style={[
+                  styles.selectValue,
+                  { color: fechasLugar.horaDevolucion ? c.textPrimary : c.textMuted },
+                ]}
+                numberOfLines={1}
+              >
+                {fechasLugar.horaDevolucion || t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={c.textMuted} />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* --- CALENDARIO DE DISPONIBILIDAD (justo después de la hora) --- */}
-      <View style={styles.labelConIcono}>
-        <Ionicons name="calendar-outline" size={13} color={c.textMuted} />
-        <Text style={[styles.tituloSeccion, { color: c.textSecondary }]}>{t("reserva.fechasLugar.calendarioDisponibilidad")}</Text>
+      <View style={styles.headerCalendarioContainer}>
+        <Ionicons name="calendar" size={14} color={COLOR_MARCA} style={styles.iconoCalendario} />
+        <Text style={styles.tituloCalendario}>
+          {t("reserva.fechasLugar.calendarioDisponibilidad", {
+            defaultValue: "Selecciona un rango de fechas en el calendario de disponibilidad",
+          })}
+        </Text>
       </View>
       <CalendarioRango
         vehiculo={vehiculo}
@@ -322,26 +451,69 @@ export default function FormFechasLugar({ vehiculo }: Props) {
       />
 
       {/* --- FECHAS AUTOMÁTICAS (se llenan solas con lo elegido en el calendario) --- */}
-      <View style={[styles.filaDosCols, { marginTop: 12 }]}>
-        <View style={[styles.selectBox, { borderColor: c.border }]}>
-          <View style={styles.selectLabelRow}>
-            <Ionicons name="calendar-outline" size={12} color={c.textMuted} />
-            <Text style={[styles.selectLabel, { color: c.textMuted }]}>{t("reserva.fechasLugar.fechaDeRetiro")}</Text>
+      <View style={[styles.filaDosCols, { marginTop: 14, marginBottom: 0 }]}>
+        <View style={styles.columnaMedia}>
+          <View style={styles.headerConIcono}>
+            <Ionicons name="calendar" size={14} color={COLOR_MARCA} />
+            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
+              {t("reserva.fechasLugar.fechaDeRetiro", { defaultValue: "Fecha de retiro" })}
+            </Text>
           </View>
-          <Text style={[styles.selectValue, { color: c.textPrimary }]} numberOfLines={1}>
-            {formatFecha(fechasLugar.fechaRetiro, t("reserva.fechasLugar.seleccionar"))}
-          </Text>
+          <View style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}>
+            <Text
+              style={[
+                styles.selectValue,
+                { color: fechasLugar.fechaRetiro ? c.textPrimary : c.textMuted },
+              ]}
+              numberOfLines={1}
+            >
+              {fechasLugar.fechaRetiro || t("reserva.fechasLugar.seleccionar", { defaultValue: "Seleccionar" })}
+            </Text>
+          </View>
         </View>
-        <View style={[styles.selectBox, { borderColor: c.border }]}>
-          <View style={styles.selectLabelRow}>
-            <Ionicons name="calendar-outline" size={12} color={c.textMuted} />
-            <Text style={[styles.selectLabel, { color: c.textMuted }]}>{t("reserva.fechasLugar.fechaDeDevolucion")}</Text>
+
+        <View style={styles.columnaMedia}>
+          <View style={styles.headerConIcono}>
+            <Ionicons name="calendar" size={14} color={COLOR_MARCA} />
+            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
+              {t("reserva.fechasLugar.fechaDeDevolucion", { defaultValue: "Fecha de devolución" })}
+            </Text>
           </View>
-          <Text style={[styles.selectValue, { color: c.textPrimary }]} numberOfLines={1}>
-            {formatFecha(fechasLugar.fechaDevolucion, t("reserva.fechasLugar.seleccionar"))}
-          </Text>
+          <View style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}>
+            <Text
+              style={[
+                styles.selectValue,
+                { color: fechasLugar.fechaDevolucion ? c.textPrimary : c.textMuted },
+              ]}
+              numberOfLines={1}
+            >
+              {fechasLugar.fechaDevolucion || t("reserva.fechasLugar.seleccionar", { defaultValue: "Seleccionar" })}
+            </Text>
+          </View>
         </View>
       </View>
+
+      {/* --- STRIP DURACIÓN DEL ALQUILER --- */}
+      {!!textoDuracion && (
+        <View
+          style={[
+            styles.duracionStrip,
+            c.oscuro
+              ? { backgroundColor: "rgba(47, 78, 162, 0.16)", borderColor: "rgba(47, 78, 162, 0.35)" }
+              : { backgroundColor: "rgba(47, 78, 162, 0.04)", borderColor: "rgba(47, 78, 162, 0.15)" },
+          ]}
+        >
+          <View style={styles.duracionLeftRow}>
+            <Ionicons name="hourglass-outline" size={16} color={COLOR_MARCA} />
+            <Text style={[styles.duracionLabel, { color: c.textSecondary }]}>
+              {t("reserva.fechasLugar.duracionAlquiler", { defaultValue: "Duración del alquiler" })}
+            </Text>
+          </View>
+          <Text style={styles.duracionValor}>
+            {textoDuracion}
+          </Text>
+        </View>
+      )}
 
       <SelectorSucursalModal
         visible={modalTipo !== null}
@@ -394,16 +566,61 @@ const styles = StyleSheet.create({
   metodoCardActivo: { borderColor: COLOR_MARCA, borderWidth: 1.5 },
   metodoHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   metodoTitulo: { fontSize: 11, fontWeight: "700", flex: 1, marginRight: 6 },
-  metodoTituloActivo: { color: "#3B82F6" },
+  metodoTituloActivo: { color: COLOR_MARCA },
   metodoDesc: { fontSize: 9, marginTop: 4 },
-  metodoDescActivo: { color: "#60A5FA" },
+  metodoDescActivo: { color: COLOR_MARCA, opacity: 0.85 },
   radio: { width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   radioActivo: { borderColor: COLOR_MARCA },
   radioPunto: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLOR_MARCA },
-  selectBox: { flex: 1, borderWidth: 1, borderRadius: 10, padding: 9 },
+  headerConIcono: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, marginTop: 2 },
+  headerCalendarioContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  iconoCalendario: {
+    marginTop: 2,
+  },
+  tituloCalendario: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+    color: COLOR_MARCA,
+    flex: 1,
+    lineHeight: 18,
+  },
+  tituloHeaderConIcono: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    color: COLOR_MARCA,
+    includeFontPadding: false,
+    textAlignVertical: "center",
+  },
+  columnaMedia: { flex: 1 },
+  campoVerticalContainer: { marginBottom: 14 },
+  puntoAutorizadoContainer: { marginBottom: 14 },
+  puntoAutorizadoBox: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    justifyContent: "center",
+  },
+  puntoAutorizadoTexto: { fontSize: 12, fontWeight: "400" },
+  selectBox: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    justifyContent: "center",
+  },
   selectLabelRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 3 },
   selectLabel: { fontSize: 9, fontWeight: "700" },
-  selectValue: { fontSize: 11, fontWeight: "600" },
+  selectValue: { fontSize: 12, fontWeight: "400", flex: 1, marginRight: 4 },
   selectValorRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
 
   // --- Bloque de información a domicilio ---
@@ -417,7 +634,7 @@ const styles = StyleSheet.create({
   domicilioTitulo: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#3B82F6",
+    color: COLOR_MARCA,
     marginBottom: 10,
   },
   ciudadBox: {
@@ -443,5 +660,32 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     fontSize: 12,
     marginBottom: 4,
+  },
+  duracionStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(47, 78, 162, 0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(47, 78, 162, 0.15)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  duracionLeftRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  duracionLabel: {
+    fontSize: 12.5,
+    fontWeight: "600",
+    color: "#64748B",
+  },
+  duracionValor: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: COLOR_MARCA,
   },
 });
