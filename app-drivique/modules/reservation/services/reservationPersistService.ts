@@ -4,7 +4,6 @@
 // dispositivo (AsyncStorage), igual que la web lo hace con localStorage
 // (src/services/reservaService.js). Esto debería migrarse a un backend.
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import reservasDemoJson from "../../../mocks/reservasDemo.json";
 
 const STORAGE_KEY = "drivique_reservas";
 
@@ -117,20 +116,7 @@ async function leer(): Promise<ReservaGuardada[]> {
     // Purgar la reserva demo residual (RES-1788500200456-M7T8W2Y) si quedó guardada en el dispositivo
     const totalOriginal = reservas.length;
     reservas = reservas.filter((r) => r.referencia !== "RES-1788500200456-M7T8W2Y");
-
-    // Cargar reservas del JSON de mocks si hubieran
-    let cambio = totalOriginal !== reservas.length;
-    for (const rDemo of (reservasDemoJson as any[])) {
-      const yaExiste = reservas.some((r) => r.referencia === rDemo.referencia);
-      if (!yaExiste) {
-        reservas.push({
-          ...rDemo,
-          fechaReserva: new Date().toISOString(),
-        } as ReservaGuardada);
-        cambio = true;
-      }
-    }
-    if (cambio) {
+    if (totalOriginal !== reservas.length) {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));
     }
 
