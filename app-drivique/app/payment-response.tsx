@@ -580,16 +580,45 @@ export default function PagoRespuestaScreen() {
       )}
 
       {reserva.metodoPago === "wompi" && !esPendienteEfectivo && reserva.estado === "PENDIENTE" && (
-        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, marginTop: 4, marginBottom: 12 }]}>
+        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, marginTop: 4, marginBottom: 16 }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <View
+              style={{
+                backgroundColor: "rgba(37, 99, 235, 0.12)",
+                paddingHorizontal: 8,
+                paddingVertical: 3.5,
+                borderRadius: 6,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <Ionicons name="card-outline" size={13} color="#2563eb" />
+              <Text style={{ fontSize: 11, fontWeight: "800", color: "#2563eb" }}>Wompi Checkout</Text>
+            </View>
+          </View>
           <Text style={[styles.tituloEfectivo, { color: c.textPrimary, fontSize: 17, marginBottom: 6 }]}>
             {t("reserva.confirmacion.pagoPendienteTitulo", { defaultValue: "Pago Digital Pendiente" })}
           </Text>
-          <Text style={[styles.descripcionEfectivo, { color: c.textSecondary, marginBottom: 16 }]}>
+          <Text style={[styles.descripcionEfectivo, { color: c.textSecondary, marginBottom: 14 }]}>
             {t("reserva.confirmacion.pagoPendienteTexto", {
               defaultValue:
-                "Tu reserva está guardada como pendiente. Completa el pago en Wompi para confirmar y habilitar tu contrato de alquiler.",
+                "Tu reserva está guardada como pendiente. Completa el pago seguro en Wompi para confirmar y habilitar tu contrato de alquiler.",
             })}
           </Text>
+          <View
+            style={[
+              styles.cajaReferencia,
+              { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.border, marginBottom: 14 },
+            ]}
+          >
+            <View style={styles.filaInfoEfectivo}>
+              <Text style={[styles.etiquetaTotalEfectivo, { color: c.textSecondary }]}>
+                {t("reserva.confirmacion.totalAPagar", { defaultValue: "TOTAL A PAGAR" })}:
+              </Text>
+              <Text style={[styles.valorTotalEfectivo, { color: primaryAccent }]}>{fmt(reserva.total)}</Text>
+            </View>
+          </View>
           <TouchableOpacity style={styles.btnWrap} onPress={handlePagarWompi} activeOpacity={0.88}>
             <LinearGradient
               colors={GRADIENTES.boton.colors}

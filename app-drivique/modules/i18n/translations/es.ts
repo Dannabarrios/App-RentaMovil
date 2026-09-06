@@ -540,6 +540,9 @@ export default {
     claveContrato: 'Número de documento',
     claveContratoPlaceholder: 'Ingresa tu número de documento',
     verContrato: 'Ver contrato',
+    verDetalles: 'Ver detalles',
+    pagarWompi: 'Pagar con Wompi',
+    pagoPendienteWompiAviso: 'Pago pendiente por Wompi. Completa tu pago para confirmar tu reserva.',
     claveIncorrecta: 'El número de documento no coincide con esta reserva.',
     detalle: {
       tituloConfirmada: 'Reserva confirmada',
