@@ -481,6 +481,14 @@ export default function NotificationsScreen() {
                 <Text style={[styles.modalSubtitle, { color: primaryAccent, fontWeight: "800", fontSize: 16, marginBottom: 4 }]}>
                   {t(selectedConditionsCoupon.tituloPremio, { defaultValue: selectedConditionsCoupon.tituloPremio })}
                 </Text>
+
+                <View style={[styles.couponCodeBadge, { backgroundColor: c.oscuro ? "#1e3a8a44" : "#EFF6FF", borderColor: primaryAccent }]}>
+                  <Ionicons name="pricetag-outline" size={13} color={primaryAccent} />
+                  <Text style={[styles.couponCodeBadgeText, { color: primaryAccent }]}>
+                    {selectedConditionsCoupon.codigo}
+                  </Text>
+                </View>
+
                 <Text style={[styles.modalDescription, { color: c.textSecondary, lineHeight: 20, marginBottom: 12 }]}>
                   {t(selectedConditionsCoupon.recompensaDetalle, { defaultValue: selectedConditionsCoupon.recompensaDetalle })}
                 </Text>
@@ -491,6 +499,7 @@ export default function NotificationsScreen() {
                   {t("coupon.termsTitle", "Términos y condiciones:")}
                 </Text>
                 <Text style={[styles.conditionText, { color: c.textSecondary, lineHeight: 20 }]}>
+                  • Código: {selectedConditionsCoupon.codigo}{"\n"}
                   {t("coupon.term1", "• Válido para pagos digitales e iniciales.")}{"\n"}
                   {t("coupon.term2", "• No transferible a otros usuarios.")}{"\n"}
                   {t("coupon.term3", "• Solo se puede aplicar un cupón por reserva.")}
@@ -1077,6 +1086,24 @@ const styles = StyleSheet.create({
   conditionText: {
     fontSize: 12.5,
     lineHeight: 18,
+  },
+  couponCodeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 10,
+    marginTop: 2,
+  },
+  couponCodeBadgeText: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.5,
   },
   modalCloseBtn: {
     backgroundColor: "#2563EB",

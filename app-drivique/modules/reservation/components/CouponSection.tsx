@@ -383,6 +383,14 @@ export default function CouponSection({ vehiculo }: Props) {
                 <Text style={[styles.modalSubtitleCenter, { color: primaryAccent, fontWeight: "800", fontSize: 16, marginBottom: 4 }]}>
                   {t(selectedConditionsCoupon.tituloPremio || selectedConditionsCoupon.descripcion)}
                 </Text>
+
+                <View style={[styles.couponCodeBadge, { backgroundColor: c.oscuro ? "#1e3a8a44" : "#EFF6FF", borderColor: primaryAccent }]}>
+                  <Ionicons name="pricetag-outline" size={13} color={primaryAccent} />
+                  <Text style={[styles.couponCodeBadgeText, { color: primaryAccent }]}>
+                    {selectedConditionsCoupon.codigo}
+                  </Text>
+                </View>
+
                 <Text style={[styles.modalDescriptionCenter, { color: c.textSecondary, lineHeight: 20, marginBottom: 12 }]}>
                   {t(selectedConditionsCoupon.recompensaDetalle || "coupon.fallbackDesc")}
                 </Text>
@@ -393,11 +401,12 @@ export default function CouponSection({ vehiculo }: Props) {
                   {t("coupon.termsTitle", "Términos y condiciones:")}
                 </Text>
                 <Text style={[styles.conditionTextCenter, { color: c.textSecondary, marginTop: 10, lineHeight: 20 }]}>
+                  • Código: {selectedConditionsCoupon.codigo}{"\n"}
                   {t("coupon.term1", "• Válido para pagos digitales e iniciales.")}{"\n"}
                   {t("coupon.term2", "• No transferible a otros usuarios.")}{"\n"}
                   {t("coupon.term3", "• Solo se puede aplicar un cupón por reserva.")}
                   {selectedConditionsCoupon.reglas?.minimoDias ? `\n• ${t("coupon.minDays", "Mínimo de días:")} ${selectedConditionsCoupon.reglas.minimoDias} días` : ''}
-                  {selectedConditionsCoupon.reglas?.categoriasValidas ? `\n• ${t("coupon.validCategories", "Categorías válidas:")} ${selectedConditionsCoupon.reglas.categoriasValidas.join(", ")}` : ''}
+                  {selectedConditionsCoupon.reglas?.categoriasValidas?.length ? `\n• ${t("coupon.validCategories", "Categorías válidas:")} ${selectedConditionsCoupon.reglas.categoriasValidas.join(", ")}` : ''}
                   {selectedConditionsCoupon.condicionesDetalladas ? `\n• ${t(selectedConditionsCoupon.condicionesDetalladas, { defaultValue: selectedConditionsCoupon.condicionesDetalladas })}` : ''}
                   {selectedConditionsCoupon.expiracion ? `\n• ${t("coupon.expires", "Vence:")} ${formatDateShort(selectedConditionsCoupon.expiracion)}` : `\n• ${t("coupon.validAllMonth", "Válido durante todo el mes.")}`}
                 </Text>
@@ -524,6 +533,24 @@ const styles = StyleSheet.create({
   infoDividerCenter: { height: 1, marginVertical: 14 },
   conditionSectionHeaderCenter: { fontSize: 13.5, fontWeight: "700", marginBottom: 8 },
   conditionTextCenter: { fontSize: 12.5, lineHeight: 18 },
+  couponCodeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 10,
+    marginTop: 2,
+  },
+  couponCodeBadgeText: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
   modalCloseBtnCenter: { paddingVertical: 10, borderRadius: 8, alignItems: "center", marginTop: 10 },
   modalCloseBtnTextCenter: { color: "#FFFFFF", fontSize: 13.5, fontWeight: "800" },
 });
