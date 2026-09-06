@@ -399,6 +399,8 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
             })}
           </Text>
 
+          <View style={[styles.divider, { backgroundColor: c.border }]} />
+
           <View style={styles.campo}>
             <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
               {t("reserva.datosPersonales.nombreCompleto", { defaultValue: "Nombre completo *" })}
@@ -685,6 +687,10 @@ const styles = StyleSheet.create({
   cardSubtitulo: {
     fontSize: 11,
     lineHeight: 15,
+    marginBottom: 10,
+  },
+  divider: {
+    height: 1,
     marginBottom: 14,
   },
   campo: {
