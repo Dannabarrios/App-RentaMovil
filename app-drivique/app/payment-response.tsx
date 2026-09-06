@@ -47,14 +47,21 @@ import {
   descargarContratoVisible,
   generarContratoPdf,
   leerPdfOriginalBase64,
+import {
+  compartirPdfOriginal,
+  crearTextosContrato,
+  descargarContratoVisible,
+  generarContratoPdf,
+  leerPdfOriginalBase64,
 } from "@/modules/reservation/services/pdfService";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { consultarTransaccionWompi, WompiTransactionResponse } from "@/modules/reservation/services/wompiService";
 
 export default function PagoRespuestaScreen() {
   const insets = useSafeAreaInsets();
   const c = useTemaColores();
   const { t } = useTranslation();
-  const { ref } = useLocalSearchParams<{ ref?: string }>();
+  const { ref, id } = useLocalSearchParams<{ ref?: string; id?: string }>();
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
 
   const [cargando, setCargando] = useState(true);
@@ -69,12 +76,49 @@ export default function PagoRespuestaScreen() {
   useEffect(() => {
     let activo = true;
     (async () => {
-      if (!ref) {
+      let refBuscada = ref;
+      let txData: WompiTransactionResponse | null = null;
+
+      if (id) {
+        txData = await consultarTransaccionWompi(id);
+        if (txData?.reference) {
+          refBuscada = txData.reference;
+        }
+      }
+
+      if (!refBuscada) {
         setCargando(false);
         return;
       }
-      const encontrada = await reservaPersistService.obtenerPorReferencia(ref);
-      const contrato = await contratoService.obtenerPorReserva(ref);
+
+      let encontrada = await reservaPersistService.obtenerPorReferencia(refBuscada);
+
+      if (encontrada && txData) {
+        const cambios: Partial<ReservaGuardada> = { paymentId: txData.id };
+        if (txData.status === "APPROVED") {
+          cambios.estado = "CONFIRMADA";
+        } else if (txData.status === "PENDING") {
+          cambios.estado = "PENDIENTE_EFECTIVO";
+          cambios.metodoPagoDetalle =
+            txData.payment_method_type === "BANCOLOMBIA_COLLECT"
+              ? "Corresponsales Bancolombia"
+              : txData.payment_method_type;
+          cambios.fechaLimitePago = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+          cambios.horasLimitePago = 72;
+          if (txData.payment_method?.extra?.business_agreement_code) {
+            cambios.convenioWompi = txData.payment_method.extra.business_agreement_code;
+          }
+          if (txData.payment_method?.extra?.payment_reference) {
+            cambios.referenciaWompi = txData.payment_method.extra.payment_reference;
+          }
+        } else if (txData.status === "DECLINED" || txData.status === "ERROR") {
+          cambios.estado = "CANCELADA";
+        }
+        await reservaPersistService.actualizarReserva(refBuscada, cambios);
+        encontrada = await reservaPersistService.obtenerPorReferencia(refBuscada);
+      }
+
+      const contrato = await contratoService.obtenerPorReserva(refBuscada);
       if (activo) {
         setReserva(encontrada ?? null);
         setContratoFirmado(!!contrato);
@@ -85,16 +129,10 @@ export default function PagoRespuestaScreen() {
     return () => {
       activo = false;
     };
-  }, [ref]);
+  }, [ref, id]);
 
   const irAMisReservas = () => router.replace("/(tabs)/my-bookings");
-
-  const handleSimularPagoCaja = async () => {
-    if (!reserva) return;
-    await reservaPersistService.actualizarEstado(reserva.referencia, "CONFIRMADA");
-    const actualizada = await reservaPersistService.obtenerPorReferencia(reserva.referencia);
-    setReserva(actualizada ?? null);
-  };
+  const irAlInicio = () => router.replace("/(tabs)/home");
 
   const sucursalNombre = reserva?.lugarRetiro || (reserva?.fechasLugarSnapshot as any)?.lugarRetiro || "";
   const ciudadSucursal = sucursalNombre ? getCiudadPorSucursal(String(sucursalNombre)) : "";
@@ -135,14 +173,15 @@ export default function PagoRespuestaScreen() {
     );
   }
 
-  // La reserva pudo haberse pagado con Wompi sin haber pasado todavía por
-  // la firma del contrato (eso pasa después de volver del checkout, igual
-  // que en la web). Reconstruimos todo lo necesario a partir del snapshot
-  // que se guardó junto con la reserva.
-  const requiereFirma = !contratoFirmado && (
-    reserva.metodoPago === "efectivo"
-      ? reserva.estado === "CONFIRMADA"
-      : ["PENDIENTE", "PENDIENTE_VALIDACION"].includes(reserva.estado)
+  const esPendienteEfectivo =
+    reserva.estado === "PENDIENTE_EFECTIVO" ||
+    (reserva.estado === "PENDIENTE" && reserva.metodoPago === "efectivo");
+
+  // La firma de contrato se solicita únicamente si el pago ya fue aprobado/confirmado
+  // y no está pendiente de pago en efectivo.
+  const requiereFirma = !contratoFirmado && !esPendienteEfectivo && (
+    reserva.estado === "CONFIRMADA" ||
+    (reserva.metodoPago === "wompi" && ["PENDIENTE_VALIDACION"].includes(reserva.estado))
   );
 
   if (requiereFirma) {
@@ -244,7 +283,6 @@ export default function PagoRespuestaScreen() {
       let pdfBase64 = contratoActual.contratoPdfBase64;
       let pdfNombre = contratoActual.contratoPdfNombre || `contrato-${reserva.referencia}.pdf`;
 
-      // Migra contratos antiguos: genera una sola vez el documento legal completo y lo conserva.
       if (!pdfBase64) {
         const tipoDocumentoTexto = datosPersonalesSnap.tipoDocumento
           ? t(`reserva.datosPersonales.tiposDocumento.${datosPersonalesSnap.tipoDocumento === "Doc. Extranjero" ? "DocExtranjero" : datosPersonalesSnap.tipoDocumento}`, { defaultValue: datosPersonalesSnap.tipoDocumento })
@@ -313,7 +351,7 @@ export default function PagoRespuestaScreen() {
       >
         <ScrollView
           style={{ flex: 1, backgroundColor: c.bg }}
-          contentContainerStyle={[styles.scroll, { paddingTop: 24, paddingBottom: 320 }]}
+          contentContainerStyle={[styles.scroll, { paddingTop: 24, paddingBottom: 100 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets={true}
@@ -399,7 +437,7 @@ export default function PagoRespuestaScreen() {
         />
       </View>
 
-      {reserva.estado === "PENDIENTE_EFECTIVO" && (
+      {esPendienteEfectivo && (
         <View style={[styles.card, styles.cardEfectivo, { backgroundColor: c.bgCard, borderColor: c.border }]}>
           {/* Logo Circular Superior */}
           <View
@@ -425,12 +463,11 @@ export default function PagoRespuestaScreen() {
 
           {/* Mensaje descriptivo */}
           <Text style={[styles.descripcionEfectivo, { color: c.textSecondary }]}>
-            {t("reserva.confirmacion.efectivoConfirmadaSub", {
-              defaultValue: sucursalNombre
-                ? `Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en el punto autorizado ${sucursalNombre}.`
-                : "Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en la sucursal seleccionada.",
-              sucursal: sucursalNombre,
-            })}
+            {(reserva as any).metodoPagoDetalle === "Corresponsales Bancolombia"
+              ? "Tu reserva quedó registrada. Realiza el pago en efectivo en cualquier punto o Corresponsal Bancolombia con la siguiente referencia."
+              : sucursalNombre
+              ? `Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en el punto autorizado ${sucursalNombre}.`
+              : "Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en la sucursal seleccionada."}
           </Text>
 
           {/* Caja de Referencia y Total */}
@@ -442,7 +479,21 @@ export default function PagoRespuestaScreen() {
               <Text style={[styles.valorRefEfectivo, { color: primaryAccent }]}>{reserva.referencia}</Text>
             </View>
 
-            {!!sucursalNombre && (
+            {!!(reserva as any).convenioWompi && (
+              <View style={styles.filaInfoEfectivo}>
+                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>Convenio Bancolombia:</Text>
+                <Text style={[styles.valorEfectivo, { color: c.textPrimary }]}>{(reserva as any).convenioWompi}</Text>
+              </View>
+            )}
+
+            {!!(reserva as any).referenciaWompi && (
+              <View style={styles.filaInfoEfectivo}>
+                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>Referencia de Pago:</Text>
+                <Text style={[styles.valorRefEfectivo, { color: primaryAccent }]}>{(reserva as any).referenciaWompi}</Text>
+              </View>
+            )}
+
+            {!(reserva as any).convenioWompi && !!sucursalNombre && (
               <View style={styles.filaInfoEfectivo}>
                 <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
                   {t("reserva.confirmacion.sucursal", { defaultValue: "Sucursal" })}:
@@ -453,7 +504,7 @@ export default function PagoRespuestaScreen() {
               </View>
             )}
 
-            {!!ciudadSucursal && (
+            {!(reserva as any).convenioWompi && !!ciudadSucursal && (
               <View style={styles.filaInfoEfectivo}>
                 <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
                   {t("reserva.confirmacion.ciudad", { defaultValue: "Ciudad" })}:
@@ -462,7 +513,7 @@ export default function PagoRespuestaScreen() {
               </View>
             )}
 
-            {!!direccionSucursal && (
+            {!(reserva as any).convenioWompi && !!direccionSucursal && (
               <View style={styles.filaInfoEfectivo}>
                 <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
                   {t("reserva.confirmacion.direccion", { defaultValue: "Dirección" })}:
@@ -499,29 +550,43 @@ export default function PagoRespuestaScreen() {
             <Text style={[styles.plazoTextoEfectivo, { color: c.oscuro ? "#FDE68A" : "#713F12" }]}>
               {t("reserva.confirmacion.efectivoConfirmadaMensaje", {
                 defaultValue:
-                  "Tienes 72 horas desde ahora para acercarte a la sucursal y pagar. Si no pagas dentro de este plazo, la reserva se cancelará automáticamente.",
+                  "Tienes 72 horas desde ahora para realizar el pago. Si no pagas dentro de este plazo, la reserva se cancelará automáticamente.",
                 horas: 72,
               })}
             </Text>
           </View>
 
-          {/* Banner de Simulación para Sandbox (SOLO PARA PAGO EN SUCURSAL) */}
-          {reserva.metodoPago === "efectivo" && (
-            <View style={[styles.simuladorCaja, { backgroundColor: c.oscuro ? "#1E293B" : "#FEF3C7", borderColor: "#F59E0B", width: "100%", marginTop: 8 }]}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                <Ionicons name="construct-outline" size={16} color="#D97706" />
-                <Text style={[styles.simuladorTitulo, { color: c.oscuro ? "#FBBF24" : "#B45309" }]}>
-                  {t("simulator.title", "[Simulador] Confirmación de Pago (Cajero)")}
-                </Text>
-              </View>
-              <Text style={[styles.simuladorTexto, { color: c.textSecondary }]}>
-                {t("simulator.desc", "Simula que el cliente se presenta en la caja de la sucursal y realiza el pago. Al confirmar, el estado cambiará a CONFIRMADA y se habilitará la firma del contrato.")}
+          {/* Botones de Navegación */}
+          <TouchableOpacity style={[styles.btnWrap, { marginTop: 14 }]} onPress={irAMisReservas} activeOpacity={0.88}>
+            <LinearGradient
+              colors={GRADIENTES.boton.colors}
+              start={GRADIENTES.boton.start}
+              end={GRADIENTES.boton.end}
+              style={styles.btn}
+            >
+              <Text style={styles.btnTexto}>
+                {t("reserva.confirmacion.entendidoIrAMisReservas", { defaultValue: "Ir a Mis Reservas" })}
               </Text>
-              <TouchableOpacity style={styles.simuladorBtn} onPress={handleSimularPagoCaja}>
-                <Text style={styles.simuladorBtnTexto}>{t("simulator.btn", "Confirmar Recepción de Pago")}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.btn,
+              {
+                backgroundColor: "transparent",
+                borderWidth: 1,
+                borderColor: c.border,
+                marginTop: 8,
+              },
+            ]}
+            onPress={irAlInicio}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.btnTexto, { color: c.textPrimary }]}>
+              {t("reserva.confirmacion.volverAlInicio", { defaultValue: "Volver al Inicio" })}
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -558,7 +623,7 @@ export default function PagoRespuestaScreen() {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      ) : !contratoActual ? (
+      ) : (!esPendienteEfectivo && !contratoActual) ? (
         <TouchableOpacity
           style={[styles.btnWrap, { marginBottom: 12 }, !contratoActual && { opacity: 0.5 }]}
           onPress={handleDescargarPdf}

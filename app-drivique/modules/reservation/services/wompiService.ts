@@ -101,3 +101,45 @@ export async function construirUrlCheckout({
 
   return `https://checkout.wompi.co/p/?${params.toString()}`;
 }
+
+export interface WompiTransactionResponse {
+  id: string;
+  status: "APPROVED" | "DECLINED" | "VOIDED" | "ERROR" | "PENDING";
+  reference: string;
+  amount_in_cents: number;
+  currency: string;
+  payment_method_type: string;
+  payment_method?: {
+    type?: string;
+    extra?: {
+      name?: string;
+      brand?: string;
+      last_four?: string;
+      async_payment_url?: string;
+      business_agreement_code?: string;
+      payment_reference?: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+/**
+ * Consulta el estado y los detalles de una transacción en Wompi API
+ */
+export async function consultarTransaccionWompi(transactionId: string): Promise<WompiTransactionResponse | null> {
+  try {
+    const res = await fetch(`https://sandbox.wompi.co/v1/transactions/${transactionId}`, {
+      headers: {
+        Authorization: `Bearer ${wompiConfig.publicKey}`,
+      },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data ?? null;
+  } catch (error) {
+    console.warn("[wompiService] Error consultando transaccion:", error);
+    return null;
+  }
+}

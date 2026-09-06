@@ -220,6 +220,20 @@ export const reservaPersistService = {
     return false;
   },
 
+  actualizarReserva: async (
+    referencia: string,
+    cambios: Partial<ReservaGuardada>
+  ): Promise<boolean> => {
+    const reservas = await leer();
+    const index = reservas.findIndex((r) => r.referencia === referencia);
+    if (index !== -1) {
+      reservas[index] = { ...reservas[index], ...cambios };
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));
+      return true;
+    }
+    return false;
+  },
+
   cancelarReserva: async (referencia: string): Promise<boolean> => {
     return reservaPersistService.actualizarEstado(referencia, "CANCELADA");
   },
@@ -233,5 +247,9 @@ export const reservaPersistService = {
       return true;
     }
     return false;
+  },
+
+  limpiarTodas: async (): Promise<void> => {
+    await AsyncStorage.removeItem(STORAGE_KEY);
   },
 };
