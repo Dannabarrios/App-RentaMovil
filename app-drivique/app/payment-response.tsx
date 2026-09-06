@@ -576,38 +576,6 @@ export default function PagoRespuestaScreen() {
               })}
             </Text>
           </View>
-
-          {/* Botones de Navegación */}
-          <TouchableOpacity style={[styles.btnWrap, { marginTop: 14 }]} onPress={irAMisReservas} activeOpacity={0.88}>
-            <LinearGradient
-              colors={GRADIENTES.boton.colors}
-              start={GRADIENTES.boton.start}
-              end={GRADIENTES.boton.end}
-              style={styles.btn}
-            >
-              <Text style={styles.btnTexto}>
-                {t("reserva.confirmacion.entendidoIrAMisReservas", { defaultValue: "Ir a Mis Reservas" })}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.btn,
-              {
-                backgroundColor: "transparent",
-                borderWidth: 1,
-                borderColor: c.border,
-                marginTop: 8,
-              },
-            ]}
-            onPress={irAlInicio}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.btnTexto, { color: c.textPrimary }]}>
-              {t("reserva.confirmacion.volverAlInicio", { defaultValue: "Volver al Inicio" })}
-            </Text>
-          </TouchableOpacity>
         </View>
       )}
 
