@@ -272,9 +272,6 @@ export default function CouponSection({ vehiculo }: Props) {
                 <Text style={styles.modalTitleConditionsBanner}>
                   {t("coupon.conditionsTitle", "Condiciones del Cupón")}
                 </Text>
-                <TouchableOpacity onPress={handleCerrarModal} style={styles.modalCloseCircleBtn}>
-                  <Ionicons name="close" size={18} color="#FFFFFF" />
-                </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.modalHeader}>
@@ -296,63 +293,102 @@ export default function CouponSection({ vehiculo }: Props) {
             
             {/* CONTENIDO 1: CONDICIONES DEL CUPÓN */}
             {selectedConditionsCoupon ? (
-              <ScrollView style={styles.modalScrollConditions} showsVerticalScrollIndicator={false}>
-                <View style={{ paddingBottom: 24, paddingTop: 18 }}>
-                  <Text style={[styles.modalSubtitleCenter, { color: primaryAccent, fontWeight: "800", fontSize: 16, marginBottom: 4 }]}>
+              <ScrollView 
+                style={[styles.modalScrollConditions, { backgroundColor: c.oscuro ? c.bg : "#F3F4F6" }]} 
+                contentContainerStyle={styles.modalScrollConditionsContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={[
+                  styles.conditionsCardWrapper, 
+                  { 
+                    backgroundColor: c.oscuro ? c.bgCard : "#FFFFFF", 
+                    borderColor: c.oscuro ? c.border : "#E5E7EB" 
+                  }
+                ]}>
+                  <Text style={[styles.modalSubtitleCenter, { color: primaryAccent }]}>
                     {t(selectedConditionsCoupon.tituloPremio || selectedConditionsCoupon.descripcion)}
                   </Text>
 
-                  <Text style={[styles.modalDescriptionCenter, { color: c.textSecondary, lineHeight: 20, marginBottom: 14 }]}>
+                  <Text style={[styles.modalDescriptionCenter, { color: c.textSecondary }]}>
                     {t(selectedConditionsCoupon.recompensaDetalle || "coupon.fallbackDesc")}
                   </Text>
                   
-                  <Text style={[styles.conditionSectionHeaderCenter, { color: c.textPrimary, fontWeight: "700", fontSize: 14, marginBottom: 10 }]}>
+                  <View style={[styles.conditionsCardDivider, { backgroundColor: c.oscuro ? c.border : "#E5E7EB" }]} />
+
+                  <Text style={[styles.conditionSectionHeaderCenter, { color: c.textPrimary }]}>
                     {t("coupon.termsTitle", "Términos y condiciones:")}
                   </Text>
 
-                  <View style={{ gap: 8 }}>
-                    <Text style={[styles.conditionTextCenter, { color: c.textSecondary, lineHeight: 19 }]}>
-                      • Código: <Text style={{ fontWeight: "700", color: c.textPrimary }}>{selectedConditionsCoupon.codigo}</Text>
-                    </Text>
-                    <Text style={[styles.conditionTextCenter, { color: c.textSecondary, lineHeight: 19 }]}>
-                      • {t("coupon.term1", "Válido para pagos digitales e iniciales.")}
-                    </Text>
-                    <Text style={[styles.conditionTextCenter, { color: c.textSecondary, lineHeight: 19 }]}>
-                      • {t("coupon.term2", "No transferible a otros usuarios.")}
-                    </Text>
-                    <Text style={[styles.conditionTextCenter, { color: c.textSecondary, lineHeight: 19 }]}>
-                      • {t("coupon.term3", "Solo se puede aplicar un cupón por reserva.")}
-                    </Text>
+                  <View style={styles.conditionsBulletsList}>
+                    <View style={styles.bulletRow}>
+                      <Text style={[styles.bulletDot, { color: primaryAccent }]}>•</Text>
+                      <Text style={[styles.conditionTextCenter, { color: c.textSecondary }]}>
+                        Código: <Text style={{ fontWeight: "700", color: c.textPrimary }}>{selectedConditionsCoupon.codigo}</Text>
+                      </Text>
+                    </View>
+                    <View style={styles.bulletRow}>
+                      <Text style={[styles.bulletDot, { color: primaryAccent }]}>•</Text>
+                      <Text style={[styles.conditionTextCenter, { color: c.textSecondary }]}>
+                        {t("coupon.term1", "Válido para pagos digitales e iniciales.")}
+                      </Text>
+                    </View>
+                    <View style={styles.bulletRow}>
+                      <Text style={[styles.bulletDot, { color: primaryAccent }]}>•</Text>
+                      <Text style={[styles.conditionTextCenter, { color: c.textSecondary }]}>
+                        {t("coupon.term2", "No transferible a otros usuarios.")}
+                      </Text>
+                    </View>
+                    <View style={styles.bulletRow}>
+                      <Text style={[styles.bulletDot, { color: primaryAccent }]}>•</Text>
+                      <Text style={[styles.conditionTextCenter, { color: c.textSecondary }]}>
+                        {t("coupon.term3", "Solo se puede aplicar un cupón por reserva.")}
+                      </Text>
+                    </View>
                     {selectedConditionsCoupon.reglas?.minimoDias ? (
-                      <Text style={[styles.conditionTextCenter, { color: c.textSecondary, lineHeight: 19 }]}>
-                        • {t("coupon.minDays", "Mínimo de días:")} {selectedConditionsCoupon.reglas.minimoDias} días
-                      </Text>
+                      <View style={styles.bulletRow}>
+                        <Text style={[styles.bulletDot, { color: primaryAccent }]}>•</Text>
+                        <Text style={[styles.conditionTextCenter, { color: c.textSecondary }]}>
+                          {t("coupon.minDays", "Mínimo de días:")} {selectedConditionsCoupon.reglas.minimoDias} días
+                        </Text>
+                      </View>
                     ) : null}
-                    <Text style={[styles.conditionTextCenter, { color: c.textSecondary, lineHeight: 19 }]}>
-                      • {t("coupon.validCategories", "Categorías válidas:")} <Text style={{ fontWeight: "700", color: c.textPrimary }}>{selectedConditionsCoupon.reglas?.categoriasValidas?.length ? selectedConditionsCoupon.reglas.categoriasValidas.join(", ") : "TODOS"}</Text>
-                    </Text>
-                    <Text style={[styles.conditionTextCenter, { color: c.textSecondary, lineHeight: 19 }]}>
-                      • Válido para vehículos de la flota. No acumulable con otras promociones.
-                    </Text>
-                    <Text style={[styles.conditionTextCenter, { color: c.textSecondary, lineHeight: 19 }]}>
-                      • {t("coupon.expires", "Vence:")} {selectedConditionsCoupon.expiracion ? formatDateShort(selectedConditionsCoupon.expiracion) : "31 de dic de 2026"}
-                    </Text>
-                    {selectedConditionsCoupon.condicionesDetalladas ? (
-                      <Text style={[styles.conditionTextCenter, { color: c.textSecondary, lineHeight: 19 }]}>
-                        • Condiciones especiales: {t(selectedConditionsCoupon.condicionesDetalladas, { defaultValue: selectedConditionsCoupon.condicionesDetalladas })}
+                    <View style={styles.bulletRow}>
+                      <Text style={[styles.bulletDot, { color: primaryAccent }]}>•</Text>
+                      <Text style={[styles.conditionTextCenter, { color: c.textSecondary }]}>
+                        {t("coupon.validCategories", "Categorías válidas:")} <Text style={{ fontWeight: "700", color: c.textPrimary }}>{selectedConditionsCoupon.reglas?.categoriasValidas?.length ? selectedConditionsCoupon.reglas.categoriasValidas.join(", ") : "TODOS"}</Text>
                       </Text>
+                    </View>
+                    <View style={styles.bulletRow}>
+                      <Text style={[styles.bulletDot, { color: primaryAccent }]}>•</Text>
+                      <Text style={[styles.conditionTextCenter, { color: c.textSecondary }]}>
+                        Válido para vehículos de la flota. No acumulable con otras promociones.
+                      </Text>
+                    </View>
+                    <View style={styles.bulletRow}>
+                      <Text style={[styles.bulletDot, { color: primaryAccent }]}>•</Text>
+                      <Text style={[styles.conditionTextCenter, { color: c.textSecondary }]}>
+                        {t("coupon.expires", "Vence:")} {selectedConditionsCoupon.expiracion ? formatDateShort(selectedConditionsCoupon.expiracion) : "31 de dic de 2026"}
+                      </Text>
+                    </View>
+                    {selectedConditionsCoupon.condicionesDetalladas ? (
+                      <View style={styles.bulletRow}>
+                        <Text style={[styles.bulletDot, { color: primaryAccent }]}>•</Text>
+                        <Text style={[styles.conditionTextCenter, { color: c.textSecondary }]}>
+                          Condiciones especiales: {t(selectedConditionsCoupon.condicionesDetalladas, { defaultValue: selectedConditionsCoupon.condicionesDetalladas })}
+                        </Text>
+                      </View>
                     ) : null}
                   </View>
 
                   <TouchableOpacity
-                    style={[styles.modalCloseBtnCenter, { backgroundColor: primaryAccent, marginTop: 24 }]}
+                    style={[styles.modalCloseBtnCenter, { backgroundColor: primaryAccent }]}
                     onPress={handleCerrarModal}
                   >
                     <Text style={styles.modalCloseBtnTextCenter}>{t("coupon.understoodBtn", "Entendido")}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.modalVolverBtnCenter, { backgroundColor: c.oscuro ? "#1e293b" : "#F1F5F9", borderColor: c.border }]}
+                    style={[styles.modalVolverBtnCenter, { backgroundColor: c.oscuro ? "#1e293b" : "#F8FAFC", borderColor: c.border }]}
                     onPress={handleVolverALista}
                   >
                     <Text style={[styles.modalVolverBtnTextCenter, { color: c.textPrimary }]}>{t("common.back", "Volver")}</Text>
@@ -559,9 +595,8 @@ const styles = StyleSheet.create({
   modalHeaderConditionsBanner: {
     paddingHorizontal: 20,
     paddingVertical: 14,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
@@ -569,17 +604,49 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     color: "#FFFFFF",
-  },
-  modalCloseCircleBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    alignItems: "center",
-    justifyContent: "center",
+    textAlign: "center",
   },
   modalScrollConditions: {
-    paddingHorizontal: 20,
+    flex: 1,
+  },
+  modalScrollConditionsContent: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+  conditionsCardWrapper: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 18,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  conditionsCardDivider: {
+    height: 1,
+    marginVertical: 12,
+  },
+  conditionsBulletsList: {
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  bulletDot: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "800",
   },
 
   // Ticket styles
