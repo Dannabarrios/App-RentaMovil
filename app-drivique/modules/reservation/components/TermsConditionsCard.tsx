@@ -37,7 +37,7 @@ export default function TarjetaTerminosCondiciones() {
 
   const handleScrollTerminos = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const isAtBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+    const isAtBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 35;
     if (isAtBottom && !terminosLeidos) {
       setTerminosLeidos(true);
     }
@@ -245,20 +245,32 @@ export default function TarjetaTerminosCondiciones() {
                 </Text>
               </TouchableOpacity>
 
-              {/* Botón Entendido con degradado Drivique */}
+              {/* Botón Entendido con activación al llegar al final del scroll */}
               <View style={styles.modalBotonAceptarWrap}>
                 <TouchableOpacity
-                  onPress={handleAceptarTerminos}
-                  activeOpacity={0.85}
+                  onPress={terminosLeidos ? handleAceptarTerminos : undefined}
+                  disabled={!terminosLeidos}
+                  activeOpacity={terminosLeidos ? 0.85 : 1}
                   style={{ width: "100%" }}
                 >
                   <LinearGradient
-                    colors={GRADIENTES.boton.colors}
+                    colors={
+                      terminosLeidos
+                        ? GRADIENTES.boton.colors
+                        : c.oscuro
+                          ? ["#374151", "#1F2937"]
+                          : ["#E2E8F0", "#CBD5E1"]
+                    }
                     start={GRADIENTES.boton.start}
                     end={GRADIENTES.boton.end}
                     style={styles.modalBotonAceptar}
                   >
-                    <Text style={styles.modalBotonAceptarTexto}>
+                    <Text
+                      style={[
+                        styles.modalBotonAceptarTexto,
+                        !terminosLeidos && { color: c.oscuro ? "#6B7280" : "#94A3B8" },
+                      ]}
+                    >
                       {t("reserva.terminos.modalAceptar", { defaultValue: "Entendido" })}
                     </Text>
                   </LinearGradient>
