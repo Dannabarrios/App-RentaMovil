@@ -285,7 +285,8 @@ export default function NotificationsScreen() {
 
           {cupones.map((cpx) => {
             const isApplied = appliedCoupons.includes(cpx.codigo);
-            const specificCar = cpx.reglas?.vehiculoId ? VEHICULOS_MOCK.find(v => v.id === cpx.reglas.vehiculoId) : null;
+            const vehId = cpx.reglas?.vehiculoId;
+            const specificCar = vehId ? VEHICULOS_MOCK.find((v) => v.id === vehId) : null;
             const carImages = specificCar 
               ? [specificCar.imagen || (specificCar.imagenes && specificCar.imagenes[0]) || ""].filter(Boolean)
               : getVehicleImagesByCategory(cpx.reglas?.categoriasValidas?.[0]);

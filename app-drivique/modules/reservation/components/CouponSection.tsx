@@ -268,7 +268,8 @@ export default function CouponSection({ vehiculo }: Props) {
               
               {cuponesDisponibles.map((cpx) => {
                 const esActivo = cuponAplicado?.codigo === cpx.codigo;
-                const specificCar = cpx.reglas?.vehiculoId ? VEHICULOS_MOCK.find(v => v.id === cpx.reglas.vehiculoId) : null;
+                const vehId = cpx.reglas?.vehiculoId;
+                const specificCar = vehId ? VEHICULOS_MOCK.find((v) => v.id === vehId) : null;
                 const carImages = specificCar 
                   ? [specificCar.imagen || (specificCar.imagenes && specificCar.imagenes[0]) || ""].filter(Boolean)
                   : getVehicleImagesByCategory(cpx.reglas?.categoriasValidas?.[0] || "");
