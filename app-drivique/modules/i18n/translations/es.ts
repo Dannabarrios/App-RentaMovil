@@ -742,9 +742,11 @@ export default {
       redirigidoWompi: 'Serás redirigido al checkout oficial de Wompi.',
       confirmacionCuandoExitoso: 'Recibirás la confirmación de tu reserva cuando el pago sea exitoso.',
       pagarConWompi: 'Pagar con Wompi',
-      efectivoConfirmadaTitulo: 'Reserva registrada',
-      efectivoConfirmadaMensaje: 'Tienes {{horas}} horas para acercarte a la sucursal y pagar en efectivo. Si no te presentas a tiempo, la reserva se cancelará automáticamente.',
+      efectivoConfirmadaTitulo: '¡Reserva registrada!',
+      efectivoConfirmadaSub: 'Tu reserva ha sido creada exitosamente. Realiza el pago en efectivo en la sucursal seleccionada.',
+      efectivoConfirmadaMensaje: 'Tienes {{horas}} horas para acercarte a la sucursal y pagar en efectivo. Si no se realiza el pago dentro de este plazo, la reserva pasará a estado Cancelada automáticamente.',
       entendidoIrAMisReservas: 'Ir a Mis Reservas',
+      volverAlInicio: 'Volver al Inicio',
       errorPagoTitulo: 'No se pudo completar el pago',
       errorPagoMensaje: 'El proceso de pago fue cancelado o no se completó. Puedes intentarlo de nuevo.',
       respuesta: {
@@ -769,6 +771,12 @@ export default {
         CANCELADA: 'Cancelada',
         CANCELADA_POR_TIEMPO: 'Cancelada por tiempo',
       },
+    },
+    edicion: {
+      editarFechasYLugares: 'Editar Fechas y Lugares',
+      editarProteccionYKilometraje: 'Editar Protección y Kilometraje',
+      editarServiciosAdicionales: 'Editar Servicios Adicionales',
+      guardarCambios: 'Guardar cambios',
     },
     fechasLugar: {
       metodoPagoPreferido: 'Seleccionar método de pago preferido',

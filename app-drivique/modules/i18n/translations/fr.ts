@@ -703,9 +703,11 @@ export default {
       redirigidoWompi: 'Vous serez redirigé vers le paiement officiel de Wompi.',
       confirmacionCuandoExitoso: 'Vous recevrez la confirmation de votre réservation une fois le paiement réussi.',
       pagarConWompi: 'Payer avec Wompi',
-      efectivoConfirmadaTitulo: 'Réservation enregistrée',
-      efectivoConfirmadaMensaje: "Vous avez {{horas}} heures pour vous rendre à l'agence et payer en espèces. Passé ce délai, la réservation sera automatiquement annulée.",
+      efectivoConfirmadaTitulo: 'Réservation enregistrée !',
+      efectivoConfirmadaSub: "Votre réservation a été créée avec succès. Effectuez le paiement en espèces à l'agence sélectionnée.",
+      efectivoConfirmadaMensaje: "Vous avez {{horas}} heures pour vous rendre à l'agence et payer en espèces. Si le paiement n'est pas effectué dans ce délai, la réservation sera automatiquement annulée.",
       entendidoIrAMisReservas: 'Aller à Mes réservations',
+      volverAlInicio: "Retour à l'accueil",
       errorPagoTitulo: 'Le paiement n\'a pas pu être finalisé',
       errorPagoMensaje: "Le processus de paiement a été annulé ou n'a pas abouti. Vous pouvez réessayer.",
       respuesta: {
@@ -730,6 +732,12 @@ export default {
         CANCELADA: 'Annulée',
         CANCELADA_POR_TIEMPO: 'Annulée (délai dépassé)',
       },
+    },
+    edicion: {
+      editarFechasYLugares: 'Modifier dates et lieux',
+      editarProteccionYKilometraje: 'Modifier protection et kilométrage',
+      editarServiciosAdicionales: 'Modifier services supplémentaires',
+      guardarCambios: 'Enregistrer les modifications',
     },
     fechasLugar: {
       metodoPagoPreferido: 'Sélectionner le mode de paiement préféré',

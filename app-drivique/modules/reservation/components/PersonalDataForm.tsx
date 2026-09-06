@@ -254,17 +254,16 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     }
   };
 
-  const handleCerrarInstruccionesEfectivo = () => {
+  const handleIrAMisReservas = () => {
     setModalInstruccionesEfectivoVisible(false);
     limpiarReserva();
     router.replace("/(tabs)/my-bookings");
   };
 
-  const handleCancelarInstruccionesEfectivo = async () => {
+  const handleVolverAlInicio = () => {
     setModalInstruccionesEfectivoVisible(false);
-    if (referenciaActual) {
-      await reservaPersistService.eliminarReserva(referenciaActual);
-    }
+    limpiarReserva();
+    router.replace("/(tabs)");
   };
 
   const handleCancelarModalReserva = async () => {
@@ -554,8 +553,8 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         referencia={referenciaActual || ""}
         nombreSucursal={vehiculo.sucursal || ""}
         total={total}
-        onCerrar={handleCerrarInstruccionesEfectivo}
-        onCancelar={handleCancelarInstruccionesEfectivo}
+        onIrAMisReservas={handleIrAMisReservas}
+        onVolverAlInicio={handleVolverAlInicio}
       />
 
       <AlertModal

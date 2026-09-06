@@ -14,8 +14,9 @@ interface Props {
   referencia: string;
   nombreSucursal: string;
   total: number;
-  onCerrar: () => void;
-  onCancelar?: () => void;
+  onIrAMisReservas?: () => void;
+  onVolverAlInicio?: () => void;
+  onCerrar?: () => void;
   botonTexto?: string;
 }
 
@@ -24,8 +25,9 @@ export function BranchCashPaymentModal({
   referencia,
   nombreSucursal,
   total,
+  onIrAMisReservas,
+  onVolverAlInicio,
   onCerrar,
-  onCancelar,
   botonTexto,
 }: Props) {
   const c = useTemaColores();
@@ -35,56 +37,58 @@ export function BranchCashPaymentModal({
   const ciudad = getCiudadPorSucursal(nombreSucursal);
   const direccion = getDireccionSucursal(nombreSucursal);
 
-  const handleCancelar = onCancelar || onCerrar;
+  const handleIrReservas = onIrAMisReservas || onCerrar;
+  const handleVolverInicio = onVolverAlInicio || onCerrar;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancelar}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleIrReservas}>
       <View style={styles.overlay}>
-        <View style={[styles.card, { backgroundColor: c.bgCard }]}>
-          {/* Botón X superior de cierre / cancelar */}
-          <TouchableOpacity
-            style={[styles.botonCerrarX, { backgroundColor: c.bgInput }]}
-            onPress={handleCancelar}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="close" size={20} color={c.textMuted} />
-          </TouchableOpacity>
-
+        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+          {/* Icono de Éxito / Pago en Efectivo */}
           <View style={[styles.iconoWrap, { backgroundColor: c.primaryBg }]}>
-            <Ionicons name="cash-outline" size={38} color={primaryAccent} />
+            <LinearGradient
+              colors={GRADIENTES.boton.colors}
+              start={GRADIENTES.boton.start}
+              end={GRADIENTES.boton.end}
+              style={styles.iconoGradient}
+            >
+              <Ionicons name="checkmark-circle" size={32} color="#FFFFFF" />
+            </LinearGradient>
           </View>
 
           <Text style={[styles.titulo, { color: c.textPrimary }]}>
-            {t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "Reserva registrada" })}
+            {t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "¡Reserva registrada!" })}
           </Text>
 
           <Text style={[styles.descripcion, { color: c.textSecondary }]}>
-            {t("reserva.confirmacion.efectivoConfirmadaMensaje", {
-              defaultValue: "Tienes 72 horas para acercarte a la sucursal y pagar en efectivo. Si no te presentas a tiempo, la reserva se cancelará automáticamente.",
-              horas: 72,
+            {t("reserva.confirmacion.efectivoConfirmadaSub", {
+              defaultValue: "Tu reserva ha sido creada exitosamente. Realiza el pago en efectivo en la sucursal seleccionada.",
             })}
           </Text>
 
-          {/* Caja de Detalles */}
-          <View style={[styles.caja, { backgroundColor: c.primaryBg, borderColor: c.border }]}>
-            <Text style={[styles.tituloSeccion, { color: c.textPrimary }]}>
+          {/* Caja de Detalles de Pago en Sucursal */}
+          <View style={[styles.caja, { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.border }]}>
+            <Text style={[styles.tituloSeccion, { color: primaryAccent }]}>
               {t("reserva.confirmacion.pagoEfectivoTitulo", { defaultValue: "Pago en efectivo: retiro en sucursal" })}
             </Text>
 
+            {/* Referencia de Reserva */}
             <View style={styles.filaInfo}>
               <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
                 {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia" })}:
               </Text>
-              <Text style={[styles.valor, styles.referenciaValor, { color: c.textPrimary }]}>{referencia}</Text>
+              <Text style={[styles.valor, styles.referenciaValor, { color: primaryAccent }]}>{referencia}</Text>
             </View>
 
+            {/* Sucursal */}
             <View style={styles.filaInfo}>
               <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
                 {t("reserva.confirmacion.sucursal", { defaultValue: "Sucursal" })}:
               </Text>
-              <Text style={[styles.valor, { color: c.textPrimary }]}>{nombreSucursal}</Text>
+              <Text style={[styles.valor, { color: c.textPrimary }]}>{nombreSucursal || t("reserva.confirmacion.sinDefinir")}</Text>
             </View>
 
+            {/* Ciudad */}
             <View style={styles.filaInfo}>
               <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
                 {t("reserva.confirmacion.ciudad", { defaultValue: "Ciudad" })}:
@@ -92,6 +96,7 @@ export function BranchCashPaymentModal({
               <Text style={[styles.valor, { color: c.textPrimary }]}>{ciudad || t("reserva.confirmacion.sinDefinir")}</Text>
             </View>
 
+            {/* Dirección */}
             <View style={styles.filaInfo}>
               <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
                 {t("reserva.confirmacion.direccion", { defaultValue: "Dirección" })}:
@@ -101,6 +106,7 @@ export function BranchCashPaymentModal({
               </Text>
             </View>
 
+            {/* Total */}
             <View style={[styles.divisor, { backgroundColor: c.border }]} />
 
             <View style={styles.filaInfo}>
@@ -115,28 +121,41 @@ export function BranchCashPaymentModal({
             </Text>
           </View>
 
-          {/* Botón Primario: Ir a Mis Reservas (guarda y confirma) */}
-          <TouchableOpacity style={styles.botonPrimarioWrap} onPress={onCerrar} activeOpacity={0.85}>
+          {/* Banner informativo de 72 horas para cancelación automática */}
+          <View style={[styles.bannerAlerta72h, { backgroundColor: c.oscuro ? "#1E293B" : "#EFF6FF", borderColor: c.oscuro ? "#3B82F6" : "#BFDBFE" }]}>
+            <Ionicons name="time-outline" size={18} color={primaryAccent} style={{ marginTop: 2 }} />
+            <Text style={[styles.textoAlerta72h, { color: c.textPrimary }]}>
+              {t("reserva.confirmacion.efectivoConfirmadaMensaje", {
+                defaultValue: "Tienes 72 horas para acercarte a la sucursal y pagar en efectivo. Si no se realiza el pago dentro de este plazo, la reserva pasará a estado Cancelada automáticamente.",
+                horas: 72,
+              })}
+            </Text>
+          </View>
+
+          {/* Botón 1: Ir a Mis Reservas */}
+          <TouchableOpacity style={styles.botonPrimarioWrap} onPress={handleIrReservas} activeOpacity={0.85}>
             <LinearGradient
               colors={GRADIENTES.boton.colors}
               start={GRADIENTES.boton.start}
               end={GRADIENTES.boton.end}
               style={styles.botonPrimario}
             >
+              <Ionicons name="calendar-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
               <Text style={styles.botonPrimarioTexto}>
                 {botonTexto || t("reserva.confirmacion.entendidoIrAMisReservas", { defaultValue: "Ir a Mis Reservas" })}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* Botón Secundario: Cancelar (elimina la reserva de la BD) */}
+          {/* Botón 2: Volver al Inicio */}
           <TouchableOpacity
-            style={[styles.botonCancelar, { borderColor: c.border, backgroundColor: c.bgInput }]}
-            onPress={handleCancelar}
+            style={[styles.botonSecundario, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+            onPress={handleVolverInicio}
             activeOpacity={0.8}
           >
-            <Text style={[styles.botonCancelarTexto, { color: c.textSecondary }]}>
-              {t("comun.cancelar", "Cancelar")}
+            <Ionicons name="home-outline" size={17} color={c.textPrimary} style={{ marginRight: 6 }} />
+            <Text style={[styles.botonSecundarioTexto, { color: c.textPrimary }]}>
+              {t("reserva.confirmacion.volverAlInicio", { defaultValue: "Volver al Inicio" })}
             </Text>
           </TouchableOpacity>
         </View>
@@ -148,44 +167,40 @@ export function BranchCashPaymentModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(15,23,42,0.55)",
+    backgroundColor: "rgba(15,23,42,0.65)",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
   },
   card: {
     width: "100%",
-    maxWidth: 345,
+    maxWidth: 355,
     borderRadius: 24,
-    paddingHorizontal: 22,
-    paddingTop: 26,
-    paddingBottom: 22,
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 20,
     alignItems: "center",
-    position: "relative",
-  },
-  botonCerrarX: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
   },
   iconoWrap: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
+    marginBottom: 12,
+  },
+  iconoGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
   },
   titulo: {
     fontSize: 18,
     fontWeight: "800",
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: "center",
   },
   descripcion: {
@@ -193,16 +208,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 17,
     marginBottom: 14,
+    paddingHorizontal: 6,
   },
   caja: {
     width: "100%",
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   tituloSeccion: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: "800",
     marginBottom: 10,
     textAlign: "center",
@@ -211,7 +227,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    paddingVertical: 4,
+    paddingVertical: 3.5,
     gap: 8,
   },
   etiqueta: {
@@ -227,7 +243,8 @@ const styles = StyleSheet.create({
   },
   referenciaValor: {
     fontWeight: "800",
-    fontSize: 11,
+    fontSize: 12,
+    letterSpacing: 0.3,
   },
   divisor: {
     height: 1,
@@ -245,33 +262,52 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlign: "center",
   },
+  bannerAlerta72h: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    width: "100%",
+  },
+  textoAlerta72h: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "600",
+    flex: 1,
+  },
   botonPrimarioWrap: {
     width: "100%",
     borderRadius: 14,
     ...SOMBRA_BOTON_GRADIENTE,
   },
   botonPrimario: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 14,
-    paddingVertical: 14,
+    paddingVertical: 13,
   },
   botonPrimarioTexto: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#fff",
+    color: "#FFFFFF",
   },
-  botonCancelar: {
+  botonSecundario: {
     width: "100%",
-    paddingVertical: 13,
+    flexDirection: "row",
+    paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 10,
   },
-  botonCancelarTexto: {
-    fontSize: 14,
+  botonSecundarioTexto: {
+    fontSize: 13.5,
     fontWeight: "700",
   },
 });

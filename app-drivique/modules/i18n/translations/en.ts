@@ -705,9 +705,11 @@ export default {
       redirigidoWompi: "You'll be redirected to Wompi's official checkout.",
       confirmacionCuandoExitoso: "You'll receive your booking confirmation once the payment is successful.",
       pagarConWompi: 'Pay with Wompi',
-      efectivoConfirmadaTitulo: 'Booking registered',
-      efectivoConfirmadaMensaje: 'You have {{horas}} hours to go to the branch and pay in cash. If you miss the deadline, the booking will be cancelled automatically.',
+      efectivoConfirmadaTitulo: 'Booking registered!',
+      efectivoConfirmadaSub: 'Your reservation has been created successfully. Complete the cash payment at the selected branch.',
+      efectivoConfirmadaMensaje: 'You have {{horas}} hours to go to the branch and pay in cash. If payment is not completed within this time, the booking will be cancelled automatically.',
       entendidoIrAMisReservas: 'Go to My Bookings',
+      volverAlInicio: 'Back to Home',
       errorPagoTitulo: "Payment couldn't be completed",
       errorPagoMensaje: 'The payment process was cancelled or did not finish. You can try again.',
       respuesta: {
@@ -732,6 +734,12 @@ export default {
         CANCELADA: 'Cancelled',
         CANCELADA_POR_TIEMPO: 'Cancelled (time expired)',
       },
+    },
+    edicion: {
+      editarFechasYLugares: 'Edit Dates and Locations',
+      editarProteccionYKilometraje: 'Edit Protection and Mileage',
+      editarServiciosAdicionales: 'Edit Additional Services',
+      guardarCambios: 'Save changes',
     },
     fechasLugar: {
       metodoPagoPreferido: 'Select preferred payment method',

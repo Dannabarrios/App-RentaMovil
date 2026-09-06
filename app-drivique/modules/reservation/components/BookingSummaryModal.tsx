@@ -1,5 +1,4 @@
-// modules/reservation/components/BookingSummaryModal.tsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +15,9 @@ import {
 } from "../constants/reservation.constants";
 import { fmt, fmtPct, diasEntre } from "./BookingSummaryModal.pieces";
 import { useMonedaStore } from "@/store/currencyStore";
+import EditDatesLocationSection from "./EditDatesLocationSection";
+import EditProtectionMileageSection from "./EditProtectionMileageSection";
+import EditAdditionalServicesSection from "./EditAdditionalServicesSection";
 
 interface Props {
   visible: boolean;
@@ -23,23 +25,31 @@ interface Props {
   onCerrar: () => void;
   mostrarPlanes?: boolean;
   seccionFechasCompleta?: boolean;
+  onEditarSeccion?: (seccion: "fechas" | "planes" | "servicios") => void;
 }
 
 export default function ResumenReservaModal({
   visible,
   vehiculo,
   onCerrar,
+  onEditarSeccion,
 }: Props) {
   const insets = useSafeAreaInsets();
   useMonedaStore();
   const c = useTemaColores();
   const { t, i18n } = useTranslation();
+  const [seccionEditando, setSeccionEditando] = useState<"fechas" | "planes" | "servicios" | null>(null);
 
   const fechasLugar = useReservaStore((s) => s.fechasLugar);
   const planes = useReservaStore((s) => s.planes);
   const cuponAplicado = useReservaStore((s) => s.cuponAplicado);
 
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
+
+  const handleCerrar = () => {
+    setSeccionEditando(null);
+    onCerrar();
+  };
 
   const formatFechaResumen = (fechaStr: string | null | undefined): string => {
     if (!fechaStr) return t("reserva.resumen.fechaNoSeleccionada", { defaultValue: "Fecha no seleccionada" });
@@ -172,52 +182,85 @@ export default function ResumenReservaModal({
   ]);
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onCerrar} presentationStyle="pageSheet">
+    <Modal visible={visible} animationType="slide" onRequestClose={handleCerrar} presentationStyle="pageSheet">
       <View style={[styles.container, { backgroundColor: c.bg, paddingTop: insets.top || 16 }]}>
-        {/* Header Modal */}
-        <View style={styles.header}>
-          <View style={styles.headerTitleWrap}>
-            <LinearGradient
-              colors={GRADIENTES.boton.colors}
-              start={GRADIENTES.boton.start}
-              end={GRADIENTES.boton.end}
-              style={styles.badgeIcon}
-            >
-              <Ionicons name="document-text" size={16} color="#FFFFFF" />
-            </LinearGradient>
-            <Text style={[styles.headerTitulo, { color: c.textPrimary }]}>
-              {t("reserva.resumen.titulo", { defaultValue: "Resumen de tu Reserva" })}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={onCerrar}
-            hitSlop={10}
-            style={[styles.closeBtn, { backgroundColor: c.oscuro ? c.bgInput : "#F1F5F9", borderColor: c.border }]}
-          >
-            <Ionicons name="close" size={16} color={c.textSecondary} />
-          </TouchableOpacity>
-        </View>
+        {seccionEditando === "fechas" ? (
+          <EditDatesLocationSection
+            vehiculo={vehiculo}
+            onGuardar={() => setSeccionEditando(null)}
+            onCancelar={() => setSeccionEditando(null)}
+          />
+        ) : seccionEditando === "planes" ? (
+          <EditProtectionMileageSection
+            vehiculo={vehiculo}
+            onGuardar={() => setSeccionEditando(null)}
+            onCancelar={() => setSeccionEditando(null)}
+          />
+        ) : seccionEditando === "servicios" ? (
+          <EditAdditionalServicesSection
+            vehiculo={vehiculo}
+            onGuardar={() => setSeccionEditando(null)}
+            onCancelar={() => setSeccionEditando(null)}
+          />
+        ) : (
+          <>
+            {/* Header Modal */}
+            <View style={styles.header}>
+              <View style={styles.headerTitleWrap}>
+                <LinearGradient
+                  colors={GRADIENTES.boton.colors}
+                  start={GRADIENTES.boton.start}
+                  end={GRADIENTES.boton.end}
+                  style={styles.badgeIcon}
+                >
+                  <Ionicons name="document-text" size={16} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={[styles.headerTitulo, { color: c.textPrimary }]}>
+                  {t("reserva.resumen.titulo", { defaultValue: "Resumen de tu Reserva" })}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleCerrar}
+                hitSlop={10}
+                style={[styles.closeBtn, { backgroundColor: c.oscuro ? c.bgInput : "#F1F5F9", borderColor: c.border }]}
+              >
+                <Ionicons name="close" size={16} color={c.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={[styles.cardMaestra, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-            {/* Banner Superior Azul Degradado */}
-            <LinearGradient
-              colors={GRADIENTES.boton.colors}
-              start={GRADIENTES.boton.start}
-              end={GRADIENTES.boton.end}
-              style={styles.vehiculoBanner}
-            >
-              <Text style={styles.vehiculoBannerLabel}>
-                {t("reserva.resumen.subtitulo", { defaultValue: "Resumen de tu reserva" })}
-              </Text>
-              <Text style={styles.vehiculoBannerNombre}>{vehiculo.nombre}</Text>
-            </LinearGradient>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+              <View style={[styles.cardMaestra, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+                {/* Banner Superior Azul Degradado */}
+                <LinearGradient
+                  colors={GRADIENTES.boton.colors}
+                  start={GRADIENTES.boton.start}
+                  end={GRADIENTES.boton.end}
+                  style={styles.vehiculoBanner}
+                >
+                  <Text style={styles.vehiculoBannerLabel}>
+                    {t("reserva.resumen.subtitulo", { defaultValue: "Resumen de tu reserva" })}
+                  </Text>
+                  <Text style={styles.vehiculoBannerNombre}>{vehiculo.nombre}</Text>
+                </LinearGradient>
 
             {/* SECCIÓN 1: FECHAS Y LUGARES */}
             <View style={styles.seccionCard}>
-              <Text style={[styles.seccionTituloAzul, { color: primaryAccent }]}>
-                {t("reserva.resumen.fechasYLugares", { defaultValue: "FECHAS Y LUGARES" })}
-              </Text>
+              <View style={styles.seccionHeaderFila}>
+                <Text style={[styles.seccionTituloAzul, { color: primaryAccent }]}>
+                  {t("reserva.resumen.fechasYLugares", { defaultValue: "FECHAS Y LUGARES" })}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    onEditarSeccion ? onEditarSeccion("fechas") : setSeccionEditando("fechas");
+                  }}
+                  hitSlop={8}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.seccionEditarTexto, { color: primaryAccent }]}>
+                    {t("reserva.resumen.editar", { defaultValue: "Editar" })}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               {/* LUGAR DE ENTREGA */}
               <View style={styles.bloqueDato}>
@@ -260,9 +303,22 @@ export default function ResumenReservaModal({
 
             {/* SECCIÓN 2: TU PROTECCIÓN Y EXTRAS */}
             <View style={styles.seccionCard}>
-              <Text style={[styles.seccionTituloAzul, { color: primaryAccent }]}>
-                {t("reserva.resumen.tuProteccionYExtras", { defaultValue: "TU PROTECCIÓN Y EXTRAS" })}
-              </Text>
+              <View style={styles.seccionHeaderFila}>
+                <Text style={[styles.seccionTituloAzul, { color: primaryAccent }]}>
+                  {t("reserva.resumen.tuProteccionYExtras", { defaultValue: "TU PROTECCIÓN Y EXTRAS" })}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    onEditarSeccion ? onEditarSeccion("planes") : setSeccionEditando("planes");
+                  }}
+                  hitSlop={8}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.seccionEditarTexto, { color: primaryAccent }]}>
+                    {t("reserva.resumen.editar", { defaultValue: "Editar" })}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               {/* PROTECCIONES */}
               <View style={styles.bloqueDato}>
@@ -282,11 +338,24 @@ export default function ResumenReservaModal({
 
               {/* SERVICIOS ADICIONALES */}
               <View style={[styles.bloqueDato, { marginTop: 12 }]}>
-                <Text style={[styles.sublabel, { color: c.textMuted }]}>
-                  {t("reserva.resumen.serviciosAdicionalesMayus", { defaultValue: "SERVICIOS ADICIONALES" })}
-                </Text>
-                <Text style={[styles.valorServicios, { color: planes.serviciosSeleccionados.length > 0 ? c.textPrimary : c.textSecondary }]}>
-                  {serviciosTexto}
+                <View style={styles.seccionSubHeaderFila}>
+                  <Text style={[styles.sublabel, { color: c.textMuted }]}>
+                    {t("reserva.resumen.serviciosAdicionalesMayus", { defaultValue: "SERVICIOS ADICIONALES" })}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      onEditarSeccion ? onEditarSeccion("servicios") : setSeccionEditando("servicios");
+                    }}
+                    hitSlop={8}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.seccionEditarTexto, { color: primaryAccent }]}>
+                      {t("reserva.resumen.editar", { defaultValue: "Editar" })}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.valorPrincipal, { color: c.textPrimary }]}>
+                  {desglose.servAdic > 0 ? fmt(desglose.servAdic) : "$0"}
                 </Text>
               </View>
             </View>
@@ -420,7 +489,7 @@ export default function ResumenReservaModal({
 
         {/* Footer con Botón Cerrar */}
         <View style={[styles.footer, { borderTopColor: c.border, backgroundColor: c.bg, paddingBottom: insets.bottom + 12 }]}>
-          <TouchableOpacity style={styles.cerrarBtnWrap} onPress={onCerrar} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.cerrarBtnWrap} onPress={handleCerrar} activeOpacity={0.85}>
             <LinearGradient
               colors={GRADIENTES.boton.colors}
               start={GRADIENTES.boton.start}
@@ -433,6 +502,8 @@ export default function ResumenReservaModal({
             </LinearGradient>
           </TouchableOpacity>
         </View>
+          </>
+        )}
       </View>
     </Modal>
   );
@@ -505,11 +576,26 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
   },
+  seccionHeaderFila: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  seccionSubHeaderFila: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  seccionEditarTexto: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
   seccionTituloAzul: {
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 0.5,
-    marginBottom: 12,
   },
 
   bloqueDato: {
