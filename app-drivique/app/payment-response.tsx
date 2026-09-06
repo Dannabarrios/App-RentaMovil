@@ -47,12 +47,6 @@ import {
   descargarContratoVisible,
   generarContratoPdf,
   leerPdfOriginalBase64,
-import {
-  compartirPdfOriginal,
-  crearTextosContrato,
-  descargarContratoVisible,
-  generarContratoPdf,
-  leerPdfOriginalBase64,
 } from "@/modules/reservation/services/pdfService";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { consultarTransaccionWompi, WompiTransactionResponse } from "@/modules/reservation/services/wompiService";
@@ -131,8 +125,8 @@ export default function PagoRespuestaScreen() {
     };
   }, [ref, id]);
 
-  const irAMisReservas = () => router.replace("/(tabs)/my-bookings");
-  const irAlInicio = () => router.replace("/(tabs)/home");
+  const irAMisReservas = () => router.replace("/(tabs)/my-bookings" as any);
+  const irAlInicio = () => router.replace("/(tabs)/catalog" as any);
 
   const sucursalNombre = reserva?.lugarRetiro || (reserva?.fechasLugarSnapshot as any)?.lugarRetiro || "";
   const ciudadSucursal = sucursalNombre ? getCiudadPorSucursal(String(sucursalNombre)) : "";
@@ -297,18 +291,22 @@ export default function PagoRespuestaScreen() {
           total: reserva.total,
           referencia: reserva.referencia,
           formatPrecio: fmt,
-          formatearFecha: (iso) => (iso ? fechaCorta(iso) : "—"),
+          formatearFecha: (iso: string | null) => (iso ? fechaCorta(iso) : "—"),
           tipoDocumentoTexto,
-          textos: crearTextosContrato((key) => t(key)),
+          textos: crearTextosContrato((key: string) => t(key)),
         });
         pdfBase64 = await leerPdfOriginalBase64(uriContrato);
-        const actualizado = await contratoService.guardarPdfContrato(reserva.referencia, pdfBase64, pdfNombre);
-        if (actualizado) setContratoActual(actualizado);
+        if (pdfBase64) {
+          const actualizado = await contratoService.guardarPdfContrato(reserva.referencia, pdfBase64, pdfNombre);
+          if (actualizado) setContratoActual(actualizado);
+        }
       }
-      await compartirPdfOriginal(
-        pdfBase64,
-        pdfNombre
-      );
+      if (pdfBase64) {
+        await compartirPdfOriginal(
+          pdfBase64,
+          pdfNombre
+        );
+      }
     } catch (error) {
       console.error("[pago-respuesta] Error generando el PDF", error);
       Alert.alert(t("misReservas.errorPdfTitulo"), t("misReservas.errorPdfMensaje"));
