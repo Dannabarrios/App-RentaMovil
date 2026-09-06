@@ -114,8 +114,12 @@ async function leer(): Promise<ReservaGuardada[]> {
     const data = await AsyncStorage.getItem(STORAGE_KEY);
     let reservas: ReservaGuardada[] = data ? JSON.parse(data) : [];
 
-    // Cargar reservas del JSON de mocks si no están registradas aún
-    let cambio = false;
+    // Purgar la reserva demo residual (RES-1788500200456-M7T8W2Y) si quedó guardada en el dispositivo
+    const totalOriginal = reservas.length;
+    reservas = reservas.filter((r) => r.referencia !== "RES-1788500200456-M7T8W2Y");
+
+    // Cargar reservas del JSON de mocks si hubieran
+    let cambio = totalOriginal !== reservas.length;
     for (const rDemo of (reservasDemoJson as any[])) {
       const yaExiste = reservas.some((r) => r.referencia === rDemo.referencia);
       if (!yaExiste) {
