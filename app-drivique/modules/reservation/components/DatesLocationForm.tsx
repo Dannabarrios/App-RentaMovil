@@ -173,15 +173,17 @@ export default function FormFechasLugar({ vehiculo }: Props) {
     return `${dias} ${diaTexto(dias)}`;
   }, [fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion, fechasLugar.horaRetiro, fechasLugar.horaDevolucion, t]);
 
+  const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
+
   return (
     <View style={[styles.card, { backgroundColor: c.bgCard }]}>
       <View style={styles.headerConIcono}>
-        <Ionicons name="card" size={14} color={COLOR_MARCA} />
-        <Text style={styles.tituloHeaderConIcono}>
+        <Ionicons name="card-outline" size={14} color={primaryAccent} />
+        <Text style={[styles.tituloHeaderConIcono, { color: primaryAccent }]}>
           {t("reserva.fechasLugar.metodoPagoPreferido")}
         </Text>
       </View>
-      <View style={styles.filaDosCols}>
+      <View style={styles.metodosColumna}>
         {METODOS_PAGO.map((metodo) => {
           const activo = fechasLugar.metodoPago === metodo.id;
           return (
@@ -189,8 +191,11 @@ export default function FormFechasLugar({ vehiculo }: Props) {
               key={metodo.id}
               style={[
                 styles.metodoCard,
-                { borderColor: c.border },
-                activo && [styles.metodoCardActivo, { backgroundColor: c.primaryBg }],
+                {
+                  borderColor: c.border,
+                  backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF",
+                },
+                activo && [styles.metodoCardActivo, { borderColor: primaryAccent, backgroundColor: c.primaryBg }],
               ]}
               onPress={() => {
                 actualizarFechasLugar({ metodoPago: metodo.id });
@@ -199,14 +204,14 @@ export default function FormFechasLugar({ vehiculo }: Props) {
               activeOpacity={0.8}
             >
               <View style={styles.metodoHeaderRow}>
-                <Text style={[styles.metodoTitulo, { color: c.textSecondary }, activo && styles.metodoTituloActivo]}>
+                <Text style={[styles.metodoTitulo, { color: c.textPrimary }, activo && { color: primaryAccent }]}>
                   {metodo.titulo}
                 </Text>
-                <View style={[styles.radio, { borderColor: c.border }, activo && styles.radioActivo]}>
-                  {activo && <View style={styles.radioPunto} />}
+                <View style={[styles.radio, { borderColor: c.border }, activo && [styles.radioActivo, { borderColor: primaryAccent }]]}>
+                  {activo && <View style={[styles.radioPunto, { backgroundColor: primaryAccent }]} />}
                 </View>
               </View>
-              <Text style={[styles.metodoDesc, { color: c.textMuted }, activo && styles.metodoDescActivo]}>
+              <Text style={[styles.metodoDesc, { color: c.textMuted }]}>
                 {metodo.descripcion}
               </Text>
             </TouchableOpacity>
@@ -562,16 +567,50 @@ const styles = StyleSheet.create({
   primerLabel: { marginTop: 0 },
   labelConIcono: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4, marginBottom: 8 },
   filaDosCols: { flexDirection: "row", gap: 8, marginBottom: 14 },
-  metodoCard: { flex: 1, borderWidth: 1, borderRadius: 10, padding: 10 },
-  metodoCardActivo: { borderColor: COLOR_MARCA, borderWidth: 1.5 },
-  metodoHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  metodoTitulo: { fontSize: 11, fontWeight: "700", flex: 1, marginRight: 6 },
-  metodoTituloActivo: { color: COLOR_MARCA },
-  metodoDesc: { fontSize: 9, marginTop: 4 },
-  metodoDescActivo: { color: COLOR_MARCA, opacity: 0.85 },
-  radio: { width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-  radioActivo: { borderColor: COLOR_MARCA },
-  radioPunto: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLOR_MARCA },
+  metodosColumna: {
+    flexDirection: "column",
+    gap: 10,
+    marginBottom: 14,
+  },
+  metodoCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  metodoCardActivo: {
+    borderWidth: 1.2,
+  },
+  metodoHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  metodoTitulo: {
+    fontSize: 12.5,
+    fontWeight: "500",
+    flex: 1,
+    marginRight: 8,
+  },
+  metodoDesc: {
+    fontSize: 11,
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  radio: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioActivo: {},
+  radioPunto: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   headerConIcono: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, marginTop: 2 },
   headerCalendarioContainer: {
     flexDirection: "row",

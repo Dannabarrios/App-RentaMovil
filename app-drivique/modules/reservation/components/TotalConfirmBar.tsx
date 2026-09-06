@@ -2,11 +2,12 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { GRADIENTES } from "@/constants/gradients";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { useTranslation } from "react-i18next";
-import { fmt, styles as piezas } from "./BookingSummaryModal.pieces";
+import { COLOR_MARCA } from "../constants/reservation.constants";
+import { useMonedaStore } from "@/store/currencyStore";
+import { formatCurrency } from "@/utils/currencyUtils";
 
 interface Props {
   total: number;
@@ -16,55 +17,86 @@ interface Props {
 export default function BarraTotalConfirmar({ total, onConfirmar }: Props) {
   const c = useTemaColores();
   const { t } = useTranslation();
+  const monedaActual = useMonedaStore((s) => s.monedaActual);
+  const tasaUSD = useMonedaStore((s) => s.tasaUSD);
+
+  const primaryAccent = c.oscuro ? "#1D4ED8" : COLOR_MARCA;
 
   return (
-    <View style={[styles.contenedor, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-      <View style={piezas.totalBlock}>
-        <Text style={[piezas.totalLabelChica, { color: c.textSecondary }]}>{t("reserva.confirmacion.totalAPagar")}</Text>
-        <Text style={[piezas.totalValorGrande, { color: c.textPrimary }]}>{fmt(total)}</Text>
-        <Text style={[piezas.totalNota, { color: c.textMuted }]}>{t("reserva.confirmacion.notaTotalPagar")}</Text>
-      </View>
+    <LinearGradient
+      colors={GRADIENTES.boton.colors}
+      start={GRADIENTES.boton.start}
+      end={GRADIENTES.boton.end}
+      style={styles.cardGradiente}
+    >
+      <Text style={styles.totalLabel}>
+        {t("reserva.confirmacion.totalAPagar", { defaultValue: "TOTAL A PAGAR" }).toUpperCase()}
+      </Text>
 
-      <TouchableOpacity style={styles.botonWrap} onPress={onConfirmar} activeOpacity={0.85}>
-        <LinearGradient
-          colors={GRADIENTES.boton.colors}
-          start={GRADIENTES.boton.start}
-          end={GRADIENTES.boton.end}
-          style={styles.boton}
-        >
-          <Text style={styles.botonTexto}>{t("reserva.confirmacion.confirmarReserva")}</Text>
-          <Ionicons name="arrow-forward" size={16} color="#fff" />
-        </LinearGradient>
+      <Text style={styles.totalMonto}>
+        {formatCurrency(total, monedaActual, tasaUSD)}
+      </Text>
+
+      <Text style={styles.notaImpuesto}>
+        {t("reserva.confirmacion.notaTotalPagar", { defaultValue: "Impuestos incluidos (IVA 19%)" })}
+      </Text>
+
+      <TouchableOpacity style={styles.botonBlanco} onPress={onConfirmar} activeOpacity={0.85}>
+        <Text style={[styles.botonTexto, { color: primaryAccent }]}>
+          {t("reserva.confirmacion.confirmarReserva", { defaultValue: "Confirmar reserva" })}
+        </Text>
       </TouchableOpacity>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  contenedor: {
+  cardGradiente: {
     borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  botonWrap: {
-    marginHorizontal: 16,
-    marginTop: 4,
+    padding: 16,
+    marginTop: 0,
     marginBottom: 16,
-    borderRadius: 14,
   },
-  boton: {
-    flexDirection: "row",
+  totalLabel: {
+    fontSize: 10.5,
+    fontWeight: "700",
+    color: "rgba(255, 255, 255, 0.85)",
+    letterSpacing: 0.6,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  totalMonto: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: 0.3,
+    textAlign: "center",
+  },
+  notaImpuesto: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.85)",
+    marginTop: 2,
+    marginBottom: 14,
+    textAlign: "center",
+  },
+  botonBlanco: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    borderRadius: 14,
-    paddingVertical: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   botonTexto: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: "800",
-    color: "#fff",
+    letterSpacing: 0.2,
+    textAlign: "center",
   },
 });

@@ -85,13 +85,14 @@ export interface BeneficioProteccion {
 export function getBeneficiosProteccion(
   t: (key: string, opts?: any) => any
 ): Record<string, BeneficioProteccion[]> {
-  const tipos: BeneficioProteccion["tipo"][] = ["check", "check", "check", "warning", "cross"];
+  const tiposObligatoria: BeneficioProteccion["tipo"][] = ["check", "check", "check", "warning", "cross"];
+  const tiposTotal: BeneficioProteccion["tipo"][] = ["check", "check", "check", "check", "check", "cross"];
   const obligatoria = (t("reserva.planes.beneficiosProteccionObligatoria", {
     returnObjects: true,
-  }) as string[]).map((texto, i) => ({ tipo: tipos[i], texto }));
+  }) as string[]).map((texto, i) => ({ tipo: tiposObligatoria[i] ?? "check", texto }));
   const total = (t("reserva.planes.beneficiosProteccionTotal", {
     returnObjects: true,
-  }) as string[]).map((texto, i) => ({ tipo: tipos[i], texto }));
+  }) as string[]).map((texto, i) => ({ tipo: tiposTotal[i] ?? "check", texto }));
 
   return {
     "Protección Obligatoria": obligatoria,
@@ -124,8 +125,12 @@ export function getBeneficiosKilometraje(
 export const ICONO_SERVICIO_DEFECTO = "add-circle-outline";
 export const ICONOS_SERVICIOS: Record<string, string> = {
   GPS: "navigate-outline",
+  "GPS Integrado": "navigate-outline",
   "Silla bebé": "body-outline",
+  "Silla de bebé": "body-outline",
   "Conductor adicional": "person-add-outline",
+  "Lavado de auto post-entrega": "sparkles-outline",
+  "Devolución con tanque vacío": "color-fill-outline",
   "Entrega en otra ciudad": "map-outline",
   "WiFi portátil": "wifi-outline",
 };

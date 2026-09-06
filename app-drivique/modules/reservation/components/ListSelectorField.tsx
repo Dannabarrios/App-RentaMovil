@@ -35,12 +35,12 @@ export default function CampoSelectorLista({
 
   return (
     <View style={styles.contenedor}>
-      <Text style={[styles.selectLabel, { color: c.textSecondary }]}>{etiqueta}</Text>
+      <Text style={[styles.selectLabel, { color: c.textPrimary }]}>{etiqueta}</Text>
 
       <TouchableOpacity
         style={[
           styles.selectBox,
-          { backgroundColor: c.bgInput, borderColor: primaryAccent },
+          { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border },
         ]}
         onPress={() => setAbierto(true)}
         activeOpacity={0.8}
@@ -55,7 +55,7 @@ export default function CampoSelectorLista({
         >
           {opcionActual?.label ?? placeholderTexto}
         </Text>
-        <Ionicons name="chevron-down" size={14} color={primaryAccent} />
+        <Ionicons name="chevron-down" size={13} color={c.textMuted} />
       </TouchableOpacity>
 
       <Modal visible={abierto} animationType="slide" transparent onRequestClose={() => setAbierto(false)}>
@@ -116,19 +116,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.3,
-    textTransform: "uppercase",
-    marginBottom: 8,
+    marginBottom: 5,
   },
   selectBox: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1.3,
+    borderWidth: 1,
     borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  selectValue: { fontSize: 11, fontWeight: "600", flex: 1, marginRight: 6 },
+  selectValue: { fontSize: 12, fontWeight: "400", flex: 1, marginRight: 6 },
   placeholder: { fontWeight: "400" },
 
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },

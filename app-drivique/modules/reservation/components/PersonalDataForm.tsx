@@ -4,6 +4,7 @@ import { useReservaStore } from "@/store/reservationStore";
 import { useUsuarioStore } from "@/store/userStore";
 import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
@@ -179,14 +180,9 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     const servAdic = servicios
       .filter((s) => planes.serviciosSeleccionados.includes(s.nombre))
       .reduce((a, s) => a + s.precio * dias, 0);
-    const cargos = Math.round(diarias * PORCENTAJE_CARGOS_ADMINISTRATIVOS);
-    const subtotalBruto =
-      diarias +
-      proteccion +
-      kilometraje +
-      servAdic +
-      cargos +
-      RECARGO_LOGISTICO;
+    const subtotalBase = diarias + proteccion + kilometraje + servAdic;
+    const cargos = Math.round(subtotalBase * PORCENTAJE_CARGOS_ADMINISTRATIVOS);
+    const subtotalBruto = subtotalBase + cargos + RECARGO_LOGISTICO;
       
     let descuentoCupon = 0;
     if (cuponAplicado) {
@@ -197,7 +193,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       }
     }
     
-    const subtotal = subtotalBruto - descuentoCupon;
+    const subtotal = Math.max(subtotalBruto - descuentoCupon, 0);
     const iva = Math.round(subtotal * PORCENTAJE_IVA);
     return subtotal + iva;
   }, [vehiculo, fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion, planes, cuponAplicado]);
@@ -379,29 +375,39 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 
   return (
     <View>
-      <Text style={[styles.seccionLabel, { color: c.textMuted }]}>{t("reserva.datosPersonales.titulo")}</Text>
+      {/* Tarjeta Padre Contenedora */}
+      <View style={[styles.cardPadre, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+        {/* Tarjeta de Formulario de Datos Personales */}
+        <View style={[styles.cardForm, { backgroundColor: c.oscuro ? c.bgCard : "#FFFFFF", borderColor: c.border }]}>
+          <View style={styles.cardHeaderFila}>
+            <Ionicons name="person" size={14} color={primaryAccent} />
+            <Text style={[styles.cardHeaderTitulo, { color: primaryAccent }]}>
+              {t("reserva.datosPersonales.titulo", { defaultValue: "Datos personales" })}
+            </Text>
+          </View>
 
-      <View style={[styles.card, { backgroundColor: c.bgCard }]}>
-        <View style={[styles.subcard, { backgroundColor: c.bgCard, borderColor: brandBg }]}>
-          <Text style={[styles.subtitulo, { color: c.textMuted }]}>
-            {t("reserva.datosPersonales.subtitulo")}
+          <Text style={[styles.cardSubtitulo, { color: c.textMuted }]}>
+            {t("reserva.datosPersonales.subtitulo", {
+              defaultValue: "Completa tus datos de contacto para la reserva y el contrato digital",
+            })}
           </Text>
-          <Text style={[styles.nota, { color: primaryAccent }]}>
-            {t("reserva.datosPersonales.camposObligatorios")}
-          </Text>
-
-          <View style={[styles.separador, { backgroundColor: c.border }]} />
 
           <View style={styles.campo}>
-            <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.datosPersonales.nombreCompleto")}</Text>
+            <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
+              {t("reserva.datosPersonales.nombreCompleto", { defaultValue: "Nombre completo *" })}
+            </Text>
             <TextInput
-              style={[styles.input, { backgroundColor: c.bgInput, borderColor: brandBg, color: c.textPrimary }]}
+              style={[
+                styles.input,
+                { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
+              ]}
               value={datosPersonales.nombreCompleto}
               onChangeText={(v) => {
                 actualizarDatosPersonales({ nombreCompleto: v });
                 const { nombres, apellidos } = separarNombreCompleto(v);
                 actualizarUsuarioGlobal({ nombres, apellidos });
               }}
+              placeholder="Cliente Drivique"
               placeholderTextColor={c.textMuted}
               autoCapitalize="words"
             />
@@ -409,7 +415,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 
           <View style={styles.campo}>
             <CampoSelectorLista
-              etiqueta={t("reserva.datosPersonales.nacionalidad")}
+              etiqueta={t("reserva.datosPersonales.nacionalidad", { defaultValue: "Nacionalidad *" })}
               valorSeleccionado={datosPersonales.nacionalidad || null}
               opciones={OPCIONES_NACIONALIDAD}
               onSeleccionar={(id) => {
@@ -420,14 +426,20 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
           </View>
 
           <View style={styles.campo}>
-            <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.datosPersonales.correoElectronico")}</Text>
+            <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
+              {t("reserva.datosPersonales.correoElectronico", { defaultValue: "Correo electrónico *" })}
+            </Text>
             <TextInput
-              style={[styles.input, { backgroundColor: c.bgInput, borderColor: brandBg, color: c.textPrimary }]}
+              style={[
+                styles.input,
+                { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
+              ]}
               value={datosPersonales.correo}
               onChangeText={(v) => {
                 actualizarDatosPersonales({ correo: v });
                 actualizarUsuarioGlobal({ correo: v });
               }}
+              placeholder="cliente@drivique.com"
               placeholderTextColor={c.textMuted}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -435,30 +447,32 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
           </View>
 
           <View style={styles.campo}>
-            <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.datosPersonales.numeroCelular")}</Text>
+            <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
+              {t("reserva.datosPersonales.numeroCelular", { defaultValue: "Teléfono celular *" })}
+            </Text>
             <View style={styles.filaCelular}>
               <View
                 style={[
                   styles.prefijoBox,
-                  { backgroundColor: c.primaryBg, borderColor: brandBg },
+                  { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border },
                   !hayPrefijo && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6" },
                 ]}
               >
                 <Text
                   style={[
                     styles.prefijoText,
-                    { color: primaryAccent },
+                    { color: c.textPrimary },
                     !hayPrefijo && { color: c.textMuted },
                   ]}
                 >
-                  {hayPrefijo ? prefijoTelefono : ""}
+                  {hayPrefijo ? prefijoTelefono : "+57"}
                 </Text>
               </View>
               <TextInput
                 style={[
                   styles.input,
                   styles.inputCelular,
-                  { backgroundColor: c.bgInput, borderColor: brandBg, color: c.textPrimary },
+                  { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
                   !hayPrefijo && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted },
                 ]}
                 value={datosPersonales.celular}
@@ -468,7 +482,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
                   actualizarUsuarioGlobal({ telefono: digits });
                 }}
                 keyboardType="phone-pad"
-                placeholder={hayPrefijo ? undefined : ""}
+                placeholder="3001234567"
                 placeholderTextColor={c.textMuted}
                 editable={hayPrefijo}
               />
@@ -477,7 +491,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 
           <View style={styles.campo}>
             <CampoSelectorLista
-              etiqueta={t("reserva.datosPersonales.tipoDeDocumento")}
+              etiqueta={t("reserva.datosPersonales.tipoDeDocumento", { defaultValue: "Tipo de documento *" })}
               valorSeleccionado={datosPersonales.tipoDocumento}
               opciones={OPCIONES_TIPO_DOCUMENTO}
               onSeleccionar={(id) => {
@@ -492,14 +506,20 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
           </View>
 
           <View style={[styles.campo, { marginBottom: 0 }]}>
-            <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.datosPersonales.numeroDeDocumento")}</Text>
+            <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
+              {t("reserva.datosPersonales.numeroDeDocumento", { defaultValue: "Número de documento *" })}
+            </Text>
             <TextInput
-              style={[styles.input, { backgroundColor: c.bgInput, borderColor: brandBg, color: c.textPrimary }]}
+              style={[
+                styles.input,
+                { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
+              ]}
               value={datosPersonales.numeroDocumento}
               onChangeText={(v) => {
                 actualizarDatosPersonales({ numeroDocumento: v });
                 actualizarUsuarioGlobal({ numeroDocumento: v });
               }}
+              placeholder="123456789"
               placeholderTextColor={c.textMuted}
               keyboardType="numeric"
             />
@@ -507,14 +527,19 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         </View>
       </View>
 
-      <TarjetaVerificacionDocumental
-        tipoDocumento={datosPersonales.tipoDocumento ?? undefined}
-        docsVerificados={docsVerificados}
-      />
-      
-      <CouponSection vehiculo={vehiculo} />
-      
-      <TarjetaTerminosCondiciones />
+      {/* 2. Tarjeta Padre de Verificación Documental */}
+      <View style={[styles.cardPadre, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+        <TarjetaVerificacionDocumental
+          tipoDocumento={datosPersonales.tipoDocumento ?? undefined}
+          docsVerificados={docsVerificados}
+        />
+      </View>
+
+      {/* 3. Tarjeta Padre de Cupón y Políticas */}
+      <View style={[styles.cardPadre, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+        <CouponSection vehiculo={vehiculo} />
+        <TarjetaTerminosCondiciones />
+      </View>
 
       <BarraTotalConfirmar total={total} onConfirmar={handleConfirmarReserva} />
 
@@ -576,66 +601,73 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 }
 
 const styles = StyleSheet.create({
-  seccionLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  card: {
+  cardPadre: {
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
-  subcard: {
-    borderWidth: 1.3,
-    borderRadius: 12,
-    padding: 12,
+  cardForm: {
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
   },
-  subtitulo: { fontSize: 12, marginBottom: 8 },
-  nota: { fontSize: 10.5, fontStyle: "italic" },
-  separador: {
-    height: 1,
-    marginTop: 14,
+  cardHeaderFila: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  cardHeaderTitulo: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    includeFontPadding: false,
+    textAlignVertical: "center",
+  },
+  cardSubtitulo: {
+    fontSize: 11,
+    lineHeight: 15,
     marginBottom: 14,
   },
-
-  campo: { marginBottom: 14 },
-
+  campo: {
+    marginBottom: 12,
+  },
   inputLabel: {
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.3,
-    marginBottom: 8,
+    marginBottom: 5,
   },
   input: {
-    borderWidth: 1.3,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     fontSize: 12,
   },
-  inputDeshabilitado: {
-    color: "#9CA3AF",
+  filaCelular: {
+    flexDirection: "row",
+    gap: 8,
   },
-
-  filaCelular: { flexDirection: "row", gap: 10 },
   prefijoBox: {
-    borderWidth: 1.3,
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
     justifyContent: "center",
-    minWidth: 46,
     alignItems: "center",
+    minWidth: 48,
   },
-  prefijoBoxVacio: {},
-  prefijoText: { fontSize: 12, fontWeight: "700" },
-  prefijoTextVacio: {},
-  inputCelular: { flex: 1 },
+  prefijoText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  inputCelular: {
+    flex: 1,
+  },
 });

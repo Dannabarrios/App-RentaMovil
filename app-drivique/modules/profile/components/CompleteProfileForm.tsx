@@ -155,7 +155,7 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
             style={[
               inputFieldStyles.input,
               { borderColor: c.border, backgroundColor: c.bgInput, color: c.textPrimary },
-              errores.telefono ? inputFieldStyles.inputError : undefined,
+              errores.telefono ? inputFieldStyles.inputErrorWrapper : undefined,
               !hayPrefijo ? { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted } : undefined,
             ]}
             placeholder="1234567890"

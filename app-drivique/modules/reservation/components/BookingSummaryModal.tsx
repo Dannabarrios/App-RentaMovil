@@ -37,7 +37,6 @@ export default function ResumenReservaModal({
 
   const fechasLugar = useReservaStore((s) => s.fechasLugar);
   const planes = useReservaStore((s) => s.planes);
-  const datosPersonales = useReservaStore((s) => s.datosPersonales);
   const cuponAplicado = useReservaStore((s) => s.cuponAplicado);
 
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
@@ -172,12 +171,6 @@ export default function ResumenReservaModal({
     cuponAplicado,
   ]);
 
-  const tieneDatosPersonales =
-    !!datosPersonales.nombreCompleto ||
-    !!datosPersonales.numeroDocumento ||
-    !!datosPersonales.correo ||
-    !!datosPersonales.celular;
-
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onCerrar} presentationStyle="pageSheet">
       <View style={[styles.container, { backgroundColor: c.bg, paddingTop: insets.top || 16 }]}>
@@ -298,51 +291,7 @@ export default function ResumenReservaModal({
               </View>
             </View>
 
-            {/* SECCIÓN 3: DATOS PERSONALES (SI EXISTEN / ALCANZADO FLUJO 3) */}
-            {tieneDatosPersonales && (
-              <>
-                <View style={[styles.divisorSolido, { backgroundColor: c.border }]} />
-                <View style={styles.seccionCard}>
-                  <Text style={[styles.seccionTituloAzul, { color: primaryAccent }]}>
-                    {t("reserva.resumen.datosPersonales", { defaultValue: "DATOS PERSONALES" })}
-                  </Text>
 
-                  {/* CONDUCTOR PRINCIPAL */}
-                  <View style={styles.bloqueDato}>
-                    <Text style={[styles.sublabel, { color: c.textMuted }]}>
-                      {t("reserva.resumen.conductorPrincipal", { defaultValue: "CONDUCTOR PRINCIPAL" })}
-                    </Text>
-                    <Text style={[styles.valorPrincipal, { color: c.textPrimary }]}>
-                      {datosPersonales.nombreCompleto || t("reserva.resumen.noProporcionado", { defaultValue: "No proporcionado" })}
-                    </Text>
-                  </View>
-
-                  {/* DOCUMENTO */}
-                  <View style={[styles.bloqueDato, { marginTop: 12 }]}>
-                    <Text style={[styles.sublabel, { color: c.textMuted }]}>
-                      {t("reserva.resumen.documento", { defaultValue: "DOCUMENTO" })}
-                    </Text>
-                    <Text style={[styles.valorPrincipal, { color: c.textPrimary }]}>
-                      {datosPersonales.numeroDocumento
-                        ? `${datosPersonales.tipoDocumento || ""} ${datosPersonales.numeroDocumento}`.trim()
-                        : t("reserva.resumen.noProporcionado", { defaultValue: "No proporcionado" })}
-                    </Text>
-                  </View>
-
-                  {/* CONTACTO */}
-                  <View style={[styles.bloqueDato, { marginTop: 12 }]}>
-                    <Text style={[styles.sublabel, { color: c.textMuted }]}>
-                      {t("reserva.resumen.contacto", { defaultValue: "CONTACTO" })}
-                    </Text>
-                    <Text style={[styles.valorPrincipal, { color: c.textPrimary }]}>
-                      {datosPersonales.correo || datosPersonales.celular
-                        ? `${datosPersonales.correo || ""}${datosPersonales.correo && datosPersonales.celular ? " · " : ""}${datosPersonales.celular || ""}`.trim()
-                        : t("reserva.resumen.noProporcionado", { defaultValue: "No proporcionado" })}
-                    </Text>
-                  </View>
-                </View>
-              </>
-            )}
 
             {/* SECCIÓN: DESGLOSE DE TARIFA */}
             <View style={[styles.divisorSolido, { backgroundColor: c.border }]} />
