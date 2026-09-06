@@ -154,7 +154,6 @@ export default function CouponSection({ vehiculo }: Props) {
   return (
     <View style={[styles.cardForm, { backgroundColor: c.oscuro ? c.bgCard : "#FFFFFF", borderColor: cuponAplicado ? primaryAccent : c.border }]}>
       <View style={styles.cardHeaderFila}>
-        <Ionicons name="pricetag" size={14} color={primaryAccent} />
         <Text style={[styles.cardHeaderTitulo, { color: primaryAccent }]}>
           {t("coupon.title", { defaultValue: "Cupón de descuento (Opcional)" })}
         </Text>
