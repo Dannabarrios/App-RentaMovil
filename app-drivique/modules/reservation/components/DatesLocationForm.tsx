@@ -45,15 +45,13 @@ export default function FormFechasLugar({ vehiculo }: Props) {
     ];
     if (esWompi) {
       base.push({ value: "domicilio", label: t("reserva.fechasLugar.entregaDomicilio"), icono: "home-outline" });
-      if (ciudadInfo?.tieneAeropuerto) {
+      if (ciudadInfo?.tieneAeropuerto !== false) {
         base.push({ value: "aeropuerto", label: t("reserva.fechasLugar.entregaAeropuerto"), icono: "airplane-outline" });
       }
-      if (ciudadInfo?.tieneTerminal) {
-        base.push({ value: "terminal", label: t("reserva.fechasLugar.entregaTerminal"), icono: "bus-outline" });
-      }
+      base.push({ value: "terminal", label: t("reserva.fechasLugar.entregaTerminal"), icono: "bus-outline" });
     }
     return base;
-  }, [nombreSucursal, esWompi, ciudadInfo]);
+  }, [nombreSucursal, esWompi, ciudadInfo, t]);
 
   const opcionesDevolucion: OpcionLugar[] = useMemo(() => {
     const base: OpcionLugar[] = [
@@ -61,15 +59,13 @@ export default function FormFechasLugar({ vehiculo }: Props) {
     ];
     if (esWompi) {
       base.push({ value: "domicilio", label: t("reserva.fechasLugar.devolucionDomicilio"), icono: "home-outline" });
-      if (ciudadInfo?.tieneAeropuerto) {
+      if (ciudadInfo?.tieneAeropuerto !== false) {
         base.push({ value: "aeropuerto", label: t("reserva.fechasLugar.devolucionAeropuerto"), icono: "airplane-outline" });
       }
-      if (ciudadInfo?.tieneTerminal) {
-        base.push({ value: "terminal", label: t("reserva.fechasLugar.devolucionTerminal"), icono: "bus-outline" });
-      }
+      base.push({ value: "terminal", label: t("reserva.fechasLugar.devolucionTerminal"), icono: "bus-outline" });
     }
     return base;
-  }, [nombreSucursal, esWompi, ciudadInfo]);
+  }, [nombreSucursal, esWompi, ciudadInfo, t]);
 
   useEffect(() => {
     if (fechasLugar.metodoPago === "efectivo") {
