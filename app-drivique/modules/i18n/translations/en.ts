@@ -1191,7 +1191,7 @@ export default {
     errorCategory: 'Only valid for: {{categories}}.',
     errorExpired: 'This coupon is no longer valid.',
     errorInvalid: 'The entered code does not exist or has expired.',
-    title: 'DISCOUNT COUPON (OPTIONAL)',
+    title: 'Discount coupon (Optional)',
     placeholder: 'Enter a code',
     applyBtn: 'APPLY',
     viewAvailable: 'VIEW AVAILABLE COUPONS',

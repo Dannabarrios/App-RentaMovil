@@ -1189,7 +1189,7 @@ export default {
     errorCategory: 'Válido apenas para: {{categories}}.',
     errorExpired: 'Este cupom não é mais válido.',
     errorInvalid: 'O código inserido não existe ou expirou.',
-    title: 'CUPOM DE DESCONTO (OPCIONAL)',
+    title: 'Cupom de desconto (Opcional)',
     placeholder: 'Insira um código',
     applyBtn: 'APLICAR',
     viewAvailable: 'VER CUPONS DISPONÍVEIS',

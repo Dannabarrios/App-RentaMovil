@@ -1189,7 +1189,7 @@ export default {
     errorCategory: 'Valable uniquement pour : {{categories}}.',
     errorExpired: 'Ce coupon n\'est plus valable.',
     errorInvalid: 'Le code saisi n\'existe pas ou a expiré.',
-    title: 'COUPON DE RÉDUCTION (OPTIONNEL)',
+    title: 'Coupon de réduction (Optionnel)',
     placeholder: 'Entrez un code',
     applyBtn: 'APPLIQUER',
     viewAvailable: 'VOIR LES COUPONS DISPONIBLES',
