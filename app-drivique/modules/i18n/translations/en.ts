@@ -453,8 +453,16 @@ export default {
     },
   },
   misReservas: {
-    titulo: 'My bookings',
-    subtitulo: 'History of your bookings',
+    titulo: 'My Bookings',
+    subtitulo: 'History of your reservations',
+    conteo_one: '{{count}} booking found',
+    conteo_other: '{{count}} bookings found',
+    conteo: '{{count}} bookings found',
+    card: {
+      recogida: 'PICKUP',
+      devolucion: 'RETURN',
+      sucursal: 'BRANCH',
+    },
     vacioTitulo: "You don't have any bookings yet",
     vacioTexto: "Once you book a vehicle, you'll see the full history here with dates, location and status for each booking.",
     explorarVehiculos: 'Explore vehicles',

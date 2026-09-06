@@ -455,6 +455,14 @@ export default {
   misReservas: {
     titulo: 'Mes réservations',
     subtitulo: 'Historique de vos réservations',
+    conteo_one: '{{count}} réservation trouvée',
+    conteo_other: '{{count}} réservations trouvées',
+    conteo: '{{count}} réservations trouvées',
+    card: {
+      recogida: 'PRISE EN CHARGE',
+      devolucion: 'RETOUR',
+      sucursal: 'AGENCE',
+    },
     vacioTitulo: "Vous n'avez pas encore de réservations",
     vacioTexto: 'Une fois que vous aurez réservé un véhicule, vous verrez ici l\'historique complet avec les dates, le lieu et le statut de chaque réservation.',
     explorarVehiculos: 'Explorer les véhicules',

@@ -453,8 +453,16 @@ export default {
     },
   },
   misReservas: {
-    titulo: 'As minhas reservas',
+    titulo: 'As Minhas Reservas',
     subtitulo: 'Histórico das suas reservas',
+    conteo_one: '{{count}} reserva encontrada',
+    conteo_other: '{{count}} reservas encontradas',
+    conteo: '{{count}} reservas encontradas',
+    card: {
+      recogida: 'RECOLHA',
+      devolucion: 'DEVOLUÇÃO',
+      sucursal: 'FILIAL',
+    },
     vacioTitulo: 'Ainda não tem reservas',
     vacioTexto: 'Quando reservar um veículo, vai ver aqui o histórico completo com datas, local e estado de cada reserva.',
     explorarVehiculos: 'Explorar veículos',
