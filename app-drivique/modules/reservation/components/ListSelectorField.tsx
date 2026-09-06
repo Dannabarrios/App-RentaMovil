@@ -17,6 +17,7 @@ interface Props {
   opciones: Opcion[];
   onSeleccionar: (id: string) => void;
   placeholder?: string;
+  deshabilitado?: boolean;
 }
 
 export default function CampoSelectorLista({
@@ -25,6 +26,7 @@ export default function CampoSelectorLista({
   opciones,
   onSeleccionar,
   placeholder,
+  deshabilitado = false,
 }: Props) {
   const [abierto, setAbierto] = useState(false);
   const c = useTemaColores();
@@ -41,15 +43,17 @@ export default function CampoSelectorLista({
         style={[
           styles.selectBox,
           { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border },
+          deshabilitado && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", opacity: 0.8 },
         ]}
-        onPress={() => setAbierto(true)}
-        activeOpacity={0.8}
+        onPress={() => !deshabilitado && setAbierto(true)}
+        disabled={deshabilitado}
+        activeOpacity={deshabilitado ? 1 : 0.8}
       >
         <Text
           style={[
             styles.selectValue,
             { color: c.textPrimary },
-            !opcionActual && { color: c.textMuted, fontWeight: "400" },
+            (!opcionActual || deshabilitado) && { color: c.textMuted, fontWeight: "400" },
           ]}
           numberOfLines={1}
         >

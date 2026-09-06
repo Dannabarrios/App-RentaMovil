@@ -73,6 +73,14 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
   const { t } = useTranslation();
   const OPCIONES_TIPO_DOCUMENTO = useMemo(() => getTiposDocumento(t), [t]);
   const datosPersonales = useReservaStore((s) => s.datosPersonales);
+
+  const opcionesTipoDocumentoFiltradas = useMemo(() => {
+    if (!datosPersonales.nacionalidad) return OPCIONES_TIPO_DOCUMENTO;
+    if (datosPersonales.nacionalidad === "Colombia") {
+      return OPCIONES_TIPO_DOCUMENTO.filter((o) => o.id === "CC" || o.id === "TI");
+    }
+    return OPCIONES_TIPO_DOCUMENTO.filter((o) => o.id === "Pasaporte" || o.id === "Doc. Extranjero");
+  }, [datosPersonales.nacionalidad, OPCIONES_TIPO_DOCUMENTO]);
   const actualizarDatosPersonales = useReservaStore(
     (s) => s.actualizarDatosPersonales,
   );
@@ -430,6 +438,18 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
               onSeleccionar={(id) => {
                 actualizarDatosPersonales({ nacionalidad: id });
                 actualizarUsuarioGlobal({ nacionalidad: id });
+                // Sincronizar tipo de documento automáticamente según nacionalidad
+                if (id === "Colombia") {
+                  if (datosPersonales.tipoDocumento !== "CC" && datosPersonales.tipoDocumento !== "TI") {
+                    actualizarDatosPersonales({ tipoDocumento: "CC" });
+                    actualizarUsuarioGlobal({ tipoDocumento: "CC" });
+                  }
+                } else {
+                  if (datosPersonales.tipoDocumento !== "Pasaporte" && datosPersonales.tipoDocumento !== "Doc. Extranjero") {
+                    actualizarDatosPersonales({ tipoDocumento: "Pasaporte" });
+                    actualizarUsuarioGlobal({ tipoDocumento: "Pasaporte" });
+                  }
+                }
               }}
             />
           </View>
@@ -502,7 +522,8 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
             <CampoSelectorLista
               etiqueta={t("reserva.datosPersonales.tipoDeDocumento", { defaultValue: "Tipo de documento *" })}
               valorSeleccionado={datosPersonales.tipoDocumento}
-              opciones={OPCIONES_TIPO_DOCUMENTO}
+              opciones={opcionesTipoDocumentoFiltradas}
+              deshabilitado={!hayPrefijo}
               onSeleccionar={(id) => {
                 actualizarDatosPersonales({
                   tipoDocumento: id as typeof datosPersonales.tipoDocumento,
@@ -522,15 +543,17 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
               style={[
                 styles.input,
                 { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
+                !hayPrefijo && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted },
               ]}
               value={datosPersonales.numeroDocumento}
               onChangeText={(v) => {
                 actualizarDatosPersonales({ numeroDocumento: v });
                 actualizarUsuarioGlobal({ numeroDocumento: v });
               }}
-              placeholder="123456789"
+              placeholder={hayPrefijo ? (datosPersonales.nacionalidad === "Colombia" ? "123456789" : "P12345678") : "123456789"}
               placeholderTextColor={c.textMuted}
-              keyboardType="numeric"
+              keyboardType={datosPersonales.tipoDocumento === "Pasaporte" ? "default" : "numeric"}
+              editable={hayPrefijo}
             />
           </View>
         </View>
