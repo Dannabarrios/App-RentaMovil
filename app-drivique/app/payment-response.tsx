@@ -49,7 +49,13 @@ import {
   leerPdfOriginalBase64,
 } from "@/modules/reservation/services/pdfService";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { consultarTransaccionWompi, WompiTransactionResponse } from "@/modules/reservation/services/wompiService";
+import {
+  aCentavos,
+  construirUrlCheckout,
+  consultarTransaccionWompi,
+  WompiTransactionResponse,
+} from "@/modules/reservation/services/wompiService";
+import * as Linking from "expo-linking";
 
 export default function PagoRespuestaScreen() {
   const insets = useSafeAreaInsets();
@@ -127,6 +133,23 @@ export default function PagoRespuestaScreen() {
 
   const irAMisReservas = () => router.replace("/(tabs)/my-bookings" as any);
   const irAlInicio = () => router.replace("/(tabs)/catalog" as any);
+
+  const handlePagarWompi = async () => {
+    if (!reserva) return;
+    try {
+      const redirectUrl = Linking.createURL("pago-respuesta");
+      const amountInCents = aCentavos(reserva.total);
+      const url = await construirUrlCheckout({
+        reference: reserva.referencia,
+        amountInCents,
+        redirectUrl,
+      });
+      await Linking.openURL(url);
+    } catch (err) {
+      console.error("[payment-response] Error abriendo Wompi", err);
+      Alert.alert(t("comun.error", { defaultValue: "Error" }), t("reserva.confirmacion.errorWompi", { defaultValue: "No se pudo abrir la pasarela de pago de Wompi." }));
+    }
+  };
 
   const sucursalNombre = reserva?.lugarRetiro || (reserva?.fechasLugarSnapshot as any)?.lugarRetiro || "";
   const ciudadSucursal = sucursalNombre ? getCiudadPorSucursal(String(sucursalNombre)) : "";
@@ -584,6 +607,33 @@ export default function PagoRespuestaScreen() {
             <Text style={[styles.btnTexto, { color: c.textPrimary }]}>
               {t("reserva.confirmacion.volverAlInicio", { defaultValue: "Volver al Inicio" })}
             </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {reserva.metodoPago === "wompi" && !esPendienteEfectivo && reserva.estado === "PENDIENTE" && (
+        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, marginTop: 4, marginBottom: 12 }]}>
+          <Text style={[styles.tituloEfectivo, { color: c.textPrimary, fontSize: 17, marginBottom: 6 }]}>
+            {t("reserva.confirmacion.pagoPendienteTitulo", { defaultValue: "Pago Digital Pendiente" })}
+          </Text>
+          <Text style={[styles.descripcionEfectivo, { color: c.textSecondary, marginBottom: 16 }]}>
+            {t("reserva.confirmacion.pagoPendienteTexto", {
+              defaultValue:
+                "Tu reserva está guardada como pendiente. Completa el pago en Wompi para confirmar y habilitar tu contrato de alquiler.",
+            })}
+          </Text>
+          <TouchableOpacity style={styles.btnWrap} onPress={handlePagarWompi} activeOpacity={0.88}>
+            <LinearGradient
+              colors={GRADIENTES.boton.colors}
+              start={GRADIENTES.boton.start}
+              end={GRADIENTES.boton.end}
+              style={styles.btn}
+            >
+              <Ionicons name="card-outline" size={17} color="#fff" />
+              <Text style={styles.btnTexto}>
+                {t("reserva.confirmacion.pagarConWompi", { defaultValue: "Pagar con Wompi" })}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       )}

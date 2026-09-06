@@ -1,6 +1,6 @@
 // modules/reserva/components/ModalReservaRegistrada.tsx
 import React from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
@@ -17,50 +17,64 @@ interface Props {
 export default function ModalReservaRegistrada({ visible, onPagarWompi, onCerrar }: Props) {
   const c = useTemaColores();
   const { t } = useTranslation();
-  const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCerrar}>
       <View style={styles.overlay}>
-        <View style={[styles.card, { backgroundColor: c.bgCard }]}>
-          {/* Botón X superior de cierre */}
-          <TouchableOpacity style={[styles.botonCerrarX, { backgroundColor: c.bgInput }]} onPress={onCerrar} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="close" size={20} color={c.textMuted} />
-          </TouchableOpacity>
-
-          <View style={[styles.iconoWrap, { backgroundColor: c.primaryBg }]}>
-            <Ionicons name="checkmark-circle" size={40} color={primaryAccent} />
+        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+          {/* Logo Circular Superior */}
+          <View
+            style={[
+              styles.logoCircle,
+              {
+                backgroundColor: "#FFFFFF",
+                borderColor: c.oscuro ? "#334155" : "#F1F5F9",
+              },
+            ]}
+          >
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={styles.logoImg}
+              resizeMode="contain"
+            />
           </View>
 
-          <Text style={[styles.titulo, { color: c.textPrimary }]}>{t("reserva.confirmacion.reservaRegistradaTitulo")}</Text>
-
-          <Text style={[styles.descripcion, { color: c.textSecondary }]}>
-            {t("reserva.confirmacion.reservaRegistradaDescripcion")}
+          {/* Título */}
+          <Text style={[styles.titulo, { color: c.textPrimary }]}>
+            {t("reserva.confirmacion.reservaRegistradaTitulo", { defaultValue: "Reserva Registrada" })}
           </Text>
 
-          <Text style={[styles.linkTexto, { color: primaryAccent }]}>{t("reserva.confirmacion.redirigidoWompi")}</Text>
-          <Text style={[styles.subTexto, { color: c.textMuted }]}>{t("reserva.confirmacion.confirmacionCuandoExitoso")}</Text>
+          {/* Descripción */}
+          <Text style={[styles.descripcion, { color: c.textSecondary }]}>
+            {t("reserva.confirmacion.reservaRegistradaDescripcion", {
+              defaultValue:
+                "Tu reserva quedó guardada como pendiente. Para confirmarla, completa el pago digital seguro con Wompi (Pruebas).",
+            })}
+          </Text>
 
-          <TouchableOpacity style={styles.botonWompiWrap} onPress={onPagarWompi} activeOpacity={0.85}>
+          {/* Botón Principal: Pagar con Wompi */}
+          <TouchableOpacity style={styles.botonWompiWrap} onPress={onPagarWompi} activeOpacity={0.88}>
             <LinearGradient
               colors={GRADIENTES.boton.colors}
               start={GRADIENTES.boton.start}
               end={GRADIENTES.boton.end}
               style={styles.botonWompi}
             >
-              <Ionicons name="card-outline" size={16} color="#fff" />
-              <Text style={styles.botonWompiTexto}>{t("reserva.confirmacion.pagarConWompi")}</Text>
+              <Ionicons name="card-outline" size={17} color="#fff" />
+              <Text style={styles.botonWompiTexto}>
+                {t("reserva.confirmacion.pagarConWompi", { defaultValue: "Pagar con Wompi" })}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* Botón Cancelar al pie con borde sutil y mismo tamaño */}
+          {/* Botón Secundario: Cancelar */}
           <TouchableOpacity
-            style={[styles.botonCancelar, { borderColor: c.border, backgroundColor: c.bgInput }]}
+            style={[styles.botonCancelar, { borderColor: c.border, backgroundColor: "transparent" }]}
             onPress={onCerrar}
             activeOpacity={0.8}
           >
             <Text style={[styles.botonCancelarTexto, { color: c.textSecondary }]}>
-              {t("comun.cancelar", "Cancelar")}
+              {t("comun.cancelar", { defaultValue: "Cancelar" })}
             </Text>
           </TouchableOpacity>
         </View>
@@ -81,58 +95,52 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 340,
     borderRadius: 24,
+    borderWidth: 1,
     paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: 32,
     paddingBottom: 24,
     alignItems: "center",
     position: "relative",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 20,
+    elevation: 8,
   },
-  botonCerrarX: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-  },
-  iconoWrap: {
+  logoCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  logoImg: {
+    width: 48,
+    height: 48,
   },
   titulo: {
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: "800",
     marginBottom: 10,
     textAlign: "center",
   },
   descripcion: {
-    fontSize: 13,
+    fontSize: 13.5,
     textAlign: "center",
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  linkTexto: {
-    fontSize: 12.5,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  subTexto: {
-    fontSize: 11.5,
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 16,
+    lineHeight: 19,
+    marginBottom: 22,
+    paddingHorizontal: 6,
   },
   botonWompiWrap: {
     width: "100%",
-    borderRadius: 14,
+    borderRadius: 12,
     ...SOMBRA_BOTON_GRADIENTE,
   },
   botonWompi: {
@@ -140,25 +148,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    borderRadius: 14,
-    paddingVertical: 15,
+    borderRadius: 12,
+    paddingVertical: 14,
   },
   botonWompiTexto: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: "800",
     color: "#fff",
   },
   botonCancelar: {
     width: "100%",
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 10,
   },
   botonCancelarTexto: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: "700",
   },
 });
