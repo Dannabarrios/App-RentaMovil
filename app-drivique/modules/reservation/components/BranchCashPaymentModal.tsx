@@ -136,9 +136,8 @@ export function BranchCashPaymentModal({
               end={GRADIENTES.boton.end}
               style={styles.botonPrimario}
             >
-              <Ionicons name="card-outline" size={17} color="#FFFFFF" style={{ marginRight: 8 }} />
               <Text style={styles.botonPrimarioTexto}>
-                {botonTexto || t("reserva.confirmacion.confirmarYVerMisReservas", { defaultValue: "Confirmar y Ver Mis Reservas" })}
+                {botonTexto || t("reserva.confirmacion.entendidoIrAMisReservas", { defaultValue: "Ir a Mis Reservas" })}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -155,7 +154,6 @@ export function BranchCashPaymentModal({
             onPress={handleVolverInicio}
             activeOpacity={0.8}
           >
-            <Ionicons name="home-outline" size={16} color={c.textPrimary} style={{ marginRight: 6 }} />
             <Text style={[styles.botonSecundarioTexto, { color: c.textPrimary }]}>
               {t("reserva.confirmacion.volverAlInicio", { defaultValue: "Volver al Inicio" })}
             </Text>
