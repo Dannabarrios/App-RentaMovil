@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   aplicarBtn: { justifyContent: "center", paddingHorizontal: 16, borderRadius: 10 },
   aplicarBtnText: { color: "#fff", fontSize: 11, fontWeight: "700" },
   verCuponesBtn: { marginTop: 10, alignItems: "center" },
-  verCuponesText: { fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
+  verCuponesText: { fontSize: 12, fontWeight: "600", letterSpacing: 0.3 },
   
   errorAlertBanner: {
     flexDirection: "row",
