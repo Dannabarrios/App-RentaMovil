@@ -73,15 +73,48 @@ export default function CouponSection({ vehiculo }: Props) {
   
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
 
-  const getVehicleImagesByCategory = (category: string) => {
-    const matching = VEHICULOS_MOCK.filter(
-      (v) => v.categoria.toLowerCase() === (category || "").toLowerCase()
-    );
-    const others = VEHICULOS_MOCK.filter(
-      (v) => v.categoria.toLowerCase() !== (category || "").toLowerCase()
-    );
-    const combined = [...matching, ...others];
-    return combined.slice(0, 3).map((v) => v.imagen || (v.imagenes && v.imagenes[0]) || "");
+  const getCouponVehicleImages = (cpx: any): string[] => {
+    const vehId = cpx.reglas?.vehiculoId;
+    if (vehId) {
+      const specificCar = VEHICULOS_MOCK.find((v) => v.id === vehId);
+      if (specificCar) {
+        const carImgs = (specificCar.imagenes || []).filter(Boolean);
+        if (carImgs.length >= 3) return carImgs.slice(0, 3);
+        if (specificCar.imagen && !carImgs.includes(specificCar.imagen)) {
+          carImgs.unshift(specificCar.imagen);
+        }
+        if (carImgs.length >= 3) return carImgs.slice(0, 3);
+        // Completar con vehículos de la misma categoría
+        const catCars = VEHICULOS_MOCK.filter((v) => v.categoria === specificCar.categoria && v.id !== specificCar.id);
+        for (const v of catCars) {
+          const img = (v.imagenes && v.imagenes[0]) || v.imagen;
+          if (img && !carImgs.includes(img)) carImgs.push(img);
+          if (carImgs.length >= 3) break;
+        }
+        return carImgs.slice(0, 3);
+      }
+    }
+
+    const cat = cpx.reglas?.categoriasValidas?.[0];
+    const imgs: string[] = [];
+
+    if (cat && cat.toLowerCase() !== "todos") {
+      const matchingCars = VEHICULOS_MOCK.filter((v) => v.categoria.toLowerCase() === cat.toLowerCase());
+      for (const v of matchingCars) {
+        const img = (v.imagenes && v.imagenes[0]) || v.imagen;
+        if (img && !imgs.includes(img)) imgs.push(img);
+        if (imgs.length >= 3) break;
+      }
+    }
+
+    // Completar hasta 3 con vehículos de la flota
+    for (const v of VEHICULOS_MOCK) {
+      const img = (v.imagenes && v.imagenes[0]) || v.imagen;
+      if (img && !imgs.includes(img)) imgs.push(img);
+      if (imgs.length >= 3) break;
+    }
+
+    return imgs.slice(0, 3);
   };
 
   const formatDateShort = (isoString?: string) => {
@@ -418,11 +451,7 @@ export default function CouponSection({ vehiculo }: Props) {
                 
                 {cuponesDisponibles.map((cpx) => {
                   const esActivo = cuponAplicado?.codigo === cpx.codigo;
-                  const vehId = cpx.reglas?.vehiculoId;
-                  const specificCar = vehId ? VEHICULOS_MOCK.find((v) => v.id === vehId) : null;
-                  const carImages = specificCar 
-                    ? [specificCar.imagen || (specificCar.imagenes && specificCar.imagenes[0]) || ""].filter(Boolean)
-                    : getVehicleImagesByCategory(cpx.reglas?.categoriasValidas?.[0] || "");
+                  const carImages = getCouponVehicleImages(cpx);
 
                   let discountLabel = "";
                   if (cpx.descuentoPorcentaje) {
