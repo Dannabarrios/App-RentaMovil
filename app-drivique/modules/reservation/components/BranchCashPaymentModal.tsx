@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
@@ -44,116 +44,118 @@ export function BranchCashPaymentModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleIrReservas}>
       <View style={styles.overlay}>
         <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-          {/* Icono de Éxito / Pago en Efectivo */}
-          <View style={[styles.iconoWrap, { backgroundColor: c.primaryBg }]}>
-            <LinearGradient
-              colors={GRADIENTES.boton.colors}
-              start={GRADIENTES.boton.start}
-              end={GRADIENTES.boton.end}
-              style={styles.iconoGradient}
-            >
-              <Ionicons name="checkmark-circle" size={32} color="#FFFFFF" />
-            </LinearGradient>
+          {/* Logo Circular Superior con Sombra */}
+          <View
+            style={[
+              styles.logoCircle,
+              {
+                backgroundColor: "#FFFFFF",
+                borderColor: c.oscuro ? "#334155" : "#F1F5F9",
+              },
+            ]}
+          >
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={styles.logoImg}
+              resizeMode="contain"
+            />
           </View>
 
+          {/* Título */}
           <Text style={[styles.titulo, { color: c.textPrimary }]}>
-            {t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "¡Reserva registrada!" })}
+            {t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "Reserva Registrada" })}
           </Text>
 
+          {/* Mensaje descriptivo */}
           <Text style={[styles.descripcion, { color: c.textSecondary }]}>
             {t("reserva.confirmacion.efectivoConfirmadaSub", {
-              defaultValue: "Tu reserva ha sido creada exitosamente. Realiza el pago en efectivo en la sucursal seleccionada.",
+              defaultValue: nombreSucursal
+                ? `Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en el punto autorizado ${nombreSucursal}.`
+                : "Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en la sucursal seleccionada.",
+              sucursal: nombreSucursal,
             })}
           </Text>
 
-          {/* Caja de Detalles de Pago en Sucursal */}
-          <View style={[styles.caja, { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.border }]}>
-            <Text style={[styles.tituloSeccion, { color: primaryAccent }]}>
-              {t("reserva.confirmacion.pagoEfectivoTitulo", { defaultValue: "Pago en efectivo: retiro en sucursal" })}
-            </Text>
-
-            {/* Referencia de Reserva */}
+          {/* Caja de Referencia y Total */}
+          <View style={[styles.cajaReferencia, { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.border }]}>
             <View style={styles.filaInfo}>
               <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
-                {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia" })}:
+                {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia de reserva" })}:
               </Text>
-              <Text style={[styles.valor, styles.referenciaValor, { color: primaryAccent }]}>{referencia}</Text>
+              <Text style={[styles.valorRef, { color: primaryAccent }]}>{referencia}</Text>
             </View>
 
-            {/* Sucursal */}
-            <View style={styles.filaInfo}>
-              <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
-                {t("reserva.confirmacion.sucursal", { defaultValue: "Sucursal" })}:
-              </Text>
-              <Text style={[styles.valor, { color: c.textPrimary }]}>{nombreSucursal || t("reserva.confirmacion.sinDefinir")}</Text>
-            </View>
+            {!!nombreSucursal && (
+              <View style={styles.filaInfo}>
+                <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
+                  {t("reserva.confirmacion.sucursal", { defaultValue: "Sucursal" })}:
+                </Text>
+                <Text style={[styles.valor, { color: c.textPrimary }]} numberOfLines={1}>
+                  {nombreSucursal}
+                </Text>
+              </View>
+            )}
 
-            {/* Ciudad */}
-            <View style={styles.filaInfo}>
-              <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
-                {t("reserva.confirmacion.ciudad", { defaultValue: "Ciudad" })}:
-              </Text>
-              <Text style={[styles.valor, { color: c.textPrimary }]}>{ciudad || t("reserva.confirmacion.sinDefinir")}</Text>
-            </View>
-
-            {/* Dirección */}
-            <View style={styles.filaInfo}>
-              <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
-                {t("reserva.confirmacion.direccion", { defaultValue: "Dirección" })}:
-              </Text>
-              <Text style={[styles.valor, { color: c.textPrimary }]} numberOfLines={2}>
-                {direccion || t("reserva.confirmacion.sinDefinir")}
-              </Text>
-            </View>
-
-            {/* Total */}
             <View style={[styles.divisor, { backgroundColor: c.border }]} />
 
             <View style={styles.filaInfo}>
-              <Text style={[styles.etiqueta, { color: c.textSecondary }]}>
+              <Text style={[styles.etiquetaTotal, { color: c.textSecondary }]}>
                 {t("reserva.confirmacion.totalAPagar", { defaultValue: "TOTAL A PAGAR" })}:
               </Text>
-              <Text style={[styles.totalValor, { color: primaryAccent }]}>{fmt(total)}</Text>
+              <Text style={[styles.valorTotal, { color: primaryAccent }]}>{fmt(total)}</Text>
             </View>
-
-            <Text style={[styles.nota, { color: c.textMuted }]}>
-              {t("reserva.confirmacion.notaTotalPagar", { defaultValue: "*Incluye impuestos y cargos administrativos" })}
-            </Text>
           </View>
 
-          {/* Banner informativo de 72 horas para cancelación automática */}
-          <View style={[styles.bannerAlerta72h, { backgroundColor: c.oscuro ? "#1E293B" : "#EFF6FF", borderColor: c.oscuro ? "#3B82F6" : "#BFDBFE" }]}>
-            <Ionicons name="time-outline" size={18} color={primaryAccent} style={{ marginTop: 2 }} />
-            <Text style={[styles.textoAlerta72h, { color: c.textPrimary }]}>
+          {/* Tarjeta Amarilla: PLAZO PARA PAGAR */}
+          <View
+            style={[
+              styles.plazoCard,
+              {
+                backgroundColor: c.oscuro ? "#261C08" : "#FEFCE8",
+                borderColor: c.oscuro ? "#785C15" : "#FDE047",
+              },
+            ]}
+          >
+            <Text style={[styles.plazoTitulo, { color: c.oscuro ? "#FCD34D" : "#854D0E" }]}>
+              {t("reserva.confirmacion.plazoParaPagarTitulo", { defaultValue: "PLAZO PARA PAGAR" })}
+            </Text>
+            <Text style={[styles.plazoTexto, { color: c.oscuro ? "#FDE68A" : "#713F12" }]}>
               {t("reserva.confirmacion.efectivoConfirmadaMensaje", {
-                defaultValue: "Tienes 72 horas para acercarte a la sucursal y pagar en efectivo. Si no se realiza el pago dentro de este plazo, la reserva pasará a estado Cancelada automáticamente.",
+                defaultValue:
+                  "Tienes 72 horas desde ahora para acercarte a la sucursal y pagar. Si no pagas dentro de este plazo, la reserva se cancelará automáticamente.",
                 horas: 72,
               })}
             </Text>
           </View>
 
-          {/* Botón 1: Ir a Mis Reservas */}
-          <TouchableOpacity style={styles.botonPrimarioWrap} onPress={handleIrReservas} activeOpacity={0.85}>
+          {/* Botón Principal con Gradiente Corporativo */}
+          <TouchableOpacity style={styles.botonPrimarioWrap} onPress={handleIrReservas} activeOpacity={0.88}>
             <LinearGradient
               colors={GRADIENTES.boton.colors}
               start={GRADIENTES.boton.start}
               end={GRADIENTES.boton.end}
               style={styles.botonPrimario}
             >
-              <Ionicons name="calendar-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Ionicons name="card-outline" size={17} color="#FFFFFF" style={{ marginRight: 8 }} />
               <Text style={styles.botonPrimarioTexto}>
-                {botonTexto || t("reserva.confirmacion.entendidoIrAMisReservas", { defaultValue: "Ir a Mis Reservas" })}
+                {botonTexto || t("reserva.confirmacion.confirmarYVerMisReservas", { defaultValue: "Confirmar y Ver Mis Reservas" })}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* Botón 2: Volver al Inicio */}
+          {/* Botón Secundario: Volver al Inicio */}
           <TouchableOpacity
-            style={[styles.botonSecundario, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+            style={[
+              styles.botonSecundario,
+              {
+                borderColor: c.border,
+                backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF",
+              },
+            ]}
             onPress={handleVolverInicio}
             activeOpacity={0.8}
           >
-            <Ionicons name="home-outline" size={17} color={c.textPrimary} style={{ marginRight: 6 }} />
+            <Ionicons name="home-outline" size={16} color={c.textPrimary} style={{ marginRight: 6 }} />
             <Text style={[styles.botonSecundarioTexto, { color: c.textPrimary }]}>
               {t("reserva.confirmacion.volverAlInicio", { defaultValue: "Volver al Inicio" })}
             </Text>
@@ -167,38 +169,46 @@ export function BranchCashPaymentModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(15,23,42,0.65)",
+    backgroundColor: "rgba(15, 23, 42, 0.65)",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
   },
   card: {
     width: "100%",
-    maxWidth: 355,
+    maxWidth: 345,
     borderRadius: 24,
     borderWidth: 1,
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 20,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 8,
   },
-  iconoWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  logoCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 3,
   },
-  iconoGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
+  logoImg: {
+    width: 48,
+    height: 30,
   },
   titulo: {
-    fontSize: 18,
+    fontSize: 21,
     fontWeight: "800",
     marginBottom: 6,
     textAlign: "center",
@@ -207,77 +217,69 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     textAlign: "center",
     lineHeight: 17,
-    marginBottom: 14,
-    paddingHorizontal: 6,
-  },
-  caja: {
-    width: "100%",
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
     marginBottom: 12,
+    paddingHorizontal: 4,
   },
-  tituloSeccion: {
-    fontSize: 12.5,
-    fontWeight: "800",
-    marginBottom: 10,
-    textAlign: "center",
+  cajaReferencia: {
+    width: "100%",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
   },
   filaInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingVertical: 3.5,
-    gap: 8,
+    alignItems: "center",
+    paddingVertical: 2.5,
   },
   etiqueta: {
     fontSize: 11.5,
-    fontWeight: "700",
-    flexShrink: 0,
+    fontWeight: "600",
+  },
+  etiquetaTotal: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   valor: {
     fontSize: 11.5,
     fontWeight: "600",
-    flex: 1,
+    maxWidth: "55%",
     textAlign: "right",
   },
-  referenciaValor: {
-    fontWeight: "800",
+  valorRef: {
     fontSize: 12,
-    letterSpacing: 0.3,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+  },
+  valorTotal: {
+    fontSize: 14.5,
+    fontWeight: "800",
   },
   divisor: {
     height: 1,
-    marginVertical: 8,
+    marginVertical: 6,
   },
-  totalValor: {
-    fontSize: 15,
-    fontWeight: "800",
-    flex: 1,
-    textAlign: "right",
-  },
-  nota: {
-    fontSize: 9.5,
-    fontStyle: "italic",
-    marginTop: 6,
-    textAlign: "center",
-  },
-  bannerAlerta72h: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
+  plazoCard: {
     width: "100%",
+    borderRadius: 14,
+    borderWidth: 1.2,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
   },
-  textoAlerta72h: {
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: "600",
-    flex: 1,
+  plazoTitulo: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+    marginBottom: 4,
+  },
+  plazoTexto: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontWeight: "500",
   },
   botonPrimarioWrap: {
     width: "100%",
@@ -290,6 +292,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 14,
     paddingVertical: 13,
+    paddingHorizontal: 16,
   },
   botonPrimarioTexto: {
     fontSize: 14,
@@ -299,15 +302,15 @@ const styles = StyleSheet.create({
   botonSecundario: {
     width: "100%",
     flexDirection: "row",
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: 8,
   },
   botonSecundarioTexto: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: "700",
   },
 });
