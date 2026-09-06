@@ -154,7 +154,7 @@ export default function TarjetaTerminosCondiciones() {
       <Modal visible={modalTerminos} transparent animationType="slide" onRequestClose={() => setModalTerminos(false)} statusBarTranslucent>
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setModalTerminos(false)} />
-          <View style={[styles.modalContenedor, { backgroundColor: c.bgCard }]} onStartShouldSetResponder={() => true}>
+          <View style={[styles.modalContenedor, { backgroundColor: c.bgCard }]}>
             <View style={[styles.modalHandle, { backgroundColor: c.border }]} />
             <View style={[styles.modalEncabezado, { borderBottomColor: c.border }]}>
               <Text style={[styles.modalTitulo, { color: c.textPrimary }]}>
@@ -170,9 +170,10 @@ export default function TarjetaTerminosCondiciones() {
 
             <ScrollView
               style={styles.modalScroll}
-              contentContainerStyle={{ paddingBottom: 24 }}
+              contentContainerStyle={{ paddingBottom: 28, flexGrow: 1 }}
               showsVerticalScrollIndicator={true}
               nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
               bounces={true}
               overScrollMode="always"
               onScroll={handleScrollTerminos}

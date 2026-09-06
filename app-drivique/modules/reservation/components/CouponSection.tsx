@@ -311,7 +311,6 @@ export default function CouponSection({ vehiculo }: Props) {
                 { backgroundColor: c.bg }, 
                 selectedConditionsCoupon ? { paddingTop: 0, height: "85%" } : { height: "80%" }
               ]}
-              onStartShouldSetResponder={() => true}
             >
               {/* Header del Modal */}
               {selectedConditionsCoupon ? (
@@ -342,9 +341,10 @@ export default function CouponSection({ vehiculo }: Props) {
               {selectedConditionsCoupon ? (
                 <ScrollView 
                   style={[styles.modalScrollConditions, { backgroundColor: c.oscuro ? c.bg : "#F3F4F6" }]} 
-                  contentContainerStyle={styles.modalScrollConditionsContent}
+                  contentContainerStyle={[styles.modalScrollConditionsContent, { flexGrow: 1 }]}
                   showsVerticalScrollIndicator={true}
                   nestedScrollEnabled={true}
+                  keyboardShouldPersistTaps="handled"
                   bounces={true}
                   overScrollMode="always"
                 >
