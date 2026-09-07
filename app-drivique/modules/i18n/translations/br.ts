@@ -506,7 +506,7 @@ export default {
     contratoPendienteFirmaBadge: 'Bloqueado até a assinatura',
     contratoDesbloqueadoTitulo: 'Contrato de locação',
     contratoDesbloqueadoTexto: 'Seu contrato digital está assinado e verificado. Você pode baixá-lo em formato PDF.',
-    claveContrato: 'Chave',
+    claveContrato: 'Digite sua chave',
     claveContratoPlaceholder: 'Digite sua chave',
     verContrato: 'Ver contrato',
     verDetalles: 'Ver detalhes',

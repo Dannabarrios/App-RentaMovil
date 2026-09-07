@@ -506,7 +506,7 @@ export default {
     contratoPendienteFirmaBadge: 'Verrouillé jusqu\'à la signature',
     contratoDesbloqueadoTitulo: 'Contrat de location',
     contratoDesbloqueadoTexto: 'Votre contrat numérique est signé et vérifié. Vous pouvez le télécharger au format PDF.',
-    claveContrato: 'Clé',
+    claveContrato: 'Entrez votre clé',
     claveContratoPlaceholder: 'Entrez votre clé',
     verContrato: 'Voir le contrat',
     verDetalles: 'Voir les détails',

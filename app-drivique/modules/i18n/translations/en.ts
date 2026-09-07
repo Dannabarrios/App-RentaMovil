@@ -506,7 +506,7 @@ export default {
     contratoPendienteFirmaBadge: 'Locked until signed',
     contratoDesbloqueadoTitulo: 'Rental contract',
     contratoDesbloqueadoTexto: 'Your digital contract is signed and verified. You can download it as PDF.',
-    claveContrato: 'Key',
+    claveContrato: 'Enter your key',
     claveContratoPlaceholder: 'Enter your key',
     verContrato: 'View contract',
     verDetalles: 'View details',
