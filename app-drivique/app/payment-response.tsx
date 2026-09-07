@@ -581,23 +581,7 @@ export default function PagoRespuestaScreen() {
 
       {reserva.metodoPago === "wompi" && !esPendienteEfectivo && reserva.estado === "PENDIENTE" && (
         <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, marginTop: 4, marginBottom: 16 }]}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <View
-              style={{
-                backgroundColor: "rgba(37, 99, 235, 0.12)",
-                paddingHorizontal: 8,
-                paddingVertical: 3.5,
-                borderRadius: 6,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <Ionicons name="card-outline" size={13} color="#2563eb" />
-              <Text style={{ fontSize: 11, fontWeight: "800", color: "#2563eb" }}>Wompi Checkout</Text>
-            </View>
-          </View>
-          <Text style={[styles.tituloEfectivo, { color: c.textPrimary, fontSize: 17, marginBottom: 6 }]}>
+          <Text style={[styles.tituloEfectivo, { color: c.textPrimary, fontSize: 18, marginBottom: 6 }]}>
             {t("reserva.confirmacion.pagoPendienteTitulo", { defaultValue: "Pago Digital Pendiente" })}
           </Text>
           <Text style={[styles.descripcionEfectivo, { color: c.textSecondary, marginBottom: 14 }]}>
@@ -624,9 +608,9 @@ export default function PagoRespuestaScreen() {
               colors={GRADIENTES.boton.colors}
               start={GRADIENTES.boton.start}
               end={GRADIENTES.boton.end}
-              style={styles.btn}
+              style={[styles.btn, { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 }]}
             >
-              <Ionicons name="card-outline" size={17} color="#fff" />
+              <Ionicons name="card-outline" size={18} color="#fff" />
               <Text style={styles.btnTexto}>
                 {t("reserva.confirmacion.pagarConWompi", { defaultValue: "Pagar con Wompi" })}
               </Text>
