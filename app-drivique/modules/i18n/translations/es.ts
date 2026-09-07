@@ -1125,8 +1125,11 @@ export default {
     documentos: {
       seccionLabel: 'Verificación Documental Obligatoria',
       subtitulo: 'Sube los documentos requeridos para verificar tu identidad y habilitar la reserva del vehículo.',
+      documentoGenerico: 'Documento de Identidad',
       cedulaEtiqueta: 'Cédula de Ciudadanía',
       cedulaAyuda: 'Sube tu cédula de ciudadanía en un solo archivo PDF (ambos lados incluidos, máx 5MB)',
+      pasaporteAyuda: 'Sube tu pasaporte vigente en formato PDF (página de datos y foto, máx 5MB)',
+      documentoGenericoAyuda: 'Sube tu {{doc}} en un solo archivo PDF (ambos lados incluidos si aplica, máx 5MB)',
       licenciaEtiqueta: 'Licencia de Conducción',
       licenciaAyuda: 'Sube tu licencia de conducción vigente y legible en formato PDF (máx 5MB)',
       nota: 'Tus documentos se usan exclusivamente para la elaboración del contrato digital de alquiler y la verificación de identidad.',

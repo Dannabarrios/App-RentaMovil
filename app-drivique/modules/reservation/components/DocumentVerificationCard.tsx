@@ -22,12 +22,26 @@ export default function TarjetaVerificacionDocumental({ tipoDocumento, docsVerif
   const c = useTemaColores();
   const { t } = useTranslation();
 
-  const etiquetaDocumentoId = tipoDocumento
+  const nombreDocumento = tipoDocumento
     ? t(
         `reserva.datosPersonales.tiposDocumento.${tipoDocumento === "Doc. Extranjero" ? "DocExtranjero" : tipoDocumento}`,
-        { defaultValue: t("reserva.documentos.cedulaEtiqueta") }
+        { defaultValue: tipoDocumento }
       )
-    : t("reserva.documentos.cedulaEtiqueta");
+    : t("reserva.documentos.documentoGenerico", { defaultValue: "Documento de Identidad" });
+
+  const etiquetaDocumentoId = nombreDocumento;
+
+  const ayudaDocumento = React.useMemo(() => {
+    if (tipoDocumento === "Pasaporte") {
+      return t("reserva.documentos.pasaporteAyuda", {
+        defaultValue: "Sube tu pasaporte vigente en formato PDF (página de datos y foto, máx 5MB)",
+      });
+    }
+    return t("reserva.documentos.documentoGenericoAyuda", {
+      doc: nombreDocumento,
+      defaultValue: `Sube tu ${nombreDocumento.toLowerCase()} en un solo archivo PDF (ambos lados incluidos si aplica, máx 5MB)`,
+    });
+  }, [tipoDocumento, nombreDocumento, t]);
 
   const [errorCedula, setErrorCedula] = useState("");
   const [errorLicencia, setErrorLicencia] = useState("");
@@ -113,7 +127,7 @@ export default function TarjetaVerificacionDocumental({ tipoDocumento, docsVerif
       <View style={styles.columnaSubtarjetas}>
         <CampoSubidaDocumento
           etiqueta={etiquetaDocumentoId}
-          ayuda={t("reserva.documentos.cedulaAyuda")}
+          ayuda={ayudaDocumento}
           archivo={documentos.cedulaFrente}
           cargando={cargandoCedula}
           error={errorCedula}

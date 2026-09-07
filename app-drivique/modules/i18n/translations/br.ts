@@ -1085,8 +1085,11 @@ export default {
     },
     documentos: {
       seccionLabel: 'Verificação Documental Obrigatória',
+      documentoGenerico: 'Documento de Identidade',
       cedulaEtiqueta: 'Cédula de Cidadania',
       cedulaAyuda: 'Envie seu documento de identidade em um único arquivo PDF (ambos os lados incluídos, máx. 5MB)',
+      pasaporteAyuda: 'Envie seu passaporte válido em formato PDF (página de dados e foto, máx. 5MB)',
+      documentoGenericoAyuda: 'Envie seu {{doc}} em um único arquivo PDF (ambos os lados incluídos se aplicável, máx. 5MB)',
       licenciaEtiqueta: 'Carteira de Habilitação',
       licenciaAyuda: 'Envie sua carteira de habilitação válida e legível em formato PDF (máx. 5MB)',
       nota: 'A verificação dos seus documentos será feita manualmente pela equipe da filial no momento da entrega do carro. Certifique-se de que as fotos/digitalizações dentro do PDF estejam nítidas.',

@@ -1085,8 +1085,11 @@ export default {
     },
     documentos: {
       seccionLabel: 'Vérification documentaire obligatoire',
+      documentoGenerico: "Pièce d'identité",
       cedulaEtiqueta: "Carte d'identité nationale",
       cedulaAyuda: "Téléchargez votre pièce d'identité en un seul fichier PDF (recto-verso inclus, max 5 Mo)",
+      pasaporteAyuda: "Téléchargez votre passeport valide au format PDF (page de données et photo, max 5 Mo)",
+      documentoGenericoAyuda: "Téléchargez votre {{doc}} en un seul fichier PDF (recto-verso inclus si applicable, max 5 Mo)",
       licenciaEtiqueta: 'Permis de conduire',
       licenciaAyuda: 'Téléchargez votre permis de conduire valide et lisible au format PDF (max 5 Mo)',
       nota: "La vérification de vos documents sera effectuée manuellement par le personnel de l'agence lors de la remise du véhicule. Assurez-vous que les photos/scans dans le PDF sont nets.",

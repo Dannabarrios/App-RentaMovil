@@ -1087,8 +1087,11 @@ export default {
     },
     documentos: {
       seccionLabel: 'Mandatory Document Verification',
+      documentoGenerico: 'Identity Document',
       cedulaEtiqueta: 'National ID',
       cedulaAyuda: 'Upload your ID document as a single PDF file (both sides included, max 5MB)',
+      pasaporteAyuda: 'Upload your valid passport as a PDF file (data and photo page, max 5MB)',
+      documentoGenericoAyuda: 'Upload your {{doc}} as a single PDF file (both sides included if applicable, max 5MB)',
       licenciaEtiqueta: "Driver's License",
       licenciaAyuda: "Upload your current, legible driver's license as a PDF (max 5MB)",
       nota: "Your documents will be verified manually by branch staff when the car is handed over. Make sure the photos/scans inside the PDF are clear.",
