@@ -78,7 +78,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     if (!datosPersonales.nacionalidad) return OPCIONES_TIPO_DOCUMENTO;
     if (datosPersonales.nacionalidad === "Colombia") {
       return OPCIONES_TIPO_DOCUMENTO.filter(
-        (o) => o.id === "CC" || o.id === "CE" || o.id === "Pasaporte" || o.id === "TI"
+        (o) => o.id === "CC" || o.id === "CE" || o.id === "Pasaporte" || o.id === "PPT" || o.id === "PEP"
       );
     }
     return OPCIONES_TIPO_DOCUMENTO.filter(
@@ -447,7 +447,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
                 if (id === "Colombia") {
                   if (
                     datosPersonales.tipoDocumento &&
-                    !["CC", "CE", "Pasaporte", "TI"].includes(datosPersonales.tipoDocumento)
+                    !["CC", "CE", "Pasaporte", "PPT", "PEP"].includes(datosPersonales.tipoDocumento)
                   ) {
                     actualizarDatosPersonales({ tipoDocumento: null });
                     actualizarUsuarioGlobal({ tipoDocumento: "" });

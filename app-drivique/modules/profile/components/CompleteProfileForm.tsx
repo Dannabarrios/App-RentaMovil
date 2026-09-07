@@ -46,7 +46,7 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
   const tiposDocumentoFiltrados = TIPOS_DOCUMENTO.filter((tipo) => {
     if (!form.nacionalidad) return true;
     if (form.nacionalidad === "Colombia") {
-      return tipo === "CC" || tipo === "CE" || tipo === "Pasaporte" || tipo === "TI";
+      return tipo === "CC" || tipo === "CE" || tipo === "Pasaporte" || tipo === "PPT" || tipo === "PEP";
     }
     return tipo === "Pasaporte" || tipo === "DNI" || tipo === "CE" || tipo === "PPT" || tipo === "PEP";
   });
@@ -130,7 +130,7 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
               onPress={() => {
                 actualizarCampo("nacionalidad", valor);
                 if (valor === "Colombia") {
-                  if (form.tipoDocumento && !["CC", "CE", "Pasaporte", "TI"].includes(form.tipoDocumento)) {
+                  if (form.tipoDocumento && !["CC", "CE", "Pasaporte", "PPT", "PEP"].includes(form.tipoDocumento)) {
                     actualizarCampo("tipoDocumento", "");
                   }
                 } else {
