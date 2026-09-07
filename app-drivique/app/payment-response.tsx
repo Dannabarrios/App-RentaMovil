@@ -635,14 +635,72 @@ export default function PagoRespuestaScreen() {
         </View>
       )}
 
-      {contratoActual && !claveDesbloqueada ? (
+      {/* Tarjeta de Contrato de Alquiler */}
+      {!contratoActual ? (
+        /* Estado 1: Contrato aún no firmado (Bloqueado hasta la firma) */
         <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, alignItems: "center" }]}>
-          <Ionicons name="lock-closed-outline" size={32} color={c.textMuted} style={{ marginBottom: 10 }} />
+          <View
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: c.oscuro ? "rgba(148, 163, 184, 0.15)" : "#F1F5F9",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 10,
+            }}
+          >
+            <Ionicons name="lock-closed" size={24} color={c.textMuted} />
+          </View>
           <Text style={[styles.tituloCandado, { color: c.textPrimary }]}>
-            {t("misReservas.contratoBloqueadoTitulo")}
+            {t("misReservas.contratoBloqueadoTitulo", { defaultValue: "Contrato protegido" })}
           </Text>
           <Text style={[styles.textoCandado, { color: c.textSecondary }]}>
-            {t("misReservas.contratoBloqueadoTexto")}
+            {t("misReservas.contratoPendienteFirmaTexto", {
+              defaultValue:
+                "Para desbloquear el contrato con tu clave, primero se debe confirmar el pago y completar la firma digital del contrato.",
+            })}
+          </Text>
+          <View style={{ width: "100%", marginTop: 12, opacity: 0.55 }}>
+            <PasswordInput
+              label={t("misReservas.claveContrato")}
+              placeholder={t("misReservas.claveContratoPlaceholder")}
+              value=""
+              editable={false}
+              keyboardType="number-pad"
+            />
+          </View>
+          <View style={[styles.btnWrap, { marginTop: 4, opacity: 0.5 }]}>
+            <View
+              style={[
+                styles.btn,
+                {
+                  backgroundColor: c.oscuro ? "rgba(148, 163, 184, 0.2)" : "#E2E8F0",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: 8,
+                },
+              ]}
+            >
+              <Ionicons name="lock-closed" size={16} color={c.textMuted} />
+              <Text style={[styles.btnTexto, { color: c.textMuted }]}>
+                {t("misReservas.verContrato", { defaultValue: "Ver contrato" })}
+              </Text>
+            </View>
+          </View>
+        </View>
+      ) : !claveDesbloqueada ? (
+        /* Estado 2: Contrato firmado, protegido con clave (Activo para ingresar documento) */
+        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, alignItems: "center" }]}>
+          <Ionicons name="lock-closed-outline" size={32} color={primaryAccent} style={{ marginBottom: 10 }} />
+          <Text style={[styles.tituloCandado, { color: c.textPrimary }]}>
+            {t("misReservas.contratoBloqueadoTitulo", { defaultValue: "Contrato protegido" })}
+          </Text>
+          <Text style={[styles.textoCandado, { color: c.textSecondary }]}>
+            {t("misReservas.contratoBloqueadoTexto", {
+              defaultValue: "Ingresa el número de documento con el que confirmaste esta reserva para ver el contrato.",
+            })}
           </Text>
           <View style={{ width: "100%", marginTop: 12 }}>
             <PasswordInput
@@ -668,30 +726,56 @@ export default function PagoRespuestaScreen() {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      ) : (!esPendienteEfectivo && !contratoActual) ? (
-        <TouchableOpacity
-          style={[styles.btnWrap, { marginBottom: 12 }, !contratoActual && { opacity: 0.5 }]}
-          onPress={handleDescargarPdf}
-          activeOpacity={0.85}
-          disabled={generandoPdf || !contratoActual}
-        >
-          <LinearGradient
-            colors={GRADIENTES.boton.colors}
-            start={GRADIENTES.boton.start}
-            end={GRADIENTES.boton.end}
-            style={[styles.btn, { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 }]}
+      ) : (
+        /* Estado 3: Contrato firmado y desbloqueado */
+        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, alignItems: "center" }]}>
+          <View
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: "rgba(22, 163, 74, 0.12)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 10,
+            }}
           >
-            {generandoPdf ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Ionicons name="document-text-outline" size={18} color="#FFFFFF" />
-            )}
-            <Text style={styles.btnTexto}>
-              {generandoPdf ? t("misReservas.generandoPdf") : t("misReservas.descargarContrato")}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      ) : null}
+            <Ionicons name="checkmark-circle" size={26} color="#16a34a" />
+          </View>
+          <Text style={[styles.tituloCandado, { color: c.textPrimary }]}>
+            {t("misReservas.contratoDesbloqueadoTitulo", { defaultValue: "Contrato de alquiler" })}
+          </Text>
+          <Text style={[styles.textoCandado, { color: c.textSecondary, marginBottom: 14 }]}>
+            {t("misReservas.contratoDesbloqueadoTexto", {
+              defaultValue: "Tu contrato digital está firmado y verificado. Puedes descargarlo en formato PDF.",
+            })}
+          </Text>
+          <TouchableOpacity
+            style={[styles.btnWrap, { marginBottom: 4 }]}
+            onPress={handleDescargarPdf}
+            activeOpacity={0.85}
+            disabled={generandoPdf}
+          >
+            <LinearGradient
+              colors={GRADIENTES.boton.colors}
+              start={GRADIENTES.boton.start}
+              end={GRADIENTES.boton.end}
+              style={[styles.btn, { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 }]}
+            >
+              {generandoPdf ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Ionicons name="document-text-outline" size={18} color="#FFFFFF" />
+              )}
+              <Text style={styles.btnTexto}>
+                {generandoPdf
+                  ? t("misReservas.generandoPdf", { defaultValue: "Generando PDF..." })
+                  : t("misReservas.descargarContrato", { defaultValue: "Descargar Contrato (PDF)" })}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )}
 
     </ScrollView>
       </KeyboardAvoidingView>
