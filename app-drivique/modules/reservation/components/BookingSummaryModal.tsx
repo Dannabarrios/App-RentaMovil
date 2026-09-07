@@ -136,6 +136,29 @@ export default function ResumenReservaModal({
           .join(", ")
       : t("reserva.resumen.ningunaSeleccionada", { defaultValue: "Ninguna seleccionada" });
 
+  const diasContrato = useMemo(() => {
+    const d = diasEntre(fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion);
+    return d > 0 ? d : 1;
+  }, [fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion]);
+
+  const serviciosElegidosDetalle = useMemo(() => {
+    if (!planes.serviciosSeleccionados || planes.serviciosSeleccionados.length === 0) {
+      return [];
+    }
+    return planes.serviciosSeleccionados.map((nombre) => {
+      const servObj = servicios.find((s) => s.nombre === nombre);
+      const precioDia = servObj ? servObj.precio : 0;
+      const totalCalculado = precioDia * diasContrato;
+      const nombreTraducido = t(`reserva.planes.nombreServicio.${nombre}`, { defaultValue: nombre });
+      return {
+        nombre,
+        nombreTraducido,
+        precioDia,
+        totalCalculado,
+      };
+    });
+  }, [planes.serviciosSeleccionados, servicios, diasContrato, t]);
+
   const desglose = useMemo(() => {
     const diasCalc = diasEntre(fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion);
     const dias = diasCalc > 0 ? diasCalc : 1;
@@ -365,9 +388,33 @@ export default function ResumenReservaModal({
                     </TouchableOpacity>
                   )}
                 </View>
-                <Text style={[styles.valorPrincipal, { color: c.textPrimary }]}>
-                  {desglose.servAdic > 0 ? fmt(desglose.servAdic) : "$0"}
-                </Text>
+
+                {serviciosElegidosDetalle.length > 0 ? (
+                  <View style={styles.listaServiciosExtras}>
+                    {serviciosElegidosDetalle.map((serv) => (
+                      <View key={serv.nombre} style={styles.filaServicioExtra}>
+                        <View style={styles.filaServicioExtraIzq}>
+                          <Text style={[styles.puntoVina, { color: primaryAccent }]}>•</Text>
+                          <Text style={[styles.servicioExtraNombre, { color: c.textPrimary }]}>
+                            {serv.nombreTraducido}
+                            {diasContrato > 1 ? (
+                              <Text style={[styles.servicioExtraDias, { color: c.textMuted }]}>
+                                {` (${diasContrato} ${diasContrato === 1 ? t("reserva.resumen.diaSingular", { defaultValue: "día" }) : t("reserva.resumen.diaPlural", { defaultValue: "días" })})`}
+                              </Text>
+                            ) : null}
+                          </Text>
+                        </View>
+                        <Text style={[styles.servicioExtraPrecio, { color: c.textPrimary }]}>
+                          {fmt(serv.totalCalculado)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={[styles.valorPrincipal, { color: c.textPrimary }]}>
+                    {t("reserva.resumen.ninguno", { defaultValue: "Ninguno" })}
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -421,12 +468,10 @@ export default function ResumenReservaModal({
                 </Text>
               </View>
 
-              {/* Fila 4: Servicios adicionales (si se seleccionaron en flujo 2, o dash si no) */}
+              {/* Fila 4: Servicios adicionales (consolidado en desglose de tarifa) */}
               <View style={styles.filaDesglose}>
                 <Text style={[styles.filaDesgloseLabel, { color: c.textSecondary }]}>
-                  {planes.serviciosSeleccionados.length > 0
-                    ? serviciosTexto
-                    : t("reserva.resumen.serviciosAdicionalesMayus", { defaultValue: "Servicios adicionales" })}
+                  {t("reserva.resumen.serviciosAdicionalesMayus", { defaultValue: "Servicios adicionales" })}
                 </Text>
                 <Text style={[styles.filaDesgloseValor, { color: c.textPrimary }]}>
                   {desglose.servAdic > 0 ? fmt(desglose.servAdic) : "—"}
@@ -635,6 +680,39 @@ const styles = StyleSheet.create({
   valorServicios: {
     fontSize: 12.5,
     fontWeight: "500",
+  },
+
+  listaServiciosExtras: {
+    marginTop: 4,
+    gap: 6,
+  },
+  filaServicioExtra: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  filaServicioExtraIzq: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    paddingRight: 8,
+  },
+  puntoVina: {
+    fontSize: 14,
+    marginRight: 6,
+    fontWeight: "800",
+  },
+  servicioExtraNombre: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  servicioExtraDias: {
+    fontSize: 11.5,
+    fontWeight: "500",
+  },
+  servicioExtraPrecio: {
+    fontSize: 13,
+    fontWeight: "800",
   },
 
   divisorPunteado: {
