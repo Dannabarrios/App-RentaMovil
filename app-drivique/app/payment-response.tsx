@@ -72,6 +72,7 @@ export default function PagoRespuestaScreen() {
   const [claveDesbloqueada, setClaveDesbloqueada] = useState(false);
   const [claveIngresada, setClaveIngresada] = useState("");
   const [errorClave, setErrorClave] = useState("");
+  const [mostrarFirma, setMostrarFirma] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -194,32 +195,37 @@ export default function PagoRespuestaScreen() {
     reserva.estado === "PENDIENTE_EFECTIVO" ||
     (reserva.estado === "PENDIENTE" && reserva.metodoPago === "efectivo");
 
-  // La firma de contrato se solicita únicamente si el pago ya fue aprobado/confirmado
-  // y no está pendiente de pago en efectivo.
-  const requiereFirma = !contratoFirmado && !esPendienteEfectivo && (
+  // La firma puede mostrarse como pantalla completa cuando el usuario toca la tarjeta CTA
+  const puedeFirmar = !contratoFirmado && !esPendienteEfectivo && (
     reserva.estado === "CONFIRMADA" ||
     (reserva.metodoPago === "wompi" && ["PENDIENTE_VALIDACION"].includes(reserva.estado))
   );
 
-  if (requiereFirma) {
-    const vehiculoSnap = reserva.vehiculoSnapshot as Vehiculo | undefined;
-    const datosPersonalesSnap = reserva.datosPersonalesSnapshot as DatosPersonales | undefined;
-    const datosDocumentosSnap = reserva.datosDocumentosSnapshot as DatosDocumentos | undefined;
-    const fechasLugarSnap = reserva.fechasLugarSnapshot as DatosFechasLugar | undefined;
-    const planesSnap = reserva.planesSnapshot as DatosPlanes | undefined;
+  // Pantalla completa de firma cuando el usuario la solicita
+  if (mostrarFirma && puedeFirmar) {
+    const vehiculoSnap2 = reserva.vehiculoSnapshot as Vehiculo | undefined;
+    const datosPersonalesSnap2 = reserva.datosPersonalesSnapshot as DatosPersonales | undefined;
+    const datosDocumentosSnap2 = reserva.datosDocumentosSnapshot as DatosDocumentos | undefined;
+    const fechasLugarSnap2 = reserva.fechasLugarSnapshot as DatosFechasLugar | undefined;
+    const planesSnap2 = reserva.planesSnapshot as DatosPlanes | undefined;
 
-    if (vehiculoSnap && datosPersonalesSnap && fechasLugarSnap && planesSnap) {
+    if (vehiculoSnap2 && datosPersonalesSnap2 && fechasLugarSnap2 && planesSnap2) {
       return (
         <View style={{ flex: 1, backgroundColor: c.bg }}>
-          <HeaderDetalle insets={insets} c={c} titulo={t("reserva.contrato.title")} onVolver={irAMisReservas} />
+          <HeaderDetalle
+            insets={insets}
+            c={c}
+            titulo={t("reserva.contrato.title", { defaultValue: "Contrato de Alquiler" })}
+            onVolver={() => setMostrarFirma(false)}
+          />
           <FirmaContrato
-            vehiculo={vehiculoSnap}
-            datosPersonales={datosPersonalesSnap}
+            vehiculo={vehiculoSnap2}
+            datosPersonales={datosPersonalesSnap2}
             datosDocumentos={
-              datosDocumentosSnap ?? { cedulaFrente: null, cedulaReverso: null, licenciaConduccion: null }
+              datosDocumentosSnap2 ?? { cedulaFrente: null, cedulaReverso: null, licenciaConduccion: null }
             }
-            fechasLugar={fechasLugarSnap}
-            planes={planesSnap}
+            fechasLugar={fechasLugarSnap2}
+            planes={planesSnap2}
             total={reserva.total}
             referencia={reserva.referencia}
             onFirmado={async () => {
@@ -229,6 +235,7 @@ export default function PagoRespuestaScreen() {
               setReserva(actualizada ?? null);
               setContratoActual(contratoNuevo);
               setContratoFirmado(true);
+              setMostrarFirma(false);
             }}
           />
         </View>
@@ -613,6 +620,60 @@ export default function PagoRespuestaScreen() {
               <Ionicons name="card-outline" size={18} color="#fff" />
               <Text style={styles.btnTexto}>
                 {t("reserva.confirmacion.pagarConWompi", { defaultValue: "Pagar con Wompi" })}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Tarjeta CTA: Firma tu Contrato (solo cuando el pago ya fue confirmado y no se ha firmado) */}
+      {puedeFirmar && (
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: c.oscuro ? "rgba(37, 99, 235, 0.12)" : "#EFF6FF",
+              borderColor: c.oscuro ? "rgba(96, 165, 250, 0.35)" : "#BFDBFE",
+              alignItems: "center",
+            },
+          ]}
+        >
+          <View
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 26,
+              backgroundColor: c.oscuro ? "rgba(96, 165, 250, 0.2)" : "rgba(37, 99, 235, 0.12)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Ionicons name="document-text-outline" size={26} color={primaryAccent} />
+          </View>
+          <Text style={[styles.tituloCandado, { color: c.textPrimary, marginBottom: 6 }]}>
+            {t("misReservas.firmaContratoTitulo", { defaultValue: "Firma tu Contrato" })}
+          </Text>
+          <Text style={[styles.textoCandado, { color: c.textSecondary, marginBottom: 16 }]}>
+            {t("misReservas.firmaContratoTexto", {
+              defaultValue:
+                "Tu reserva ha sido confirmada. Lee y firma el contrato de alquiler para habilitar el acceso al documento.",
+            })}
+          </Text>
+          <TouchableOpacity
+            style={styles.btnWrap}
+            onPress={() => setMostrarFirma(true)}
+            activeOpacity={0.88}
+          >
+            <LinearGradient
+              colors={GRADIENTES.boton.colors}
+              start={GRADIENTES.boton.start}
+              end={GRADIENTES.boton.end}
+              style={[styles.btn, { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 }]}
+            >
+              <Ionicons name="create-outline" size={18} color="#fff" />
+              <Text style={styles.btnTexto}>
+                {t("misReservas.firmaContratoBoton", { defaultValue: "Leer y Firmar Contrato" })}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
