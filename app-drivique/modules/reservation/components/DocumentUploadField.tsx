@@ -96,7 +96,7 @@ export default function CampoSubidaDocumento({
 
 const styles = StyleSheet.create({
   subcard: {
-    borderWidth: 1.3,
+    borderWidth: 1.5,
     borderStyle: "dashed",
     borderRadius: 14,
     padding: 16,
@@ -109,35 +109,42 @@ const styles = StyleSheet.create({
     borderColor: "#EF4444",
   },
   etiqueta: {
-    fontSize: 13.5,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
     textAlign: "center",
     marginBottom: 4,
+    letterSpacing: 0.2,
   },
   ayuda: {
-    fontSize: 11,
+    fontSize: 11.5,
     textAlign: "center",
-    lineHeight: 15,
-    marginBottom: 12,
+    lineHeight: 16,
+    marginBottom: 14,
+    maxWidth: 320,
   },
   boton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 16,
+    gap: 7,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
   botonTexto: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: "700",
   },
   estadoCargando: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   textoCargando: {
     fontSize: 12,
@@ -163,7 +170,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   error: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: "700",
   },
 });

@@ -179,15 +179,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   cardHeaderTitulo: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "800",
     letterSpacing: 0.3,
     includeFontPadding: false,
     textAlignVertical: "center",
   },
   cardSubtitulo: {
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 11.5,
+    lineHeight: 16,
     marginBottom: 14,
   },
   columnaSubtarjetas: {
