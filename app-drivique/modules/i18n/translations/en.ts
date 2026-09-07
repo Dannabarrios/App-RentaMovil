@@ -924,10 +924,14 @@ export default {
       alertaFaltantesTitulo: 'Some info is missing',
       alertaFaltantesMensaje: 'Complete your personal details, upload your documents and accept the terms and conditions before confirming your booking.',
       tiposDocumento: {
-        CC: 'National ID (Cédula)',
-        TI: 'Minor ID card (Tarjeta de identidad)',
+        CC: 'Citizenship ID (CC)',
+        CE: 'Foreigner ID (CE)',
+        Pasaporte: 'Passport (PAS)',
+        DNI: 'National Identity Document (DNI)',
+        PPT: 'Temporary Protection Permit (PPT)',
+        PEP: 'Special Stay Permit (PEP)',
+        TI: 'Identity Card (TI)',
         DocExtranjero: 'Foreign ID document',
-        Pasaporte: 'Passport',
       },
     },
     terminos: {

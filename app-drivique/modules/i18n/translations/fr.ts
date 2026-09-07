@@ -922,10 +922,14 @@ export default {
       alertaFaltantesTitulo: 'Informations manquantes',
       alertaFaltantesMensaje: 'Complétez vos informations personnelles, téléchargez vos documents et acceptez les conditions générales avant de confirmer votre réservation.',
       tiposDocumento: {
-        CC: "Carte d'identité nationale",
-        TI: "Carte d'identité mineur",
+        CC: "Carte d'identité (CC)",
+        CE: "Carte de séjour / étranger (CE)",
+        Pasaporte: 'Passeport (PAS)',
+        DNI: "Document national d'identité (DNI)",
+        PPT: 'Permis de protection temporaire (PPT)',
+        PEP: 'Permis spécial de séjour (PEP)',
+        TI: "Carte d'identité mineur (TI)",
         DocExtranjero: "Document d'identité étranger",
-        Pasaporte: 'Passeport',
       },
     },
     terminos: {

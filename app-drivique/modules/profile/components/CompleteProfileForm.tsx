@@ -20,7 +20,7 @@ import { DateField } from "@/components/ui/DateField";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { getPrefijoPorNacionalidad } from "@/modules/reservation/constants/reservation.constants";
 
-const TIPOS_DOCUMENTO: TipoDocumento[] = ["CC", "TI", "Doc. Extranjero", "Pasaporte"];
+const TIPOS_DOCUMENTO: TipoDocumento[] = ["CC", "CE", "Pasaporte", "DNI", "PPT", "PEP", "TI"];
 
 const NACIONALIDADES: { valor: Nacionalidad; bandera: string }[] = [
   { valor: "Colombia",  bandera: "🇨🇴" },
@@ -42,6 +42,14 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
   const [showNacionalidad, setShowNacionalidad] = useState(false);
   const prefijoTelefono = getPrefijoPorNacionalidad(form.nacionalidad || null);
   const hayPrefijo = prefijoTelefono !== "";
+
+  const tiposDocumentoFiltrados = TIPOS_DOCUMENTO.filter((tipo) => {
+    if (!form.nacionalidad) return true;
+    if (form.nacionalidad === "Colombia") {
+      return tipo === "CC" || tipo === "CE" || tipo === "Pasaporte" || tipo === "TI";
+    }
+    return tipo === "Pasaporte" || tipo === "DNI" || tipo === "CE" || tipo === "PPT" || tipo === "PEP";
+  });
 
   const handleGuardar = () => {
     guardar(
@@ -198,7 +206,7 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
       </TouchableOpacity>
       {showTipoDoc && (
         <View style={[s.dropdown, { borderColor: c.border, backgroundColor: c.bgCard }]}>
-          {TIPOS_DOCUMENTO.map(tipo => (
+          {tiposDocumentoFiltrados.map(tipo => (
             <TouchableOpacity
               key={tipo}
               style={[s.dropdownItem, form.tipoDocumento === tipo && { backgroundColor: c.primaryBg }]}

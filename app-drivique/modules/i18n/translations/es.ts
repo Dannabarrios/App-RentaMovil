@@ -961,10 +961,14 @@ export default {
       alertaFaltantesTitulo: 'Faltan datos por completar',
       alertaFaltantesMensaje: 'Completa tus datos personales, sube tus documentos y acepta los términos y condiciones antes de confirmar la reserva.',
       tiposDocumento: {
-        CC: 'Cédula de ciudadanía',
-        TI: 'Tarjeta de identidad',
-        DocExtranjero: 'Documento de extranjería',
-        Pasaporte: 'Pasaporte',
+        CC: 'Cédula de Ciudadanía (CC)',
+        CE: 'Cédula de Extranjería (CE)',
+        Pasaporte: 'Pasaporte (PAS)',
+        DNI: 'Documento Nacional de Identidad (DNI)',
+        PPT: 'Permiso por Protección Temporal (PPT)',
+        PEP: 'Permiso Especial de Permanencia (PEP)',
+        TI: 'Tarjeta de Identidad (TI)',
+        DocExtranjero: 'Documento de Extranjería',
       },
     },
     terminos: {

@@ -146,9 +146,12 @@ export function getTiposDocumento(
 ): { id: TipoDocumento; label: string }[] {
   return [
     { id: "CC", label: t("reserva.datosPersonales.tiposDocumento.CC") },
-    { id: "TI", label: t("reserva.datosPersonales.tiposDocumento.TI") },
-    { id: "Doc. Extranjero", label: t("reserva.datosPersonales.tiposDocumento.DocExtranjero") },
+    { id: "CE", label: t("reserva.datosPersonales.tiposDocumento.CE") },
     { id: "Pasaporte", label: t("reserva.datosPersonales.tiposDocumento.Pasaporte") },
+    { id: "DNI", label: t("reserva.datosPersonales.tiposDocumento.DNI") },
+    { id: "PPT", label: t("reserva.datosPersonales.tiposDocumento.PPT") },
+    { id: "PEP", label: t("reserva.datosPersonales.tiposDocumento.PEP") },
+    { id: "TI", label: t("reserva.datosPersonales.tiposDocumento.TI") },
   ];
 }
 

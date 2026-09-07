@@ -922,10 +922,14 @@ export default {
       alertaFaltantesTitulo: 'Faltam dados a preencher',
       alertaFaltantesMensaje: 'Complete os seus dados pessoais, carregue os seus documentos e aceite os termos e condições antes de confirmar a reserva.',
       tiposDocumento: {
-        CC: 'Cédula de cidadania',
-        TI: 'Cartão de identidade',
-        DocExtranjero: 'Documento de estrangeiro',
-        Pasaporte: 'Passaporte',
+        CC: 'Cédula de Cidadania (CC)',
+        CE: 'Cédula de Estrangeiro (CE)',
+        Pasaporte: 'Passaporte (PAS)',
+        DNI: 'Documento Nacional de Identidade (DNI)',
+        PPT: 'Permissão por Proteção Temporal (PPT)',
+        PEP: 'Permissão Especial de Permanência (PEP)',
+        TI: 'Cartão de Identidade (TI)',
+        DocExtranjero: 'Documento de Estrangeiro',
       },
     },
     terminos: {

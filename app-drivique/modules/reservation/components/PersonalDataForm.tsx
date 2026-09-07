@@ -77,9 +77,13 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
   const opcionesTipoDocumentoFiltradas = useMemo(() => {
     if (!datosPersonales.nacionalidad) return OPCIONES_TIPO_DOCUMENTO;
     if (datosPersonales.nacionalidad === "Colombia") {
-      return OPCIONES_TIPO_DOCUMENTO.filter((o) => o.id === "CC" || o.id === "TI");
+      return OPCIONES_TIPO_DOCUMENTO.filter(
+        (o) => o.id === "CC" || o.id === "CE" || o.id === "Pasaporte" || o.id === "TI"
+      );
     }
-    return OPCIONES_TIPO_DOCUMENTO.filter((o) => o.id === "Pasaporte" || o.id === "Doc. Extranjero");
+    return OPCIONES_TIPO_DOCUMENTO.filter(
+      (o) => o.id === "Pasaporte" || o.id === "DNI" || o.id === "CE" || o.id === "PPT" || o.id === "PEP"
+    );
   }, [datosPersonales.nacionalidad, OPCIONES_TIPO_DOCUMENTO]);
   const actualizarDatosPersonales = useReservaStore(
     (s) => s.actualizarDatosPersonales,
@@ -550,9 +554,19 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
                 actualizarDatosPersonales({ numeroDocumento: v });
                 actualizarUsuarioGlobal({ numeroDocumento: v });
               }}
-              placeholder={hayPrefijo ? (datosPersonales.nacionalidad === "Colombia" ? "123456789" : "P12345678") : "123456789"}
+              placeholder={
+                hayPrefijo
+                  ? datosPersonales.nacionalidad === "Colombia"
+                    ? "123456789"
+                    : "P12345678"
+                  : "123456789"
+              }
               placeholderTextColor={c.textMuted}
-              keyboardType={datosPersonales.tipoDocumento === "Pasaporte" ? "default" : "numeric"}
+              keyboardType={
+                datosPersonales.tipoDocumento === "CC" || datosPersonales.tipoDocumento === "TI"
+                  ? "numeric"
+                  : "default"
+              }
               editable={hayPrefijo}
             />
           </View>
