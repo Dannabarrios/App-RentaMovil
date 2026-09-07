@@ -158,37 +158,50 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
 
       {/* Teléfono: el prefijo del país se completa solo según la nacionalidad elegida arriba */}
       <Text style={[s.label, { color: c.textSecondary }]}>{t("perfil.telefono")}</Text>
-      <View style={s.filaCelular}>
-        <View
-          style={[
-            s.prefijoBox,
-            { backgroundColor: c.primaryBg, borderColor: c.border },
-            !hayPrefijo && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6" },
-          ]}
-        >
-          <Text style={[s.prefijoText, { color: "#1D4ED8" }, !hayPrefijo && { color: c.textMuted }]}>
-            {hayPrefijo ? prefijoTelefono : ""}
-          </Text>
+      {hayPrefijo ? (
+        <View style={s.filaCelular}>
+          <View
+            style={[
+              s.prefijoBox,
+              { backgroundColor: c.primaryBg, borderColor: c.border },
+            ]}
+          >
+            <Text style={[s.prefijoText, { color: "#1D4ED8" }]}>
+              {prefijoTelefono}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={[
+                inputFieldStyles.input,
+                { borderColor: c.border, backgroundColor: c.bgInput, color: c.textPrimary },
+                errores.telefono ? inputFieldStyles.inputErrorWrapper : undefined,
+              ]}
+              placeholder="Ej. 3144214909"
+              placeholderTextColor="#9CA3AF"
+              autoCorrect={false}
+              keyboardType="phone-pad"
+              value={form.telefono}
+              onChangeText={v => actualizarCampo("telefono", v.replace(/\D/g, ""))}
+            />
+            {errores.telefono && <Text style={s.error}>{errores.telefono}</Text>}
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
+      ) : (
+        <View>
           <TextInput
             style={[
               inputFieldStyles.input,
-              { borderColor: c.border, backgroundColor: c.bgInput, color: c.textPrimary },
-              errores.telefono ? inputFieldStyles.inputErrorWrapper : undefined,
-              !hayPrefijo ? { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted } : undefined,
+              { borderColor: c.border, backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted },
             ]}
-            placeholder="1234567890"
+            placeholder="3144214909"
             placeholderTextColor="#9CA3AF"
-            autoCorrect={false}
-            keyboardType="phone-pad"
             value={form.telefono}
-            onChangeText={v => actualizarCampo("telefono", v.replace(/\D/g, ""))}
-            editable={hayPrefijo}
+            editable={false}
           />
           {errores.telefono && <Text style={s.error}>{errores.telefono}</Text>}
         </View>
-      </View>
+      )}
 
       <SectionLabel icono="card-outline" texto={t("perfil.seccionDocumento")} primaryBg={c.primaryBg} />
 
@@ -237,49 +250,58 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
       )}
       {/* Número de documento */}
       <Text style={[s.label, { color: c.textSecondary }]}>{t("perfil.numeroDocumento")}</Text>
-      <View style={s.filaCelular}>
-        <View
-          style={[
-            s.prefijoBox,
-            { backgroundColor: c.primaryBg, borderColor: c.border },
-            !form.tipoDocumento && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6" },
-          ]}
-        >
-          <Text style={[s.prefijoText, { color: "#1D4ED8" }, !form.tipoDocumento && { color: c.textMuted }]}>
-            {form.tipoDocumento ? getSiglaDocumento(form.tipoDocumento) : "—"}
-          </Text>
+      {form.tipoDocumento ? (
+        <View style={s.filaCelular}>
+          <View
+            style={[
+              s.prefijoBox,
+              { backgroundColor: c.primaryBg, borderColor: c.border },
+            ]}
+          >
+            <Text style={[s.prefijoText, { color: "#1D4ED8" }]}>
+              {getSiglaDocumento(form.tipoDocumento)}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={[
+                inputFieldStyles.input,
+                { borderColor: c.border, backgroundColor: c.bgInput, color: c.textPrimary },
+                errores.numeroDocumento ? inputFieldStyles.inputErrorWrapper : undefined,
+              ]}
+              placeholder={
+                form.tipoDocumento === "Pasaporte"
+                  ? "Ej. P12345678"
+                  : "Ej. 1075228306"
+              }
+              placeholderTextColor="#9CA3AF"
+              autoCorrect={false}
+              keyboardType={
+                form.tipoDocumento === "CC" || form.tipoDocumento === "TI"
+                  ? "numeric"
+                  : "default"
+              }
+              value={form.numeroDocumento}
+              onChangeText={v => actualizarCampo("numeroDocumento", v)}
+            />
+            {errores.numeroDocumento && <Text style={s.error}>{errores.numeroDocumento}</Text>}
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
+      ) : (
+        <View>
           <TextInput
             style={[
               inputFieldStyles.input,
-              { borderColor: c.border, backgroundColor: c.bgInput, color: c.textPrimary },
-              errores.numeroDocumento ? inputFieldStyles.inputErrorWrapper : undefined,
-              !form.tipoDocumento ? { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted } : undefined,
+              { borderColor: c.border, backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted },
             ]}
-            placeholder={
-              form.tipoDocumento
-                ? form.tipoDocumento === "CC"
-                  ? "1020304050"
-                  : form.tipoDocumento === "Pasaporte"
-                    ? "P12345678"
-                    : "123456789"
-                : "1020304050"
-            }
+            placeholder="1075228306"
             placeholderTextColor="#9CA3AF"
-            autoCorrect={false}
-            keyboardType={
-              form.tipoDocumento === "CC" || form.tipoDocumento === "TI"
-                ? "numeric"
-                : "default"
-            }
             value={form.numeroDocumento}
-            onChangeText={v => actualizarCampo("numeroDocumento", v)}
-            editable={!!form.tipoDocumento}
+            editable={false}
           />
           {errores.numeroDocumento && <Text style={s.error}>{errores.numeroDocumento}</Text>}
         </View>
-      </View>
+      )}
 
       <View style={{ marginTop: 24 }}>
         <PrimaryButton titulo={t("perfil.guardarDatos")} onPress={handleGuardar} cargando={cargando} />
