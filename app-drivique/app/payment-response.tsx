@@ -23,7 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
+import { useIdioma, useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { GRADIENTES } from "@/constants/gradients";
 import { COLOR_MARCA, getCiudadPorSucursal, getDireccionSucursal } from "@/modules/catalog/constants/catalog.constants";
 import {
@@ -838,11 +838,14 @@ function HeaderDetalle({
   titulo: string;
   onVolver: () => void;
 }) {
+  const { temaActual, toggleTema } = useIdioma();
+
   return (
     <View
       style={{
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "space-between",
         paddingTop: insets.top,
         height: insets.top + 56,
         paddingHorizontal: 16,
@@ -851,6 +854,37 @@ function HeaderDetalle({
         backgroundColor: c.bgHeader,
       }}
     >
+      <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 12 }}>
+        <TouchableOpacity
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: c.bgInput,
+            borderWidth: 1,
+            borderColor: c.border,
+          }}
+          onPress={onVolver}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="arrow-back" size={20} color={c.textPrimary} />
+        </TouchableOpacity>
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: "700",
+            color: c.textPrimary,
+            marginLeft: 12,
+            flexShrink: 1,
+          }}
+          numberOfLines={1}
+        >
+          {titulo}
+        </Text>
+      </View>
+
       <TouchableOpacity
         style={{
           width: 36,
@@ -859,24 +893,18 @@ function HeaderDetalle({
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: c.bgInput,
+          borderWidth: 1,
+          borderColor: c.border,
         }}
-        onPress={onVolver}
+        onPress={toggleTema}
         activeOpacity={0.8}
       >
-        <Ionicons name="arrow-back" size={20} color={c.textPrimary} />
+        <Ionicons
+          name={temaActual === "oscuro" ? "sunny-outline" : "moon-outline"}
+          size={18}
+          color={temaActual === "oscuro" ? "#F59E0B" : c.textPrimary}
+        />
       </TouchableOpacity>
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "700",
-          color: c.textPrimary,
-          marginLeft: 12,
-          flexShrink: 1,
-        }}
-        numberOfLines={1}
-      >
-        {titulo}
-      </Text>
     </View>
   );
 }

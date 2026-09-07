@@ -74,7 +74,7 @@ export default function MisReservasScreen() {
   const insets = useSafeAreaInsets();
   const c = useTemaColores();
   const { t } = useTranslation();
-  const { idiomaActual } = useIdioma();
+  const { idiomaActual, temaActual, toggleTema } = useIdioma();
   const usuario = useUsuarioStore((state) => state.usuario);
   const usuarioId = usuario.id;
   const usuarioCorreo = usuario.correo;
@@ -187,10 +187,33 @@ export default function MisReservasScreen() {
         end={GRADIENTES.boton.end}
         style={styles.header}
       >
-        <Text style={[styles.headerTitulo, { color: "#ffffff" }]}>{t("misReservas.titulo")}</Text>
-        <Text style={[styles.headerSubtitulo, { color: "rgba(255,255,255,0.7)" }]}>
-          {t("misReservas.subtitulo")}
-        </Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text style={[styles.headerTitulo, { color: "#ffffff" }]}>{t("misReservas.titulo")}</Text>
+            <Text style={[styles.headerSubtitulo, { color: "rgba(255,255,255,0.7)" }]}>
+              {t("misReservas.subtitulo")}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "rgba(255, 255, 255, 0.18)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 2,
+            }}
+            onPress={toggleTema}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name={temaActual === "oscuro" ? "sunny-outline" : "moon-outline"}
+              size={18}
+              color="#ffffff"
+            />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {!cargando && reservas.length > 0 && (
