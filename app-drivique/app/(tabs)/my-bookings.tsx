@@ -304,7 +304,6 @@ export default function MisReservasScreen() {
               c={c}
               t={t}
               onPress={() => irADetalle(item.referencia)}
-              onPagarWompi={() => handlePagarWompi(item)}
             />
           )}
         />
@@ -396,23 +395,16 @@ function TarjetaReserva({
   c,
   t,
   onPress,
-  onPagarWompi,
 }: {
   reserva: ReservaGuardada;
   usuarioId: string;
   c: ReturnType<typeof useTemaColores>;
   t: (key: string, opts?: any) => string;
   onPress: () => void;
-  onPagarWompi: () => void;
 }) {
   const grupo = calcularGrupoReserva(reserva);
   const vehiculoSnap = reserva.vehiculoSnapshot as Vehiculo | undefined;
   const foto = vehiculoSnap?.imagenes?.[0];
-  const sucursalNombre = reserva.lugarRetiro || (reserva.fechasLugarSnapshot as any)?.lugarRetiro || "";
-
-  const esWompiPendiente =
-    reserva.metodoPago === "wompi" &&
-    (grupo === "pendiente" || reserva.estado === "PENDIENTE" || reserva.estado === "PENDIENTE_VALIDACION");
 
   const [resena, setResena] = useState<ResenaGuardada | null>(null);
   const [modalCalificarVisible, setModalCalificarVisible] = useState(false);
@@ -431,173 +423,53 @@ function TarjetaReserva({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
+      activeOpacity={0.85}
       style={[styles.tarjeta, { backgroundColor: c.bgCard, borderColor: c.border }]}
       onPress={onPress}
     >
-      {/* Barra superior de estado */}
-      <View style={[styles.tarjetaBarraEstado, { backgroundColor: COLOR_GRUPO[grupo] }]} />
-
-      <View style={styles.tarjetaContenido}>
-        {/* Cabecera: Foto + Info Principal */}
-        <View style={styles.tarjetaFila}>
-          {foto ? (
-            <Image source={{ uri: foto }} style={styles.tarjetaFoto} />
-          ) : (
-            <View style={[styles.tarjetaFotoVacia, { backgroundColor: c.bgInput }]}>
-              <Ionicons name="car-sport-outline" size={24} color={c.textMuted} />
-            </View>
-          )}
-
-          <View style={styles.tarjetaInfo}>
-            <View style={styles.tarjetaHeader}>
-              <Text style={[styles.tarjetaVehiculo, { color: c.textPrimary }]} numberOfLines={1}>
-                {reserva.vehiculoNombre}
-              </Text>
-              <View
-                style={[
-                  styles.badge,
-                  {
-                    backgroundColor: `${COLOR_GRUPO[grupo]}18`,
-                    borderColor: `${COLOR_GRUPO[grupo]}40`,
-                  },
-                ]}
-              >
-                <View style={[styles.badgeDot, { backgroundColor: COLOR_GRUPO[grupo] }]} />
-                <Text style={[styles.badgeTexto, { color: COLOR_GRUPO[grupo] }]} numberOfLines={1}>
-                  {t(`misReservas.grupos.${grupo}`)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Chips de Referencia y Método de pago */}
-            <View style={styles.tarjetaChipsFila}>
-              <View style={[styles.chipRef, { backgroundColor: c.bgInput, borderColor: c.border }]}>
-                <Ionicons name="receipt-outline" size={11} color={c.textMuted} />
-                <Text style={[styles.chipRefTexto, { color: c.textSecondary }]} numberOfLines={1}>
-                  #{reserva.referencia}
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.chipMetodo,
-                  {
-                    backgroundColor: reserva.metodoPago === "wompi" ? "rgba(37, 99, 235, 0.1)" : "rgba(22, 163, 74, 0.1)",
-                    borderColor: reserva.metodoPago === "wompi" ? "rgba(37, 99, 235, 0.25)" : "rgba(22, 163, 74, 0.25)",
-                  },
-                ]}
-              >
-                <Ionicons
-                  name={reserva.metodoPago === "wompi" ? "card-outline" : "cash-outline"}
-                  size={11}
-                  color={reserva.metodoPago === "wompi" ? "#2563eb" : "#16a34a"}
-                />
-                <Text
-                  style={[
-                    styles.chipMetodoTexto,
-                    { color: reserva.metodoPago === "wompi" ? "#2563eb" : "#16a34a" },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {reserva.metodoPago === "wompi" ? "Wompi" : "Efectivo"}
-                </Text>
-              </View>
-            </View>
-
-            {/* Total */}
-            <View style={styles.tarjetaPrecioFila}>
-              <Text style={[styles.tarjetaPrecioLabel, { color: c.textMuted }]}>
-                {t("reserva.confirmacion.respuesta.total", { defaultValue: "Total" })}:
-              </Text>
-              <Text style={[styles.tarjetaTotal, { color: c.oscuro ? "#60A5FA" : COLOR_MARCA }]}>
-                {fmt(reserva.total)}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Caja de detalles: Fechas y Sucursal */}
-        <View style={[styles.detallesBox, { backgroundColor: c.bgInput, borderColor: c.border }]}>
-          <View style={styles.detallesItem}>
-            <Ionicons name="calendar-outline" size={13} color={c.primary} />
-            <Text style={[styles.detallesTexto, { color: c.textPrimary }]} numberOfLines={1}>
-              {reserva.fechaRetiro ? fechaCorta(String(reserva.fechaRetiro)) : "—"}
-              {" → "}
-              {reserva.fechaDevolucion ? fechaCorta(String(reserva.fechaDevolucion)) : "—"}
-            </Text>
-          </View>
-
-          {!!sucursalNombre && (
-            <View style={styles.detallesItem}>
-              <Ionicons name="location-outline" size={13} color={c.primary} />
-              <Text style={[styles.detallesTextoSecundario, { color: c.textSecondary }]} numberOfLines={1}>
-                {sucursalNombre}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Aviso de Pago Pendiente Wompi */}
-        {esWompiPendiente && (
-          <View
-            style={[
-              styles.avisoWompiBox,
-              {
-                backgroundColor: c.oscuro ? "rgba(245, 158, 11, 0.12)" : "#FEF3C7",
-                borderColor: c.oscuro ? "rgba(245, 158, 11, 0.3)" : "#FDE68A",
-              },
-            ]}
-          >
-            <Ionicons name="alert-circle-outline" size={16} color="#D97706" />
-            <Text style={[styles.avisoWompiTexto, { color: c.oscuro ? "#FCD34D" : "#92400E" }]}>
-              {t("misReservas.pagoPendienteWompiAviso", {
-                defaultValue: "Pago pendiente por Wompi. Completa tu pago para confirmar tu reserva.",
-              })}
-            </Text>
+      <View style={styles.tarjetaFila}>
+        {foto ? (
+          <Image source={{ uri: foto }} style={styles.tarjetaFoto} />
+        ) : (
+          <View style={[styles.tarjetaFotoVacia, { backgroundColor: c.bgInput }]}>
+            <Ionicons name="car-sport-outline" size={24} color={c.textMuted} />
           </View>
         )}
 
-        {/* Separador y Botones de Acción */}
-        <View style={[styles.tarjetaAcciones, { borderTopColor: c.border }]}>
-          {/* Botón Ver Detalles */}
-          <TouchableOpacity
-            style={[styles.btnDetalles, { backgroundColor: c.bg, borderColor: c.border }]}
-            onPress={onPress}
-            activeOpacity={0.75}
-          >
-            <Ionicons name="receipt-outline" size={14} color={c.primary} />
-            <Text style={[styles.btnDetallesTexto, { color: c.textPrimary }]}>
-              {t("misReservas.verDetalles", { defaultValue: "Ver detalles" })}
+        <View style={styles.tarjetaInfo}>
+          <View style={styles.tarjetaHeader}>
+            <Text style={[styles.tarjetaVehiculo, { color: c.textPrimary }]} numberOfLines={1}>
+              {reserva.vehiculoNombre}
             </Text>
-            <Ionicons name="chevron-forward" size={13} color={c.textMuted} />
-          </TouchableOpacity>
-
-          {/* Botón Acción Principal: Pagar con Wompi */}
-          {esWompiPendiente && (
-            <TouchableOpacity
-              style={styles.btnWompiWrap}
-              onPress={(e) => {
-                e.stopPropagation();
-                onPagarWompi();
-              }}
-              activeOpacity={0.85}
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: `${COLOR_GRUPO[grupo]}18`,
+                  borderColor: `${COLOR_GRUPO[grupo]}40`,
+                },
+              ]}
             >
-              <LinearGradient
-                colors={GRADIENTES.boton.colors}
-                start={GRADIENTES.boton.start}
-                end={GRADIENTES.boton.end}
-                style={styles.btnWompi}
-              >
-                <Ionicons name="card-outline" size={14} color="#ffffff" />
-                <Text style={styles.btnWompiTexto}>
-                  {t("misReservas.pagarWompi", { defaultValue: "Pagar con Wompi" })}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          )}
+              <View style={[styles.badgeDot, { backgroundColor: COLOR_GRUPO[grupo] }]} />
+              <Text style={[styles.badgeTexto, { color: COLOR_GRUPO[grupo] }]} numberOfLines={1}>
+                {t(`misReservas.grupos.${grupo}`)}
+              </Text>
+            </View>
+          </View>
 
-          {/* Botón Reportar Incidencia (confirmada o en_curso) */}
+          <Text style={[styles.tarjetaFechas, { color: c.textSecondary }]} numberOfLines={1}>
+            {reserva.fechaRetiro ? fechaCorta(String(reserva.fechaRetiro)) : "—"}
+            {" → "}
+            {reserva.fechaDevolucion ? fechaCorta(String(reserva.fechaDevolucion)) : "—"}
+          </Text>
+
+          <View style={styles.tarjetaFooter}>
+            <Text style={[styles.tarjetaReferencia, { color: c.textMuted }]} numberOfLines={1}>
+              #{reserva.referencia}
+            </Text>
+            <Text style={[styles.tarjetaTotal, { color: c.textPrimary }]}>{fmt(reserva.total)}</Text>
+          </View>
+
           {(grupo === "confirmada" || grupo === "en_curso") && (
             <TouchableOpacity
               style={[styles.reportarBtn, { backgroundColor: c.bgInput, borderColor: c.border }]}
@@ -621,7 +493,6 @@ function TarjetaReserva({
             </TouchableOpacity>
           )}
 
-          {/* Botón Calificar (finalizada) */}
           {grupo === "finalizada" && (
             <TouchableOpacity
               style={[styles.reportarBtn, { backgroundColor: c.bgInput, borderColor: c.border }]}
@@ -631,30 +502,19 @@ function TarjetaReserva({
               }}
               activeOpacity={0.8}
             >
-              {resena ? (
-                <>
-                  <View style={{ flexDirection: "row", gap: 1 }}>
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <Ionicons
-                        key={i}
-                        name={i < resena.calificacion ? "star" : "star-outline"}
-                        size={12}
-                        color="#F59E0B"
-                      />
-                    ))}
-                  </View>
-                  <Text style={[styles.reportarBtnText, { color: c.primary }]} numberOfLines={1}>
-                    {t("misReservas.editarCalificacion")}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="star-outline" size={13} color={c.primary} />
-                  <Text style={[styles.reportarBtnText, { color: c.primary }]}>
-                    {t("misReservas.calificarViaje")}
-                  </Text>
-                </>
-              )}
+              <View style={{ flexDirection: "row", gap: 1 }}>
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Ionicons
+                    key={i}
+                    name={i < (resena?.calificacion || 0) ? "star" : "star-outline"}
+                    size={13}
+                    color="#F59E0B"
+                  />
+                ))}
+              </View>
+              <Text style={[styles.reportarBtnText, { color: c.primary }]} numberOfLines={1}>
+                {resena ? t("misReservas.editarCalificacion") : t("misReservas.calificarViaje")}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -763,209 +623,64 @@ const styles = StyleSheet.create({
 
   lista: { padding: 16, paddingBottom: 40 },
   tarjeta: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    marginBottom: 14,
-    overflow: "hidden",
+    padding: 12,
+    marginBottom: 12,
   },
-  tarjetaBarraEstado: {
-    height: 3.5,
-    width: "100%",
-  },
-  tarjetaContenido: {
-    padding: 14,
-  },
-  tarjetaFila: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  tarjetaFoto: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    resizeMode: "cover",
-  },
+  tarjetaFila: { flexDirection: "row", gap: 12 },
+  tarjetaFoto: { width: 72, height: 72, borderRadius: 10, resizeMode: "cover" },
   tarjetaFotoVacia: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
+    width: 72,
+    height: 72,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  tarjetaInfo: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
+  tarjetaInfo: { flex: 1, justifyContent: "space-between" },
   tarjetaHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: 6,
+    gap: 8,
   },
-  tarjetaVehiculo: {
-    fontSize: 14.5,
-    fontWeight: "800",
-    flexShrink: 1,
-  },
+  tarjetaVehiculo: { fontSize: 14, fontWeight: "800", flexShrink: 1 },
   badge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: 8,
-    borderWidth: 1,
-    maxWidth: 110,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 7,
+    maxWidth: 120,
   },
-  badgeDot: { width: 5.5, height: 5.5, borderRadius: 3 },
-  badgeTexto: { fontSize: 9.5, fontWeight: "800" },
-  tarjetaChipsFila: {
+  badgeDot: { width: 5, height: 5, borderRadius: 2.5 },
+  badgeTexto: { fontSize: 9.5, fontWeight: "700" },
+  tarjetaFechas: { fontSize: 11.5, marginTop: 4 },
+  tarjetaFooter: {
     flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 4,
-  },
-  chipRef: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3.5,
-    paddingHorizontal: 6,
-    paddingVertical: 2.5,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  chipRefTexto: {
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  chipMetodo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3.5,
-    paddingHorizontal: 6,
-    paddingVertical: 2.5,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  chipMetodoTexto: {
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  tarjetaPrecioFila: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 4,
-    marginTop: 4,
-  },
-  tarjetaPrecioLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  tarjetaTotal: {
-    fontSize: 15,
-    fontWeight: "800",
-  },
-
-  detallesBox: {
-    marginTop: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 4,
-  },
-  detallesItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  detallesTexto: {
-    fontSize: 11.5,
-    fontWeight: "700",
-    flex: 1,
-  },
-  detallesTextoSecundario: {
-    fontSize: 11,
-    fontWeight: "500",
-    flex: 1,
-  },
-
-  avisoWompiBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  avisoWompiTexto: {
-    flex: 1,
-    fontSize: 11,
-    fontWeight: "600",
-    lineHeight: 15,
-  },
-
-  tarjetaAcciones: {
-    flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    gap: 8,
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-  },
-  btnDetalles: {
-    flex: 1,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
+    marginTop: 8,
   },
-  btnDetallesTexto: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  btnWompiWrap: {
-    flex: 1.2,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  btnWompi: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 8.5,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  btnWompiTexto: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "800",
-  },
+  tarjetaReferencia: { fontSize: 10, flexShrink: 1 },
+  tarjetaTotal: { fontSize: 14, fontWeight: "800" },
   reportarBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 5,
-    paddingVertical: 7,
-    paddingHorizontal: 11,
-    borderRadius: 8,
+    gap: 4,
+    marginTop: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 6,
     borderWidth: 1,
+    alignSelf: "flex-end",
   },
   reportarBtnText: {
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: "700",
   },
-
   vacioContainer: {
     flex: 1,
     alignItems: "center",
