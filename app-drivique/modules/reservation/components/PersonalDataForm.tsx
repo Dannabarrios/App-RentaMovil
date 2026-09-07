@@ -439,19 +439,26 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
               etiqueta={t("reserva.datosPersonales.nacionalidad", { defaultValue: "Nacionalidad *" })}
               valorSeleccionado={datosPersonales.nacionalidad || null}
               opciones={OPCIONES_NACIONALIDAD}
+              placeholder={t("perfil.seleccionar", { defaultValue: "Seleccionar..." })}
               onSeleccionar={(id) => {
                 actualizarDatosPersonales({ nacionalidad: id });
                 actualizarUsuarioGlobal({ nacionalidad: id });
-                // Sincronizar tipo de documento automáticamente según nacionalidad
+                // Si el tipo de documento previo no es compatible con la nueva nacionalidad, resetear a null para que seleccione
                 if (id === "Colombia") {
-                  if (datosPersonales.tipoDocumento !== "CC" && datosPersonales.tipoDocumento !== "TI") {
-                    actualizarDatosPersonales({ tipoDocumento: "CC" });
-                    actualizarUsuarioGlobal({ tipoDocumento: "CC" });
+                  if (
+                    datosPersonales.tipoDocumento &&
+                    !["CC", "CE", "Pasaporte", "TI"].includes(datosPersonales.tipoDocumento)
+                  ) {
+                    actualizarDatosPersonales({ tipoDocumento: null });
+                    actualizarUsuarioGlobal({ tipoDocumento: "" });
                   }
                 } else {
-                  if (datosPersonales.tipoDocumento !== "Pasaporte" && datosPersonales.tipoDocumento !== "Doc. Extranjero") {
-                    actualizarDatosPersonales({ tipoDocumento: "Pasaporte" });
-                    actualizarUsuarioGlobal({ tipoDocumento: "Pasaporte" });
+                  if (
+                    datosPersonales.tipoDocumento &&
+                    !["Pasaporte", "DNI", "CE", "PPT", "PEP"].includes(datosPersonales.tipoDocumento)
+                  ) {
+                    actualizarDatosPersonales({ tipoDocumento: null });
+                    actualizarUsuarioGlobal({ tipoDocumento: "" });
                   }
                 }
               }}
@@ -528,6 +535,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
               valorSeleccionado={datosPersonales.tipoDocumento}
               opciones={opcionesTipoDocumentoFiltradas}
               deshabilitado={!hayPrefijo}
+              placeholder={t("perfil.seleccionar", { defaultValue: "Seleccionar..." })}
               onSeleccionar={(id) => {
                 actualizarDatosPersonales({
                   tipoDocumento: id as typeof datosPersonales.tipoDocumento,

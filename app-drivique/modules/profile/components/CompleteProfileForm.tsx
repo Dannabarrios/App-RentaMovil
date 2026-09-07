@@ -127,7 +127,19 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
             <TouchableOpacity
               key={valor}
               style={[s.dropdownItem, form.nacionalidad === valor && { backgroundColor: c.primaryBg }]}
-              onPress={() => { actualizarCampo("nacionalidad", valor); setShowNacionalidad(false); }}
+              onPress={() => {
+                actualizarCampo("nacionalidad", valor);
+                if (valor === "Colombia") {
+                  if (form.tipoDocumento && !["CC", "CE", "Pasaporte", "TI"].includes(form.tipoDocumento)) {
+                    actualizarCampo("tipoDocumento", "");
+                  }
+                } else {
+                  if (form.tipoDocumento && !["Pasaporte", "DNI", "CE", "PPT", "PEP"].includes(form.tipoDocumento)) {
+                    actualizarCampo("tipoDocumento", "");
+                  }
+                }
+                setShowNacionalidad(false);
+              }}
               activeOpacity={0.7}
             >
               <Text style={[s.dropdownText, { color: form.nacionalidad === valor ? "#1D4ED8" : c.textPrimary }]}>
