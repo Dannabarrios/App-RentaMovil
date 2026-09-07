@@ -647,7 +647,6 @@ export default function PagoRespuestaScreen() {
           </Text>
           <View style={{ width: "100%", marginTop: 12, opacity: 0.55 }}>
             <PasswordInput
-              label={t("misReservas.claveContrato")}
               placeholder={t("misReservas.claveContratoPlaceholder")}
               value=""
               editable={false}
@@ -688,7 +687,6 @@ export default function PagoRespuestaScreen() {
           </Text>
           <View style={{ width: "100%", marginTop: 12 }}>
             <PasswordInput
-              label={t("misReservas.claveContrato")}
               placeholder={t("misReservas.claveContratoPlaceholder")}
               value={claveIngresada}
               onChangeText={(v) => {

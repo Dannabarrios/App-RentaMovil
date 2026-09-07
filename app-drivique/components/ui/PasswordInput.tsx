@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { passwordInputStyles as styles } from './PasswordInput.styles';
 
 interface Props extends TextInputProps {
-  label: string;
+  label?: string;
   error?: string;
 }
 
@@ -13,7 +13,7 @@ export function PasswordInput({ label, error, ...props }: Props) {
 
   return (
     <View style={styles.contenedor}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <View style={[styles.fila, error ? styles.filaError : undefined]}>
         <TextInput
           style={styles.input}
