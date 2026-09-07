@@ -236,8 +236,8 @@ export default function CouponSection({ vehiculo }: Props) {
               </Text>
             </View>
           </View>
-          <TouchableOpacity onPress={removerCupon}>
-            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+          <TouchableOpacity onPress={removerCupon} hitSlop={8}>
+            <Ionicons name="trash-outline" size={18} color={c.oscuro ? "#9CA3AF" : "#64748B"} />
           </TouchableOpacity>
         </View>
       ) : (
@@ -432,7 +432,7 @@ export default function CouponSection({ vehiculo }: Props) {
 
                     <TouchableOpacity
                       style={[styles.modalCloseBtnCenter, { backgroundColor: primaryAccent }]}
-                      onPress={handleCerrarModal}
+                      onPress={() => handleSeleccionarCupon(selectedConditionsCoupon, true)}
                     >
                       <Text style={styles.modalCloseBtnTextCenter}>{t("coupon.understoodBtn", "Entendido")}</Text>
                     </TouchableOpacity>
