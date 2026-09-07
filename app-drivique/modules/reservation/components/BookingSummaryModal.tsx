@@ -394,7 +394,6 @@ export default function ResumenReservaModal({
                     {serviciosElegidosDetalle.map((serv) => (
                       <View key={serv.nombre} style={styles.filaServicioExtra}>
                         <View style={styles.filaServicioExtraIzq}>
-                          <Text style={[styles.puntoVina, { color: primaryAccent }]}>•</Text>
                           <Text style={[styles.servicioExtraNombre, { color: c.textPrimary }]}>
                             {serv.nombreTraducido}
                             {diasContrato > 1 ? (
