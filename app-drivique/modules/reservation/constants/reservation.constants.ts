@@ -141,6 +141,22 @@ export const ICONOS_SERVICIOS: Record<string, string> = {
 // Pasaporte). El id ahora tipa contra TipoDocumento (importado de
 // perfil.types.ts) en vez de ser un literal local — así el compilador
 // avisa si algún día los enums se vuelven a desalinear.
+export const SIGLA_DOCUMENTO: Record<string, string> = {
+  CC: "CC",
+  CE: "CE",
+  Pasaporte: "PAS",
+  DNI: "DNI",
+  PPT: "PPT",
+  PEP: "PEP",
+  TI: "TI",
+  "Doc. Extranjero": "DOC",
+};
+
+export function getSiglaDocumento(tipo: string | null | undefined): string {
+  if (!tipo) return "";
+  return SIGLA_DOCUMENTO[tipo] || tipo;
+}
+
 export function getTiposDocumento(
   t: (key: string) => string
 ): { id: TipoDocumento; label: string }[] {

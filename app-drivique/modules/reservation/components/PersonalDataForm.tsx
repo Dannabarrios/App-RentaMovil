@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import {
   COLOR_MARCA,
   getPrefijoPorNacionalidad,
+  getSiglaDocumento,
   NACIONALIDADES,
   PORCENTAJE_CARGOS_ADMINISTRATIVOS,
   PORCENTAJE_IVA,
@@ -551,32 +552,54 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
             <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
               {t("reserva.datosPersonales.numeroDeDocumento", { defaultValue: "Número de documento *" })}
             </Text>
-            <TextInput
-              style={[
-                styles.input,
-                { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
-                !hayPrefijo && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted },
-              ]}
-              value={datosPersonales.numeroDocumento}
-              onChangeText={(v) => {
-                actualizarDatosPersonales({ numeroDocumento: v });
-                actualizarUsuarioGlobal({ numeroDocumento: v });
-              }}
-              placeholder={
-                hayPrefijo
-                  ? datosPersonales.nacionalidad === "Colombia"
-                    ? "123456789"
-                    : "P12345678"
-                  : "123456789"
-              }
-              placeholderTextColor={c.textMuted}
-              keyboardType={
-                datosPersonales.tipoDocumento === "CC" || datosPersonales.tipoDocumento === "TI"
-                  ? "numeric"
-                  : "default"
-              }
-              editable={hayPrefijo}
-            />
+            <View style={styles.filaCelular}>
+              <View
+                style={[
+                  styles.prefijoBox,
+                  { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border },
+                  !datosPersonales.tipoDocumento && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.prefijoText,
+                    { color: c.textPrimary },
+                    !datosPersonales.tipoDocumento && { color: c.textMuted },
+                  ]}
+                >
+                  {datosPersonales.tipoDocumento ? getSiglaDocumento(datosPersonales.tipoDocumento) : "—"}
+                </Text>
+              </View>
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.inputCelular,
+                  { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
+                  !datosPersonales.tipoDocumento && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted },
+                ]}
+                value={datosPersonales.numeroDocumento}
+                onChangeText={(v) => {
+                  actualizarDatosPersonales({ numeroDocumento: v });
+                  actualizarUsuarioGlobal({ numeroDocumento: v });
+                }}
+                placeholder={
+                  datosPersonales.tipoDocumento
+                    ? datosPersonales.tipoDocumento === "CC"
+                      ? "1020304050"
+                      : datosPersonales.tipoDocumento === "Pasaporte"
+                        ? "P12345678"
+                        : "123456789"
+                    : "1020304050"
+                }
+                placeholderTextColor={c.textMuted}
+                keyboardType={
+                  datosPersonales.tipoDocumento === "CC" || datosPersonales.tipoDocumento === "TI"
+                    ? "numeric"
+                    : "default"
+                }
+                editable={!!datosPersonales.tipoDocumento}
+              />
+            </View>
           </View>
         </View>
       </View>

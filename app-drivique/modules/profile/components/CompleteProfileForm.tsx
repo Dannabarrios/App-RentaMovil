@@ -18,7 +18,7 @@ import { InputField } from "@/components/ui/InputField";
 import { inputFieldStyles } from "@/components/ui/InputField.styles";
 import { DateField } from "@/components/ui/DateField";
 import { SectionLabel } from "@/components/ui/SectionLabel";
-import { getPrefijoPorNacionalidad } from "@/modules/reservation/constants/reservation.constants";
+import { getPrefijoPorNacionalidad, getSiglaDocumento } from "@/modules/reservation/constants/reservation.constants";
 
 const TIPOS_DOCUMENTO: TipoDocumento[] = ["CC", "CE", "Pasaporte", "DNI", "PPT", "PEP", "TI"];
 
@@ -235,17 +235,51 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
           ))}
         </View>
       )}
-      {errores.tipoDocumento && <Text style={s.error}>{errores.tipoDocumento}</Text>}
-
-      <InputField
-        label={t("perfil.numeroDocumento")}
-        placeholder="Entre 6 y 10 dígitos"
-        keyboardType="numeric"
-        value={form.numeroDocumento}
-        onChangeText={v => actualizarCampo("numeroDocumento", v)}
-        error={errores.numeroDocumento}
-        colores={colores}
-      />
+      {/* Número de documento */}
+      <Text style={[s.label, { color: c.textSecondary }]}>{t("perfil.numeroDocumento")}</Text>
+      <View style={s.filaCelular}>
+        <View
+          style={[
+            s.prefijoBox,
+            { backgroundColor: c.primaryBg, borderColor: c.border },
+            !form.tipoDocumento && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6" },
+          ]}
+        >
+          <Text style={[s.prefijoText, { color: "#1D4ED8" }, !form.tipoDocumento && { color: c.textMuted }]}>
+            {form.tipoDocumento ? getSiglaDocumento(form.tipoDocumento) : "—"}
+          </Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <TextInput
+            style={[
+              inputFieldStyles.input,
+              { borderColor: c.border, backgroundColor: c.bgInput, color: c.textPrimary },
+              errores.numeroDocumento ? inputFieldStyles.inputErrorWrapper : undefined,
+              !form.tipoDocumento ? { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted } : undefined,
+            ]}
+            placeholder={
+              form.tipoDocumento
+                ? form.tipoDocumento === "CC"
+                  ? "1020304050"
+                  : form.tipoDocumento === "Pasaporte"
+                    ? "P12345678"
+                    : "123456789"
+                : "1020304050"
+            }
+            placeholderTextColor="#9CA3AF"
+            autoCorrect={false}
+            keyboardType={
+              form.tipoDocumento === "CC" || form.tipoDocumento === "TI"
+                ? "numeric"
+                : "default"
+            }
+            value={form.numeroDocumento}
+            onChangeText={v => actualizarCampo("numeroDocumento", v)}
+            editable={!!form.tipoDocumento}
+          />
+          {errores.numeroDocumento && <Text style={s.error}>{errores.numeroDocumento}</Text>}
+        </View>
+      </View>
 
       <View style={{ marginTop: 24 }}>
         <PrimaryButton titulo={t("perfil.guardarDatos")} onPress={handleGuardar} cargando={cargando} />
