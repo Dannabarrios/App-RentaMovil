@@ -587,7 +587,7 @@ export default {
     numeroDocumento: 'Número de documento',
     nacionalidad: 'Nacionalidade',
     guardarDatos: 'Salvar dados',
-    seleccionar: 'Selecionar...',
+    seleccionar: 'Selecionar',
     datosPersonales: 'DADOS PESSOAIS',
     seccionContacto: 'CONTATO',
     seccionDocumento: 'DOCUMENTO DE IDENTIDADE',

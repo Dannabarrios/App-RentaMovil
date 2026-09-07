@@ -639,7 +639,7 @@ export default {
     numeroDocumento: 'Número de documento',
     nacionalidad: 'Nacionalidad',
     guardarDatos: 'Guardar datos',
-    seleccionar: 'Seleccionar...',
+    seleccionar: 'Seleccionar',
     datosPersonales: 'DATOS PERSONALES',
     seccionContacto: 'CONTACTO',
     seccionDocumento: 'DOCUMENTO DE IDENTIDAD',

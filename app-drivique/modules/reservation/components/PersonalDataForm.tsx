@@ -439,7 +439,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
               etiqueta={t("reserva.datosPersonales.nacionalidad", { defaultValue: "Nacionalidad *" })}
               valorSeleccionado={datosPersonales.nacionalidad || null}
               opciones={OPCIONES_NACIONALIDAD}
-              placeholder={t("perfil.seleccionar", { defaultValue: "Seleccionar..." })}
+              placeholder={t("perfil.seleccionar", { defaultValue: "Seleccionar" })}
               onSeleccionar={(id) => {
                 actualizarDatosPersonales({ nacionalidad: id });
                 actualizarUsuarioGlobal({ nacionalidad: id });
@@ -535,7 +535,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
               valorSeleccionado={datosPersonales.tipoDocumento}
               opciones={opcionesTipoDocumentoFiltradas}
               deshabilitado={!hayPrefijo}
-              placeholder={t("perfil.seleccionar", { defaultValue: "Seleccionar..." })}
+              placeholder={t("perfil.seleccionar", { defaultValue: "Seleccionar" })}
               onSeleccionar={(id) => {
                 actualizarDatosPersonales({
                   tipoDocumento: id as typeof datosPersonales.tipoDocumento,

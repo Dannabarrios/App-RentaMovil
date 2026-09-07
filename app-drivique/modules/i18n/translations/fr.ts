@@ -587,7 +587,7 @@ export default {
     numeroDocumento: 'Numéro de document',
     nacionalidad: 'Nationalité',
     guardarDatos: 'Enregistrer',
-    seleccionar: 'Sélectionner...',
+    seleccionar: 'Sélectionner',
     datosPersonales: 'DONNÉES PERSONNELLES',
     seccionContacto: 'CONTACT',
     seccionDocumento: "PIÈCE D'IDENTITÉ",

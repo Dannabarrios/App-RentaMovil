@@ -589,7 +589,7 @@ export default {
     numeroDocumento: 'Document number',
     nacionalidad: 'Nationality',
     guardarDatos: 'Save data',
-    seleccionar: 'Select...',
+    seleccionar: 'Select',
     datosPersonales: 'PERSONAL DATA',
     seccionContacto: 'CONTACT',
     seccionDocumento: 'IDENTITY DOCUMENT',
