@@ -73,6 +73,7 @@ export default function PagoRespuestaScreen() {
   const [claveIngresada, setClaveIngresada] = useState("");
   const [errorClave, setErrorClave] = useState("");
   const [mostrarFirma, setMostrarFirma] = useState(false);
+  const [mostrarLectorContrato, setMostrarLectorContrato] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -277,6 +278,26 @@ export default function PagoRespuestaScreen() {
   const planesSnap = reserva.planesSnapshot as DatosPlanes | undefined;
   const foto = vehiculoSnap?.imagenes?.[0];
 
+  const formatLugar = (lugar: string | undefined | null, modo: "entrega" | "devolucion") => {
+    if (!lugar || lugar.trim() === "") return "—";
+    if (lugar === "domicilio") {
+      return t(modo === "entrega" ? "reserva.fechasLugar.entregaDomicilio" : "reserva.fechasLugar.devolucionDomicilio", {
+        defaultValue: modo === "entrega" ? "Entrega a domicilio" : "Devolución a domicilio",
+      });
+    }
+    if (lugar === "aeropuerto") {
+      return t(modo === "entrega" ? "reserva.fechasLugar.entregaAeropuerto" : "reserva.fechasLugar.devolucionAeropuerto", {
+        defaultValue: modo === "entrega" ? "Entrega en aeropuerto" : "Devolución en aeropuerto",
+      });
+    }
+    if (lugar === "terminal") {
+      return t(modo === "entrega" ? "reserva.fechasLugar.entregaTerminal" : "reserva.fechasLugar.devolucionTerminal", {
+        defaultValue: modo === "entrega" ? "Entrega en terminal" : "Devolución en terminal",
+      });
+    }
+    return lugar;
+  };
+
   const handleValidarClave = () => {
     const datosPersonalesSnap = reserva?.datosPersonalesSnapshot as DatosPersonales | undefined;
     const numeroDocumento = datosPersonalesSnap?.numeroDocumento?.replace(/\D/g, "");
@@ -354,23 +375,31 @@ export default function PagoRespuestaScreen() {
         onVolver={irAMisReservas}
       />
 
-      {contratoActual && claveDesbloqueada && vehiculoSnap && datosPersonalesSnap && fechasLugarSnap && planesSnap ? (
-        <FirmaContrato
-          vehiculo={vehiculoSnap}
-          datosPersonales={datosPersonalesSnap}
-          datosDocumentos={
-            datosDocumentosSnap ?? { cedulaFrente: null, cedulaReverso: null, licenciaConduccion: null }
-          }
-          fechasLugar={fechasLugarSnap}
-          planes={planesSnap}
-          total={reserva.total}
-          referencia={reserva.referencia}
-          onFirmado={() => {}}
-          soloLectura
-          contratoFirmado={contratoActual}
-          onDescargar={handleDescargarPdf}
-          descargando={generandoPdf}
-        />
+      {mostrarLectorContrato && contratoActual && claveDesbloqueada && vehiculoSnap && datosPersonalesSnap && fechasLugarSnap && planesSnap ? (
+        <View style={{ flex: 1, backgroundColor: c.bg }}>
+          <HeaderDetalle
+            insets={insets}
+            c={c}
+            titulo={t("reserva.contrato.title", { defaultValue: "Contrato de Alquiler" })}
+            onVolver={() => setMostrarLectorContrato(false)}
+          />
+          <FirmaContrato
+            vehiculo={vehiculoSnap}
+            datosPersonales={datosPersonalesSnap}
+            datosDocumentos={
+              datosDocumentosSnap ?? { cedulaFrente: null, cedulaReverso: null, licenciaConduccion: null }
+            }
+            fechasLugar={fechasLugarSnap}
+            planes={planesSnap}
+            total={reserva.total}
+            referencia={reserva.referencia}
+            onFirmado={() => {}}
+            soloLectura
+            contratoFirmado={contratoActual}
+            onDescargar={handleDescargarPdf}
+            descargando={generandoPdf}
+          />
+        </View>
       ) : (
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -424,8 +453,14 @@ export default function PagoRespuestaScreen() {
         />
         <FilaDetalle
           icono="location-outline"
-          label={t("misReservas.detalle.lugar")}
-          valor={String(reserva.lugarRetiro ?? "—")}
+          label={t("misReservas.detalle.lugarRetiro", { defaultValue: "Lugar de retiro" })}
+          valor={formatLugar(reserva.lugarRetiro ?? (reserva.fechasLugarSnapshot as any)?.lugarRetiro, "entrega")}
+          c={c}
+        />
+        <FilaDetalle
+          icono="location-outline"
+          label={t("misReservas.detalle.lugarDevolucion", { defaultValue: "Lugar de devolución" })}
+          valor={formatLugar(reserva.lugarDevolucion ?? (reserva.fechasLugarSnapshot as any)?.lugarDevolucion ?? reserva.lugarRetiro, "devolucion")}
           c={c}
         />
         {reserva.proteccion ? (
@@ -777,13 +812,13 @@ export default function PagoRespuestaScreen() {
               width: 48,
               height: 48,
               borderRadius: 24,
-              backgroundColor: "rgba(22, 163, 74, 0.12)",
+              backgroundColor: c.oscuro ? "rgba(37, 99, 235, 0.18)" : "#EFF6FF",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 10,
             }}
           >
-            <Ionicons name="checkmark-circle" size={26} color="#16a34a" />
+            <Ionicons name="checkmark-circle" size={26} color={primaryAccent} />
           </View>
           <Text style={[styles.tituloCandado, { color: c.textPrimary }]}>
             {t("misReservas.contratoDesbloqueadoTitulo", { defaultValue: "Contrato de alquiler" })}
@@ -794,7 +829,7 @@ export default function PagoRespuestaScreen() {
             })}
           </Text>
           <TouchableOpacity
-            style={[styles.btnWrap, { marginBottom: 4 }]}
+            style={[styles.btnWrap, { marginBottom: 8 }]}
             onPress={handleDescargarPdf}
             activeOpacity={0.85}
             disabled={generandoPdf}
@@ -816,6 +851,30 @@ export default function PagoRespuestaScreen() {
                   : t("misReservas.descargarContrato", { defaultValue: "Descargar Contrato (PDF)" })}
               </Text>
             </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.btnWrap,
+              {
+                borderWidth: 1,
+                borderColor: c.border,
+                borderRadius: 12,
+                backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC",
+                paddingVertical: 13,
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+                gap: 6,
+              },
+            ]}
+            onPress={() => setMostrarLectorContrato(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="eye-outline" size={17} color={primaryAccent} />
+            <Text style={{ color: primaryAccent, fontSize: 13.5, fontWeight: "700" }}>
+              {t("misReservas.leerContrato", { defaultValue: "Ver Contrato Completo" })}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
