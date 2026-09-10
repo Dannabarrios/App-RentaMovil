@@ -65,22 +65,34 @@ export function WompiCheckoutModal({
   const handleInterceptUrl = (url: string): boolean => {
     if (!url) return true;
 
-    // Detectar retorno al comercio (localtest.me, respuesta, o parámetros de resultado de Wompi)
-    const esRetorno =
+    // Si estamos dentro del dominio y flujo de pago de Wompi, permitir la navegación
+    const esDominioWompi =
+      url.includes("checkout.wompi.co") ||
+      url.includes("wompi.co") ||
+      url.includes("wompi.com") ||
+      url.includes("cloudfront.net") ||
+      url.includes("pse.com.co") ||
+      url.includes("bancolombia.com") ||
+      url.includes("nequi.com.co");
+
+    if (esDominioWompi) {
+      return true;
+    }
+
+    // Interceptar cuando la navegación sale de Wompi hacia la URL de retorno (localtest.me, respuesta, etc.)
+    const esRetornoComercio =
       url.includes("localtest.me") ||
       url.includes("/respuesta") ||
-      url.includes("env=test") ||
-      url.includes("transactionId=") ||
-      (url.includes("id=") && !url.includes("checkout.wompi.co/p/"));
+      url.includes("app-drivique://");
 
-    if (esRetorno && !procesadoRef.current) {
+    if (esRetornoComercio && !procesadoRef.current) {
       procesadoRef.current = true;
       const txId = extraerTransactionId(url);
       onComplete({
         transactionId: txId,
         reference: referencia,
       });
-      return false; // Detener carga en WebView para no solicitar localtest.me
+      return false; // Detener carga en WebView para evitar error de conexión a 127.0.0.1
     }
 
     return true;
