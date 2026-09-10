@@ -48,6 +48,8 @@ export default function WompiCheckoutScreen() {
   const [cargando, setCargando] = useState(true);
   const procesadoRef = useRef(false);
   const ultimoTransactionIdRef = useRef<string | null>(null);
+  const ultimoReferenciaWompiRef = useRef<string | null>(null);
+  const ultimoConvenioRef = useRef<string | null>("00000");
 
   useEffect(() => {
     let activo = true;
@@ -131,13 +133,27 @@ export default function WompiCheckoutScreen() {
               nuevoEstado = "CONFIRMADA";
             }
 
+            const convenioFinal =
+              txData.payment_method?.extra?.business_agreement_code ||
+              (txData as any).extra?.business_agreement_code ||
+              ultimoConvenioRef.current ||
+              "00000";
+
+            const refWompiFinal =
+              txData.payment_method?.extra?.payment_reference ||
+              txData.payment_method?.extra?.reference ||
+              txData.payment_method?.extra?.external_identifier ||
+              (txData as any).extra?.payment_reference ||
+              ultimoReferenciaWompiRef.current ||
+              "";
+
             await reservaPersistService.actualizarReserva(refDestino, {
               estado: nuevoEstado,
               paymentId: transactionId,
               paymentMethodType: pmType,
               metodoPagoDetalle: detalleMetodo,
-              convenioWompi: txData.payment_method?.extra?.business_agreement_code || (txData as any).extra?.business_agreement_code || "00000",
-              referenciaWompi: txData.payment_method?.extra?.payment_reference || (txData as any).extra?.payment_reference || "",
+              convenioWompi: convenioFinal,
+              referenciaWompi: refWompiFinal,
               wompiExtra: txData.payment_method?.extra,
             });
           }
@@ -210,6 +226,9 @@ export default function WompiCheckoutScreen() {
         if (data.type === "WOMPI_COLLECT_DATA" || data.type === "WOMPI_FINALIZAR_CLICK") {
           const convenio = data.convenio || "00000";
           const refPago = data.referenciaPago || "";
+          if (convenio) ultimoConvenioRef.current = convenio;
+          if (refPago) ultimoReferenciaWompiRef.current = refPago;
+
           if (refDestino && refPago) {
             reservaPersistService.actualizarReserva(refDestino, {
               estado: "PENDIENTE_EFECTIVO",
@@ -383,10 +402,29 @@ export default function WompiCheckoutScreen() {
                 try {
                   var text = document.body ? (document.body.innerText || document.body.textContent || '') : '';
                   var convMatch = text.match(/N[uú]mero\s+de\s+convenio\s*[:\n\r\t]*\s*([0-9]+)/i);
-                  var refMatch = text.match(/Referencia\s+de\s+pago\s*[:\n\r\t]*\s*([0-9]+)/i);
+                  var refMatch = text.match(/Referencia\s+de\s+pago\s*[:\n\r\t]*\s*([0-9]{5,25})/i);
 
                   var convenio = convMatch ? convMatch[1] : null;
                   var refPago = refMatch ? refMatch[1] : null;
+
+                  if (!refPago) {
+                    var allElements = document.querySelectorAll('*');
+                    for (var i = 0; i < allElements.length; i++) {
+                      var el = allElements[i];
+                      var elText = (el.innerText || el.textContent || '').trim();
+                      if (/^Referencia\s+de\s+pago/i.test(elText)) {
+                        var nextEl = el.nextElementSibling || (el.parentElement ? el.parentElement.nextElementSibling : null);
+                        if (nextEl) {
+                          var nextText = (nextEl.innerText || nextEl.textContent || '').trim();
+                          var numMatch = nextText.match(/([0-9]{5,25})/);
+                          if (numMatch) {
+                            refPago = numMatch[1];
+                            break;
+                          }
+                        }
+                      }
+                    }
+                  }
 
                   if (refPago) {
                     notify({
@@ -398,13 +436,17 @@ export default function WompiCheckoutScreen() {
                 } catch (err) {}
               }
 
+              setInterval(function() {
+                extractCollectData(false);
+              }, 1000);
+
               document.addEventListener('click', function(e) {
                 var target = e.target;
                 var targetText = target ? (target.innerText || target.textContent || '').trim().toLowerCase() : '';
                 if (targetText.includes('finalizar') || targetText.includes('terminar') || targetText.includes('listo')) {
                   extractCollectData(true);
                 } else {
-                  setTimeout(function() { extractCollectData(false); }, 500);
+                  setTimeout(function() { extractCollectData(false); }, 400);
                 }
               }, true);
 

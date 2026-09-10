@@ -704,21 +704,27 @@ export default function PagoRespuestaScreen() {
 
           {/* Caja de Referencia y Total */}
           <View style={[styles.cajaReferencia, { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.border }]}>
-            {!!(reserva as any).convenioWompi && (
-              <View style={styles.filaInfoEfectivo}>
-                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary, fontWeight: "700" }]}>Número de convenio:</Text>
-                <Text style={[styles.valorEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 16 }]}>{(reserva as any).convenioWompi}</Text>
-              </View>
-            )}
+            {esPendienteEfectivo ? (
+              <>
+                <View style={styles.filaInfoEfectivo}>
+                  <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary, fontWeight: "700" }]}>Número de convenio:</Text>
+                  <Text style={[styles.valorEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 16 }]}>
+                    {(reserva as any).convenioWompi || "00000"}
+                  </Text>
+                </View>
 
-            {!!(reserva as any).referenciaWompi && (
-              <View style={styles.filaInfoEfectivo}>
-                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary, fontWeight: "700" }]}>Referencia de pago:</Text>
-                <Text style={[styles.valorRefEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 16 }]}>{(reserva as any).referenciaWompi}</Text>
-              </View>
-            )}
-
-            {!(reserva as any).convenioWompi && (
+                <View style={styles.filaInfoEfectivo}>
+                  <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary, fontWeight: "700" }]}>Referencia de pago:</Text>
+                  <Text style={[styles.valorRefEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 16 }]}>
+                    {(reserva as any).referenciaWompi ||
+                     (reserva as any).wompiExtra?.payment_reference ||
+                     (reserva as any).wompiExtra?.reference ||
+                     (reserva as any).paymentId ||
+                     reserva.referencia}
+                  </Text>
+                </View>
+              </>
+            ) : (
               <View style={styles.filaInfoEfectivo}>
                 <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
                   {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia de reserva" })}:
