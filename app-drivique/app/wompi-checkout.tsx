@@ -32,6 +32,7 @@ export default function WompiCheckoutScreen() {
   
   const rawRef = params.ref ? String(params.ref) : "";
   const referencia = rawRef.includes("%") ? decodeURIComponent(rawRef) : rawRef;
+  const refDestino = referencia || rawRef;
 
   const getInitialUrl = () => {
     if (params.url) {
@@ -57,8 +58,8 @@ export default function WompiCheckoutScreen() {
           ? decodeURIComponent(rawUrl)
           : rawUrl;
         if (activo) setCheckoutUrl(urlLimpia);
-      } else if (referencia) {
-        const reserva = await reservaPersistService.obtenerPorReferencia(referencia);
+      } else if (refDestino) {
+        const reserva = await reservaPersistService.obtenerPorReferencia(refDestino);
         if (reserva) {
           const urlGen = await construirUrlCheckout({
             reference: reserva.referencia,
@@ -72,7 +73,7 @@ export default function WompiCheckoutScreen() {
     return () => {
       activo = false;
     };
-  }, [params.url, params.ref, referencia]);
+  }, [params.url, params.ref, refDestino]);
 
   const extraerTransactionId = (url: string): string | null => {
     try {
@@ -99,8 +100,6 @@ export default function WompiCheckoutScreen() {
   const handleFinalizarPago = async (transactionId: string | null) => {
     if (procesadoRef.current) return;
     procesadoRef.current = true;
-
-    const refDestino = referencia || (params.ref ? String(params.ref) : "");
 
     if (refDestino) {
       if (transactionId) {
@@ -246,7 +245,6 @@ export default function WompiCheckoutScreen() {
   };
 
   const handleVolver = () => {
-    const refDestino = referencia || (params.ref ? String(params.ref) : "");
     if (ultimoTransactionIdRef.current) {
       handleFinalizarPago(ultimoTransactionIdRef.current);
     } else if (refDestino) {
@@ -387,17 +385,13 @@ export default function WompiCheckoutScreen() {
                 } catch (err) {}
               }
 
-              setInterval(function() {
-                extractCollectData(false);
-              }, 800);
-
               document.addEventListener('click', function(e) {
                 var target = e.target;
                 var targetText = target ? (target.innerText || target.textContent || '').trim().toLowerCase() : '';
                 if (targetText.includes('finalizar') || targetText.includes('terminar') || targetText.includes('listo')) {
                   extractCollectData(true);
                 } else {
-                  setTimeout(function() { extractCollectData(false); }, 300);
+                  setTimeout(function() { extractCollectData(false); }, 500);
                 }
               }, true);
 
