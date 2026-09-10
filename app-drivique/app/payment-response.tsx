@@ -102,25 +102,47 @@ export default function PagoRespuestaScreen() {
       }
 
       if (encontrada && txData) {
-        const cambios: Partial<ReservaGuardada> = { paymentId: txData.id };
+        const pmType = (txData.payment_method_type || "").toUpperCase();
+        let detalleMetodo = "Wompi";
+        if (pmType === "BANCOLOMBIA_COLLECT" || pmType.includes("COLLECT")) {
+          detalleMetodo = "Efectivo en Bancolombia";
+        } else if (pmType === "NEQUI" || pmType.includes("NEQUI")) {
+          detalleMetodo = "Nequi";
+        } else if (pmType === "BANCOLOMBIA_TRANSFER" || pmType.includes("TRANSFER") || pmType.includes("BOTON_BANCOLOMBIA")) {
+          detalleMetodo = "Bancolombia";
+        } else if (pmType === "DAVIPLATA" || pmType.includes("DAVIPLATA")) {
+          detalleMetodo = "Daviplata";
+        } else if (pmType === "PSE" || pmType.includes("PSE")) {
+          detalleMetodo = "PSE";
+        } else if (pmType === "CARD" || pmType.includes("CARD")) {
+          const brand = txData.payment_method?.extra?.brand || "";
+          const last4 = txData.payment_method?.extra?.last_four || "";
+          detalleMetodo = brand ? `Tarjeta ${brand} ${last4 ? `(••• ${last4})` : ""}`.trim() : "Tarjeta";
+        }
+
+        const cambios: Partial<ReservaGuardada> = {
+          paymentId: txData.id,
+          paymentMethodType: pmType,
+          metodoPagoDetalle: detalleMetodo,
+        };
+
         if (txData.status === "APPROVED") {
           cambios.estado = "CONFIRMADA";
         } else if (txData.status === "PENDING") {
-          cambios.estado =
-            txData.payment_method_type === "BANCOLOMBIA_COLLECT"
-              ? "PENDIENTE_EFECTIVO"
-              : "PENDIENTE_VALIDACION";
-          cambios.metodoPagoDetalle =
-            txData.payment_method_type === "BANCOLOMBIA_COLLECT"
-              ? "Corresponsales Bancolombia"
-              : txData.payment_method_type;
-          cambios.fechaLimitePago = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
-          cambios.horasLimitePago = 72;
-          if (txData.payment_method?.extra?.business_agreement_code) {
-            cambios.convenioWompi = txData.payment_method.extra.business_agreement_code;
-          }
-          if (txData.payment_method?.extra?.payment_reference) {
-            cambios.referenciaWompi = txData.payment_method.extra.payment_reference;
+          if (pmType === "BANCOLOMBIA_COLLECT" || pmType.includes("COLLECT")) {
+            cambios.estado = "PENDIENTE_EFECTIVO";
+            cambios.fechaLimitePago = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+            cambios.horasLimitePago = 72;
+            cambios.convenioWompi =
+              txData.payment_method?.extra?.business_agreement_code ||
+              (txData as any).extra?.business_agreement_code ||
+              "00000";
+            cambios.referenciaWompi =
+              txData.payment_method?.extra?.payment_reference ||
+              (txData as any).extra?.payment_reference ||
+              "";
+          } else {
+            cambios.estado = "PENDIENTE_VALIDACION";
           }
         } else if (txData.status === "DECLINED" || txData.status === "ERROR") {
           cambios.estado = "CANCELADA";
@@ -181,37 +203,68 @@ export default function PagoRespuestaScreen() {
   };
 
   const resolverMedioPagoTexto = (r: ReservaGuardada): string => {
-    const mp = (r.metodoPago || "").toLowerCase();
-    const det = (
-      (r as any).metodoPagoDetalle ||
-      (r as any).subMetodoPago ||
+    const pmType = String(
+      r.paymentMethodType ||
+      (r as any).wompiPaymentMethodType ||
       (r as any).wompiMetodo ||
+      ""
+    ).toUpperCase();
+
+    const det = String(
+      r.metodoPagoDetalle ||
+      (r as any).subMetodoPago ||
       (r as any).formaPago ||
       ""
-    ).toLowerCase();
+    ).trim();
 
-    if (esPendienteEfectivo || mp === "efectivo" || mp.includes("sucursal")) {
+    const mp = (r.metodoPago || "").toLowerCase();
+
+    if (
+      pmType === "BANCOLOMBIA_COLLECT" ||
+      pmType.includes("COLLECT") ||
+      det.toLowerCase().includes("corresponsal") ||
+      det.toLowerCase().includes("efectivo en bancolombia") ||
+      !!r.convenioWompi
+    ) {
+      return "Efectivo en Bancolombia";
+    }
+
+    if (mp === "efectivo" && !pmType) {
       return "Efectivo en sucursal";
     }
-    if (det.includes("nequi") || mp.includes("nequi")) {
+
+    if (pmType === "NEQUI" || det.toLowerCase().includes("nequi") || mp.includes("nequi")) {
       return "Pago Wompi - Nequi";
     }
-    if (det.includes("pse") || mp.includes("pse")) {
-      return "Pago Wompi - PSE";
-    }
-    if (det.includes("tarjeta") || det.includes("card") || det.includes("credito") || mp.includes("tarjeta")) {
-      return "Pago Wompi - Tarjeta";
-    }
-    if (det.includes("bancolombia") || mp.includes("bancolombia")) {
-      return "Pago Wompi - Bancolombia";
-    }
-    if (det.includes("daviplata") || mp.includes("daviplata")) {
+
+    if (pmType === "DAVIPLATA" || det.toLowerCase().includes("daviplata") || mp.includes("daviplata")) {
       return "Pago Wompi - Daviplata";
     }
-    if (mp === "wompi" || det.includes("wompi")) {
-      return (r as any).metodoPagoDetalle || "Pago Wompi";
+
+    if (
+      pmType === "BANCOLOMBIA_TRANSFER" ||
+      pmType === "BOTON_BANCOLOMBIA" ||
+      (pmType.includes("BANCOLOMBIA") && !pmType.includes("COLLECT")) ||
+      (det.toLowerCase().includes("bancolombia") && !det.toLowerCase().includes("corresponsal"))
+    ) {
+      return "Pago Wompi - Bancolombia";
     }
-    return r.metodoPago ? r.metodoPago.charAt(0).toUpperCase() + r.metodoPago.slice(1) : "Pago Wompi";
+
+    if (pmType === "PSE" || det.toLowerCase().includes("pse") || mp.includes("pse")) {
+      return "Pago Wompi - PSE";
+    }
+
+    if (pmType === "CARD" || det.toLowerCase().includes("tarjeta") || det.toLowerCase().includes("card") || mp.includes("tarjeta")) {
+      return det && (det.toLowerCase().includes("visa") || det.toLowerCase().includes("mastercard"))
+        ? `Pago Wompi - ${det}`
+        : "Pago Wompi - Tarjeta";
+    }
+
+    if (det && det.toLowerCase() !== "wompi") {
+      return det.startsWith("Pago Wompi") ? det : `Pago Wompi - ${det}`;
+    }
+
+    return "Pago Wompi";
   };
 
   const sucursalNombre = reserva?.lugarRetiro || (reserva?.fechasLugarSnapshot as any)?.lugarRetiro || "";
@@ -255,12 +308,15 @@ export default function PagoRespuestaScreen() {
 
   const esPendienteEfectivo =
     reserva.estado === "PENDIENTE_EFECTIVO" ||
-    (reserva.estado === "PENDIENTE" && reserva.metodoPago === "efectivo");
+    (reserva.estado === "PENDIENTE" && reserva.metodoPago === "efectivo") ||
+    String(reserva.paymentMethodType || "").toUpperCase() === "BANCOLOMBIA_COLLECT" ||
+    String(reserva.metodoPagoDetalle || "").toLowerCase().includes("bancolombia") ||
+    !!reserva.convenioWompi;
 
-  // La firma puede mostrarse como pantalla completa cuando el usuario toca la tarjeta CTA
+  // La firma solo se habilita para reservas pagadas/confirmadas o pendientes de validacion digital, NUNCA cuando está pendiente pago en efectivo
   const puedeFirmar = !contratoFirmado && !esPendienteEfectivo && (
     reserva.estado === "CONFIRMADA" ||
-    (reserva.metodoPago === "wompi" && ["PENDIENTE_VALIDACION"].includes(reserva.estado))
+    (reserva.metodoPago === "wompi" && reserva.estado === "PENDIENTE_VALIDACION")
   );
 
   // Pantalla completa de firma cuando el usuario la solicita
@@ -620,13 +676,15 @@ export default function PagoRespuestaScreen() {
 
           {/* Título */}
           <Text style={[styles.tituloEfectivo, { color: c.textPrimary }]}>
-            {t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "Reserva Registrada" })}
+            {!!(reserva as any).convenioWompi || String((reserva as any).paymentMethodType || "").toUpperCase() === "BANCOLOMBIA_COLLECT" || String((reserva as any).metodoPagoDetalle || "").toLowerCase().includes("bancolombia")
+              ? "Pago en Efectivo - Bancolombia"
+              : t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "Reserva Registrada" })}
           </Text>
 
           {/* Mensaje descriptivo */}
           <Text style={[styles.descripcionEfectivo, { color: c.textSecondary }]}>
-            {(reserva as any).metodoPagoDetalle === "Corresponsales Bancolombia"
-              ? "Tu reserva quedó registrada. Realiza el pago en efectivo en cualquier punto o Corresponsal Bancolombia con la siguiente referencia."
+            {!!(reserva as any).convenioWompi || String((reserva as any).paymentMethodType || "").toUpperCase() === "BANCOLOMBIA_COLLECT" || String((reserva as any).metodoPagoDetalle || "").toLowerCase().includes("bancolombia")
+              ? "Acércate a un Corresponsal Bancario Bancolombia con los datos mostrados a continuación y efectúa el pago antes del plazo límite para confirmar tu reserva:"
               : sucursalNombre
               ? `Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en el punto autorizado ${sucursalNombre}.`
               : "Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en la sucursal seleccionada."}
@@ -634,26 +692,26 @@ export default function PagoRespuestaScreen() {
 
           {/* Caja de Referencia y Total */}
           <View style={[styles.cajaReferencia, { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.border }]}>
-            <View style={styles.filaInfoEfectivo}>
-              <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
-                {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia de reserva" })}:
-              </Text>
-              <Text style={[styles.valorRefEfectivo, { color: primaryAccent }]}>{reserva.referencia}</Text>
-            </View>
-
             {!!(reserva as any).convenioWompi && (
               <View style={styles.filaInfoEfectivo}>
-                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>Convenio Bancolombia:</Text>
-                <Text style={[styles.valorEfectivo, { color: c.textPrimary }]}>{(reserva as any).convenioWompi}</Text>
+                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary, fontWeight: "700" }]}>Número de convenio:</Text>
+                <Text style={[styles.valorEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 15 }]}>{(reserva as any).convenioWompi}</Text>
               </View>
             )}
 
             {!!(reserva as any).referenciaWompi && (
               <View style={styles.filaInfoEfectivo}>
-                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>Referencia de Pago:</Text>
-                <Text style={[styles.valorRefEfectivo, { color: primaryAccent }]}>{(reserva as any).referenciaWompi}</Text>
+                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary, fontWeight: "700" }]}>Referencia de pago:</Text>
+                <Text style={[styles.valorRefEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 15 }]}>{(reserva as any).referenciaWompi}</Text>
               </View>
             )}
+
+            <View style={styles.filaInfoEfectivo}>
+              <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia de reserva" })}:
+              </Text>
+              <Text style={[styles.valorRefEfectivo, { color: c.textPrimary }]}>{reserva.referencia}</Text>
+            </View>
 
             {!(reserva as any).convenioWompi && !!sucursalNombre && (
               <View style={styles.filaInfoEfectivo}>

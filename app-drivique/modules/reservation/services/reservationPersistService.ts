@@ -31,6 +31,11 @@ export interface ReservaGuardada {
   fechaLimitePago?: string | null;
   horasLimitePago?: number | null;
   paymentId?: string | null;
+  paymentMethodType?: string | null;
+  metodoPagoDetalle?: string | null;
+  convenioWompi?: string | null;
+  referenciaWompi?: string | null;
+  wompiExtra?: Record<string, any> | null;
   [extra: string]: unknown;
 }
 

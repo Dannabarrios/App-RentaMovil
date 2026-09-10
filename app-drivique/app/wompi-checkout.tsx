@@ -88,12 +88,39 @@ export default function WompiCheckoutScreen() {
           const txData = await consultarTransaccionWompi(transactionId);
           if (txData) {
             let nuevoEstado: "PENDIENTE_VALIDACION" | "PENDIENTE_EFECTIVO" | "CONFIRMADA" = "PENDIENTE_VALIDACION";
-            if (txData.payment_method_type === "BANCOLOMBIA_COLLECT") {
+            const pmType = (txData.payment_method_type || "").toUpperCase();
+
+            let detalleMetodo = "Wompi";
+            if (pmType === "BANCOLOMBIA_COLLECT" || pmType.includes("COLLECT")) {
               nuevoEstado = "PENDIENTE_EFECTIVO";
-            } else if (txData.status === "APPROVED") {
+              detalleMetodo = "Efectivo en Bancolombia";
+            } else if (pmType === "NEQUI" || pmType.includes("NEQUI")) {
+              detalleMetodo = "Nequi";
+            } else if (pmType === "BANCOLOMBIA_TRANSFER" || pmType.includes("TRANSFER") || pmType.includes("BOTON_BANCOLOMBIA")) {
+              detalleMetodo = "Bancolombia";
+            } else if (pmType === "DAVIPLATA" || pmType.includes("DAVIPLATA")) {
+              detalleMetodo = "Daviplata";
+            } else if (pmType === "PSE" || pmType.includes("PSE")) {
+              detalleMetodo = "PSE";
+            } else if (pmType === "CARD" || pmType.includes("CARD")) {
+              const brand = txData.payment_method?.extra?.brand || "";
+              const last4 = txData.payment_method?.extra?.last_four || "";
+              detalleMetodo = brand ? `Tarjeta ${brand} ${last4 ? `(••• ${last4})` : ""}`.trim() : "Tarjeta";
+            }
+
+            if (txData.status === "APPROVED") {
               nuevoEstado = "CONFIRMADA";
             }
-            await reservaPersistService.actualizarEstado(referencia, nuevoEstado, transactionId);
+
+            await reservaPersistService.actualizarReserva(referencia, {
+              estado: nuevoEstado,
+              paymentId: transactionId,
+              paymentMethodType: pmType,
+              metodoPagoDetalle: detalleMetodo,
+              convenioWompi: txData.payment_method?.extra?.business_agreement_code || (txData as any).extra?.business_agreement_code || "00000",
+              referenciaWompi: txData.payment_method?.extra?.payment_reference || (txData as any).extra?.payment_reference || "",
+              wompiExtra: txData.payment_method?.extra,
+            });
           }
         } catch (e) {
           console.error("[WompiCheckout] Error consultando transaccion Wompi:", e);
