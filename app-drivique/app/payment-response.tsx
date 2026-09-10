@@ -689,14 +689,14 @@ export default function PagoRespuestaScreen() {
 
           {/* Título */}
           <Text style={[styles.tituloEfectivo, { color: c.textPrimary }]}>
-            {!!(reserva as any).convenioWompi || String((reserva as any).paymentMethodType || "").toUpperCase().includes("COLLECT") || String((reserva as any).metodoPagoDetalle || "").toLowerCase().includes("efectivo en bancolombia")
+            {pmTypeUpper.includes("COLLECT") || detLower.includes("efectivo en bancolombia") || detLower.includes("corresponsal")
               ? "Pago en Efectivo - Bancolombia"
               : t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "Reserva Registrada" })}
           </Text>
 
           {/* Mensaje descriptivo */}
           <Text style={[styles.descripcionEfectivo, { color: c.textSecondary }]}>
-            {!!(reserva as any).convenioWompi || String((reserva as any).paymentMethodType || "").toUpperCase().includes("COLLECT") || String((reserva as any).metodoPagoDetalle || "").toLowerCase().includes("efectivo en bancolombia")
+            {pmTypeUpper.includes("COLLECT") || detLower.includes("efectivo en bancolombia") || detLower.includes("corresponsal")
               ? "Acércate a un Corresponsal Bancario Bancolombia con los datos mostrados a continuación y efectúa el pago antes del plazo límite para confirmar tu reserva:"
               : sucursalNombre
               ? `Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en el punto autorizado ${sucursalNombre}.`
@@ -705,7 +705,7 @@ export default function PagoRespuestaScreen() {
 
           {/* Caja de Referencia y Total */}
           <View style={[styles.cajaReferencia, { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.border }]}>
-            {esPendienteEfectivo ? (
+            {pmTypeUpper.includes("COLLECT") || detLower.includes("efectivo en bancolombia") || detLower.includes("corresponsal") ? (
               <>
                 <View style={styles.filaInfoEfectivo}>
                   <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary, fontWeight: "700" }]}>Número de convenio:</Text>
@@ -726,43 +726,45 @@ export default function PagoRespuestaScreen() {
                 </View>
               </>
             ) : (
-              <View style={styles.filaInfoEfectivo}>
-                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
-                  {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia de reserva" })}:
-                </Text>
-                <Text style={[styles.valorRefEfectivo, { color: c.textPrimary }]}>{reserva.referencia}</Text>
-              </View>
-            )}
+              <>
+                <View style={styles.filaInfoEfectivo}>
+                  <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                    {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia de reserva" })}:
+                  </Text>
+                  <Text style={[styles.valorRefEfectivo, { color: c.textPrimary }]}>{reserva.referencia}</Text>
+                </View>
 
-            {!(reserva as any).convenioWompi && !!sucursalNombre && (
-              <View style={styles.filaInfoEfectivo}>
-                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
-                  {t("reserva.confirmacion.sucursal", { defaultValue: "Sucursal" })}:
-                </Text>
-                <Text style={[styles.valorEfectivo, { color: c.textPrimary }]} numberOfLines={1}>
-                  {sucursalNombre}
-                </Text>
-              </View>
-            )}
+                {!!sucursalNombre && (
+                  <View style={styles.filaInfoEfectivo}>
+                    <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                      {t("reserva.confirmacion.sucursal", { defaultValue: "Sucursal" })}:
+                    </Text>
+                    <Text style={[styles.valorEfectivo, { color: c.textPrimary }]} numberOfLines={1}>
+                      {sucursalNombre}
+                    </Text>
+                  </View>
+                )}
 
-            {!(reserva as any).convenioWompi && !!ciudadSucursal && (
-              <View style={styles.filaInfoEfectivo}>
-                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
-                  {t("reserva.confirmacion.ciudad", { defaultValue: "Ciudad" })}:
-                </Text>
-                <Text style={[styles.valorEfectivo, { color: c.textPrimary }]}>{ciudadSucursal}</Text>
-              </View>
-            )}
+                {!!ciudadSucursal && (
+                  <View style={styles.filaInfoEfectivo}>
+                    <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                      {t("reserva.confirmacion.ciudad", { defaultValue: "Ciudad" })}:
+                    </Text>
+                    <Text style={[styles.valorEfectivo, { color: c.textPrimary }]}>{ciudadSucursal}</Text>
+                  </View>
+                )}
 
-            {!(reserva as any).convenioWompi && !!direccionSucursal && (
-              <View style={styles.filaInfoEfectivo}>
-                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
-                  {t("reserva.confirmacion.direccion", { defaultValue: "Dirección" })}:
-                </Text>
-                <Text style={[styles.valorEfectivo, { color: c.textPrimary }]} numberOfLines={2}>
-                  {direccionSucursal}
-                </Text>
-              </View>
+                {!!direccionSucursal && (
+                  <View style={styles.filaInfoEfectivo}>
+                    <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                      {t("reserva.confirmacion.direccion", { defaultValue: "Dirección" })}:
+                    </Text>
+                    <Text style={[styles.valorEfectivo, { color: c.textPrimary }]} numberOfLines={2}>
+                      {direccionSucursal}
+                    </Text>
+                  </View>
+                )}
+              </>
             )}
 
             <View style={[styles.divisorEfectivo, { backgroundColor: c.border }]} />
