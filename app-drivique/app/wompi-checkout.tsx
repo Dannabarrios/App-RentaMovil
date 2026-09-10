@@ -30,9 +30,20 @@ export default function WompiCheckoutScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ url?: string; ref?: string }>();
   
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
-  const referencia = params.ref ? decodeURIComponent(params.ref) : "";
+  const rawRef = params.ref ? String(params.ref) : "";
+  const referencia = rawRef.includes("%") ? decodeURIComponent(rawRef) : rawRef;
 
+  const getInitialUrl = () => {
+    if (params.url) {
+      const rawUrl = String(params.url);
+      return rawUrl.includes("%3A%2F%2F") || rawUrl.includes("%2F")
+        ? decodeURIComponent(rawUrl)
+        : rawUrl;
+    }
+    return null;
+  };
+
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(getInitialUrl);
   const [cargando, setCargando] = useState(true);
   const procesadoRef = useRef(false);
   const ultimoTransactionIdRef = useRef<string | null>(null);
@@ -41,10 +52,13 @@ export default function WompiCheckoutScreen() {
     let activo = true;
     (async () => {
       if (params.url) {
-        if (activo) setCheckoutUrl(decodeURIComponent(params.url));
-      } else if (params.ref) {
-        const refLimpia = decodeURIComponent(params.ref);
-        const reserva = await reservaPersistService.obtenerPorReferencia(refLimpia);
+        const rawUrl = String(params.url);
+        const urlLimpia = rawUrl.includes("%3A%2F%2F") || rawUrl.includes("%2F")
+          ? decodeURIComponent(rawUrl)
+          : rawUrl;
+        if (activo) setCheckoutUrl(urlLimpia);
+      } else if (referencia) {
+        const reserva = await reservaPersistService.obtenerPorReferencia(referencia);
         if (reserva) {
           const urlGen = await construirUrlCheckout({
             reference: reserva.referencia,
@@ -58,7 +72,7 @@ export default function WompiCheckoutScreen() {
     return () => {
       activo = false;
     };
-  }, [params.url, params.ref]);
+  }, [params.url, params.ref, referencia]);
 
   const extraerTransactionId = (url: string): string | null => {
     try {
@@ -86,7 +100,9 @@ export default function WompiCheckoutScreen() {
     if (procesadoRef.current) return;
     procesadoRef.current = true;
 
-    if (referencia) {
+    const refDestino = referencia || (params.ref ? String(params.ref) : "");
+
+    if (refDestino) {
       if (transactionId) {
         try {
           const txData = await consultarTransaccionWompi(transactionId);
@@ -116,7 +132,7 @@ export default function WompiCheckoutScreen() {
               nuevoEstado = "CONFIRMADA";
             }
 
-            await reservaPersistService.actualizarReserva(referencia, {
+            await reservaPersistService.actualizarReserva(refDestino, {
               estado: nuevoEstado,
               paymentId: transactionId,
               paymentMethodType: pmType,
@@ -132,7 +148,7 @@ export default function WompiCheckoutScreen() {
       }
 
       router.replace(
-        `/payment-response?ref=${encodeURIComponent(referencia)}${transactionId ? `&id=${encodeURIComponent(transactionId)}` : ""}`
+        `/payment-response?ref=${encodeURIComponent(refDestino)}${transactionId ? `&id=${encodeURIComponent(transactionId)}` : ""}`
       );
     } else {
       router.replace("/(tabs)/my-bookings");
@@ -190,18 +206,13 @@ export default function WompiCheckoutScreen() {
           ultimoTransactionIdRef.current = txId;
         }
 
+        // Solo finalizar cuando el usuario explícitamente cierra el checkout o Wompi finaliza
         if (
-          data.event === "wompi:transaction_updated" ||
-          data.event === "transaction.updated" ||
           data.event === "wompi:checkout_closed" ||
-          data.status === "APPROVED" ||
-          data.status === "PENDING" ||
-          data.status === "DECLINED"
+          data.type === "CHECKOUT_CLOSED"
         ) {
           const idFinal = txId || ultimoTransactionIdRef.current;
-          if (idFinal) {
-            handleFinalizarPago(idFinal);
-          }
+          handleFinalizarPago(idFinal);
         }
       } else if (typeof data === "string") {
         const txId = extraerTransactionId(data);
@@ -215,12 +226,13 @@ export default function WompiCheckoutScreen() {
   };
 
   const handleVolver = () => {
+    const refDestino = referencia || (params.ref ? String(params.ref) : "");
     if (ultimoTransactionIdRef.current) {
       handleFinalizarPago(ultimoTransactionIdRef.current);
-    } else if (referencia) {
-      router.replace(`/payment-response?ref=${encodeURIComponent(referencia)}`);
+    } else if (refDestino) {
+      router.replace(`/payment-response?ref=${encodeURIComponent(refDestino)}`);
     } else {
-      router.back();
+      router.replace("/(tabs)/my-bookings");
     }
   };
 
