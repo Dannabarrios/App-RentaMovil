@@ -72,6 +72,33 @@ function etiquetaMesCorto(claveYYYYMM: string, locale: string): string {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
+function formatHora12(horaStr?: string | null): string {
+  if (!horaStr) return "";
+  const partes = String(horaStr).trim().split(":");
+  if (partes.length < 2) return String(horaStr);
+  let h = parseInt(partes[0], 10);
+  const m = partes[1].slice(0, 2);
+  if (isNaN(h)) return String(horaStr);
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+function formatFechaCompleta(fechaStr?: string | null, locale: string = "es-CO"): string {
+  if (!fechaStr) return "";
+  const clean = String(fechaStr).split("T")[0];
+  const d = new Date(`${clean}T00:00:00`);
+  if (isNaN(d.getTime())) return String(fechaStr);
+  const texto = d.toLocaleDateString(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 export default function MisReservasScreen() {
   const insets = useSafeAreaInsets();
   const c = useTemaColores();
@@ -103,8 +130,12 @@ export default function MisReservasScreen() {
           setReservas(
             [...data].sort((a, b) => {
               const fechaA = String(a.fechaRetiro || a.fechaReserva || "");
+              const horaA = String((a.fechasLugarSnapshot as any)?.horaRetiro || a.horaRetiro || "00:00");
               const fechaB = String(b.fechaRetiro || b.fechaReserva || "");
-              return fechaB.localeCompare(fechaA);
+              const horaB = String((b.fechasLugarSnapshot as any)?.horaRetiro || b.horaRetiro || "00:00");
+              const fullA = `${fechaA}T${horaA}`;
+              const fullB = `${fechaB}T${horaB}`;
+              return fullB.localeCompare(fullA);
             })
           );
           setCargando(false);
@@ -364,15 +395,49 @@ export default function MisReservasScreen() {
           keyExtractor={(item) => item.referencia}
           contentContainerStyle={styles.lista}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TarjetaReserva
-              reserva={item}
-              usuarioId={usuarioKey}
-              c={c}
-              t={t}
-              onPress={() => irADetalle(item.referencia)}
-            />
-          )}
+          renderItem={({ item }) => {
+            const horaRetiro = (item.fechasLugarSnapshot as any)?.horaRetiro || item.horaRetiro;
+            const horaDevolucion = (item.fechasLugarSnapshot as any)?.horaDevolucion || item.horaDevolucion;
+            const horaRetiroFmt = formatHora12(horaRetiro);
+            const horaDevolucionFmt = formatHora12(horaDevolucion);
+
+            return (
+              <View style={styles.itemWrapper}>
+                {/* ── Encabezado exterior de Fecha y Hora (Arriba de la tarjeta) ── */}
+                <View style={[styles.fechaHoraBarra, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+                  <View style={[styles.fechaHoraIconoWrap, { backgroundColor: c.primaryBg }]}>
+                    <Ionicons name="calendar-outline" size={14} color={c.primary} />
+                  </View>
+                  <View style={styles.fechaHoraInfo}>
+                    <Text style={[styles.fechaHoraTexto, { color: c.textPrimary }]} numberOfLines={1}>
+                      {item.fechaRetiro ? formatFechaCompleta(String(item.fechaRetiro), locale) : "—"}
+                      {"  →  "}
+                      {item.fechaDevolucion ? formatFechaCompleta(String(item.fechaDevolucion), locale) : "—"}
+                    </Text>
+                    {(horaRetiroFmt || horaDevolucionFmt) ? (
+                      <View style={styles.horasFila}>
+                        <Ionicons name="time-outline" size={12} color={c.textMuted} />
+                        <Text style={[styles.horasTexto, { color: c.textSecondary }]} numberOfLines={1}>
+                          {horaRetiroFmt ? `${t("misReservas.card.recogida", { defaultValue: "Recogida" })}: ${horaRetiroFmt}` : ""}
+                          {horaRetiroFmt && horaDevolucionFmt ? "  ·  " : ""}
+                          {horaDevolucionFmt ? `${t("misReservas.card.devolucion", { defaultValue: "Devolución" })}: ${horaDevolucionFmt}` : ""}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+
+                {/* ── Tarjeta de la Reserva ── */}
+                <TarjetaReserva
+                  reserva={item}
+                  usuarioId={usuarioKey}
+                  c={c}
+                  t={t}
+                  onPress={() => irADetalle(item.referencia)}
+                />
+              </View>
+            );
+          }}
         />
       )}
 
@@ -532,11 +597,20 @@ function TarjetaReserva({
             </View>
           </View>
 
-          <Text style={[styles.tarjetaFechas, { color: c.textSecondary }]} numberOfLines={1}>
-            {reserva.fechaRetiro ? fechaCorta(String(reserva.fechaRetiro)) : "—"}
-            {" → "}
-            {reserva.fechaDevolucion ? fechaCorta(String(reserva.fechaDevolucion)) : "—"}
-          </Text>
+          {/* Detalles técnicos / entrega del vehículo */}
+          <View style={styles.tarjetaDetallesFila}>
+            {vehiculoSnap?.transmision ? (
+              <Text style={[styles.tarjetaDetallesTexto, { color: c.textSecondary }]} numberOfLines={1}>
+                {vehiculoSnap.transmision}
+                {vehiculoSnap.combustible ? ` · ${vehiculoSnap.combustible}` : ""}
+                {vehiculoSnap.categoria ? ` · ${vehiculoSnap.categoria}` : ""}
+              </Text>
+            ) : (
+              <Text style={[styles.tarjetaDetallesTexto, { color: c.textSecondary }]} numberOfLines={1}>
+                {reserva.lugarRetiro ? (reserva.lugarRetiro === "sucursal" ? "📍 Sucursal Principal" : "📍 Entrega a Domicilio") : "📍 Drivique Rent a Car"}
+              </Text>
+            )}
+          </View>
 
           <View style={styles.tarjetaFooter}>
             <Text style={[styles.tarjetaReferencia, { color: c.textMuted }]} numberOfLines={1}>
@@ -697,11 +771,52 @@ const styles = StyleSheet.create({
   todosMesesTexto: { fontSize: 13.5 },
 
   lista: { padding: 16, paddingBottom: 40 },
+  itemWrapper: {
+    marginBottom: 16,
+  },
+  fechaHoraBarra: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    gap: 10,
+  },
+  fechaHoraIconoWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fechaHoraInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  fechaHoraTexto: {
+    fontSize: 12.5,
+    fontWeight: "800",
+  },
+  horasFila: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 1,
+  },
+  horasTexto: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
   tarjeta: {
-    borderRadius: 14,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     borderWidth: 1,
     padding: 12,
-    marginBottom: 12,
   },
   tarjetaFila: { flexDirection: "row", gap: 12 },
   tarjetaFoto: { width: 72, height: 72, borderRadius: 10, resizeMode: "cover" },
@@ -731,7 +846,8 @@ const styles = StyleSheet.create({
   },
   badgeDot: { width: 5, height: 5, borderRadius: 2.5 },
   badgeTexto: { fontSize: 9.5, fontWeight: "700" },
-  tarjetaFechas: { fontSize: 11.5, marginTop: 4 },
+  tarjetaDetallesFila: { marginTop: 3 },
+  tarjetaDetallesTexto: { fontSize: 11.5, fontWeight: "500" },
   tarjetaFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
