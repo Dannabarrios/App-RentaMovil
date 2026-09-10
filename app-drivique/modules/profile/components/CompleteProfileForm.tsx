@@ -18,9 +18,9 @@ import { InputField } from "@/components/ui/InputField";
 import { inputFieldStyles } from "@/components/ui/InputField.styles";
 import { DateField } from "@/components/ui/DateField";
 import { SectionLabel } from "@/components/ui/SectionLabel";
-import { getPrefijoPorNacionalidad } from "@/modules/reservation/constants/reservation.constants";
+import { getPrefijoPorNacionalidad, getSiglaDocumento } from "@/modules/reservation/constants/reservation.constants";
 
-const TIPOS_DOCUMENTO: TipoDocumento[] = ["CC", "TI", "Doc. Extranjero", "Pasaporte"];
+const TIPOS_DOCUMENTO: TipoDocumento[] = ["CC", "CE", "Pasaporte", "DNI", "PPT", "PEP", "TI"];
 
 const NACIONALIDADES: { valor: Nacionalidad; bandera: string }[] = [
   { valor: "Colombia",  bandera: "🇨🇴" },
@@ -42,6 +42,14 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
   const [showNacionalidad, setShowNacionalidad] = useState(false);
   const prefijoTelefono = getPrefijoPorNacionalidad(form.nacionalidad || null);
   const hayPrefijo = prefijoTelefono !== "";
+
+  const tiposDocumentoFiltrados = TIPOS_DOCUMENTO.filter((tipo) => {
+    if (!form.nacionalidad) return true;
+    if (form.nacionalidad === "Colombia") {
+      return tipo === "CC" || tipo === "CE" || tipo === "Pasaporte" || tipo === "PPT" || tipo === "PEP";
+    }
+    return tipo === "Pasaporte" || tipo === "DNI" || tipo === "CE" || tipo === "PPT" || tipo === "PEP";
+  });
 
   const handleGuardar = () => {
     guardar(
@@ -119,7 +127,19 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
             <TouchableOpacity
               key={valor}
               style={[s.dropdownItem, form.nacionalidad === valor && { backgroundColor: c.primaryBg }]}
-              onPress={() => { actualizarCampo("nacionalidad", valor); setShowNacionalidad(false); }}
+              onPress={() => {
+                actualizarCampo("nacionalidad", valor);
+                if (valor === "Colombia") {
+                  if (form.tipoDocumento && !["CC", "CE", "Pasaporte", "PPT", "PEP"].includes(form.tipoDocumento)) {
+                    actualizarCampo("tipoDocumento", "");
+                  }
+                } else {
+                  if (form.tipoDocumento && !["Pasaporte", "DNI", "CE", "PPT", "PEP"].includes(form.tipoDocumento)) {
+                    actualizarCampo("tipoDocumento", "");
+                  }
+                }
+                setShowNacionalidad(false);
+              }}
               activeOpacity={0.7}
             >
               <Text style={[s.dropdownText, { color: form.nacionalidad === valor ? "#1D4ED8" : c.textPrimary }]}>
@@ -138,37 +158,50 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
 
       {/* Teléfono: el prefijo del país se completa solo según la nacionalidad elegida arriba */}
       <Text style={[s.label, { color: c.textSecondary }]}>{t("perfil.telefono")}</Text>
-      <View style={s.filaCelular}>
-        <View
-          style={[
-            s.prefijoBox,
-            { backgroundColor: c.primaryBg, borderColor: c.border },
-            !hayPrefijo && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6" },
-          ]}
-        >
-          <Text style={[s.prefijoText, { color: "#1D4ED8" }, !hayPrefijo && { color: c.textMuted }]}>
-            {hayPrefijo ? prefijoTelefono : ""}
-          </Text>
+      {hayPrefijo ? (
+        <View style={s.filaCelular}>
+          <View
+            style={[
+              s.prefijoBox,
+              { backgroundColor: c.primaryBg, borderColor: c.border },
+            ]}
+          >
+            <Text style={[s.prefijoText, { color: "#1D4ED8" }]}>
+              {prefijoTelefono}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={[
+                inputFieldStyles.input,
+                { borderColor: c.border, backgroundColor: c.bgInput, color: c.textPrimary },
+                errores.telefono ? inputFieldStyles.inputErrorWrapper : undefined,
+              ]}
+              placeholder="Ej. 3144214909"
+              placeholderTextColor="#9CA3AF"
+              autoCorrect={false}
+              keyboardType="phone-pad"
+              value={form.telefono}
+              onChangeText={v => actualizarCampo("telefono", v.replace(/\D/g, ""))}
+            />
+            {errores.telefono && <Text style={s.error}>{errores.telefono}</Text>}
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
+      ) : (
+        <View>
           <TextInput
             style={[
               inputFieldStyles.input,
-              { borderColor: c.border, backgroundColor: c.bgInput, color: c.textPrimary },
-              errores.telefono ? inputFieldStyles.inputError : undefined,
-              !hayPrefijo ? { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted } : undefined,
+              { borderColor: c.border, backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted },
             ]}
-            placeholder="1234567890"
+            placeholder="3144214909"
             placeholderTextColor="#9CA3AF"
-            autoCorrect={false}
-            keyboardType="phone-pad"
             value={form.telefono}
-            onChangeText={v => actualizarCampo("telefono", v.replace(/\D/g, ""))}
-            editable={hayPrefijo}
+            editable={false}
           />
           {errores.telefono && <Text style={s.error}>{errores.telefono}</Text>}
         </View>
-      </View>
+      )}
 
       <SectionLabel icono="card-outline" texto={t("perfil.seccionDocumento")} primaryBg={c.primaryBg} />
 
@@ -198,7 +231,7 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
       </TouchableOpacity>
       {showTipoDoc && (
         <View style={[s.dropdown, { borderColor: c.border, backgroundColor: c.bgCard }]}>
-          {TIPOS_DOCUMENTO.map(tipo => (
+          {tiposDocumentoFiltrados.map(tipo => (
             <TouchableOpacity
               key={tipo}
               style={[s.dropdownItem, form.tipoDocumento === tipo && { backgroundColor: c.primaryBg }]}
@@ -215,17 +248,60 @@ export function FormCompletarPerfil({ onGuardado }: Props) {
           ))}
         </View>
       )}
-      {errores.tipoDocumento && <Text style={s.error}>{errores.tipoDocumento}</Text>}
-
-      <InputField
-        label={t("perfil.numeroDocumento")}
-        placeholder="Entre 6 y 10 dígitos"
-        keyboardType="numeric"
-        value={form.numeroDocumento}
-        onChangeText={v => actualizarCampo("numeroDocumento", v)}
-        error={errores.numeroDocumento}
-        colores={colores}
-      />
+      {/* Número de documento */}
+      <Text style={[s.label, { color: c.textSecondary }]}>{t("perfil.numeroDocumento")}</Text>
+      {form.tipoDocumento ? (
+        <View style={s.filaCelular}>
+          <View
+            style={[
+              s.prefijoBox,
+              { backgroundColor: c.primaryBg, borderColor: c.border },
+            ]}
+          >
+            <Text style={[s.prefijoText, { color: "#1D4ED8" }]}>
+              {getSiglaDocumento(form.tipoDocumento)}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={[
+                inputFieldStyles.input,
+                { borderColor: c.border, backgroundColor: c.bgInput, color: c.textPrimary },
+                errores.numeroDocumento ? inputFieldStyles.inputErrorWrapper : undefined,
+              ]}
+              placeholder={
+                form.tipoDocumento === "Pasaporte"
+                  ? "Ej. P12345678"
+                  : "Ej. 1075228306"
+              }
+              placeholderTextColor="#9CA3AF"
+              autoCorrect={false}
+              keyboardType={
+                form.tipoDocumento === "CC" || form.tipoDocumento === "TI"
+                  ? "numeric"
+                  : "default"
+              }
+              value={form.numeroDocumento}
+              onChangeText={v => actualizarCampo("numeroDocumento", v)}
+            />
+            {errores.numeroDocumento && <Text style={s.error}>{errores.numeroDocumento}</Text>}
+          </View>
+        </View>
+      ) : (
+        <View>
+          <TextInput
+            style={[
+              inputFieldStyles.input,
+              { borderColor: c.border, backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted },
+            ]}
+            placeholder="1075228306"
+            placeholderTextColor="#9CA3AF"
+            value={form.numeroDocumento}
+            editable={false}
+          />
+          {errores.numeroDocumento && <Text style={s.error}>{errores.numeroDocumento}</Text>}
+        </View>
+      )}
 
       <View style={{ marginTop: 24 }}>
         <PrimaryButton titulo={t("perfil.guardarDatos")} onPress={handleGuardar} cargando={cargando} />

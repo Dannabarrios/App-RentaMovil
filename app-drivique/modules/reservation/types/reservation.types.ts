@@ -52,10 +52,10 @@ export interface DatosPersonales {
 }
 
 export interface ArchivoDocumento {
-  uri: string;
+  uri?: string;
   nombre: string;
-  tipoMime: string;
-  tamanoBytes: number;
+  tipoMime?: string;
+  tamanoBytes?: number;
 }
 
 export type LlaveDocumento =

@@ -10,8 +10,8 @@ export interface SeccionConfig<T extends string = string> {
 }
 
 const SECCIONES_RESERVA: SeccionConfig<SeccionReserva>[] = [
-  { id: "fechas", label: "fechas y lugar" },
-  { id: "planes", label: "Planes" },
+  { id: "fechas", label: "Fechas y ubicación" },
+  { id: "planes", label: "Protección y extras" },
   { id: "datos", label: "Datos personales" },
 ];
 

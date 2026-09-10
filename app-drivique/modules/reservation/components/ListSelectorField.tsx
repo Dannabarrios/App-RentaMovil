@@ -17,6 +17,7 @@ interface Props {
   opciones: Opcion[];
   onSeleccionar: (id: string) => void;
   placeholder?: string;
+  deshabilitado?: boolean;
 }
 
 export default function CampoSelectorLista({
@@ -25,6 +26,7 @@ export default function CampoSelectorLista({
   opciones,
   onSeleccionar,
   placeholder,
+  deshabilitado = false,
 }: Props) {
   const [abierto, setAbierto] = useState(false);
   const c = useTemaColores();
@@ -35,27 +37,29 @@ export default function CampoSelectorLista({
 
   return (
     <View style={styles.contenedor}>
-      <Text style={[styles.selectLabel, { color: c.textSecondary }]}>{etiqueta}</Text>
+      <Text style={[styles.selectLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{etiqueta}</Text>
 
       <TouchableOpacity
         style={[
           styles.selectBox,
-          { backgroundColor: c.bgInput, borderColor: primaryAccent },
+          { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0" },
+          deshabilitado && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", opacity: 0.8 },
         ]}
-        onPress={() => setAbierto(true)}
-        activeOpacity={0.8}
+        onPress={() => !deshabilitado && setAbierto(true)}
+        disabled={deshabilitado}
+        activeOpacity={deshabilitado ? 1 : 0.8}
       >
         <Text
           style={[
             styles.selectValue,
-            { color: c.textPrimary },
-            !opcionActual && { color: c.textMuted, fontWeight: "400" },
+            { color: c.oscuro ? "#F8FAFC" : "#0F172A" },
+            (!opcionActual || deshabilitado) && { color: c.textMuted, fontWeight: "400" },
           ]}
           numberOfLines={1}
         >
           {opcionActual?.label ?? placeholderTexto}
         </Text>
-        <Ionicons name="chevron-down" size={14} color={primaryAccent} />
+        <Ionicons name="chevron-down" size={13} color={c.textMuted} />
       </TouchableOpacity>
 
       <Modal visible={abierto} animationType="slide" transparent onRequestClose={() => setAbierto(false)}>
@@ -110,25 +114,25 @@ export default function CampoSelectorLista({
 }
 
 const styles = StyleSheet.create({
-  contenedor: { flex: 1 },
-
+  contenedor: {
+    width: "100%",
+  },
   selectLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748b",
+    marginBottom: 6,
   },
   selectBox: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1.3,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 46,
   },
-  selectValue: { fontSize: 11, fontWeight: "600", flex: 1, marginRight: 6 },
+  selectValue: { fontSize: 14, fontWeight: "400", flex: 1, marginRight: 6 },
   placeholder: { fontWeight: "400" },
 
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },

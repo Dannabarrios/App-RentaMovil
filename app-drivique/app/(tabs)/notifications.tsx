@@ -95,17 +95,47 @@ export default function NotificationsScreen() {
     marcarComoLeida(id);
   };
 
-  // Helper: resolve vehicle images from VEHICULOS_MOCK by category (always returns 3 images)
-  const getVehicleImagesByCategory = (category?: string) => {
-    const cat = category || "SUV";
-    const matching = VEHICULOS_MOCK.filter(
-      (v) => v.categoria.toLowerCase() === cat.toLowerCase()
-    );
-    const others = VEHICULOS_MOCK.filter(
-      (v) => v.categoria.toLowerCase() !== cat.toLowerCase()
-    );
-    const combined = [...matching, ...others];
-    return combined.slice(0, 3).map((v) => v.imagen || (v.imagenes && v.imagenes[0]) || "");
+  // Helper: resolve vehicle images from VEHICULOS_MOCK (always returns 3 images)
+  const getCouponVehicleImages = (cpx: any): string[] => {
+    const vehId = cpx.reglas?.vehiculoId;
+    if (vehId) {
+      const specificCar = VEHICULOS_MOCK.find((v) => v.id === vehId);
+      if (specificCar) {
+        const carImgs = (specificCar.imagenes || []).filter(Boolean);
+        if (carImgs.length >= 3) return carImgs.slice(0, 3);
+        if (specificCar.imagen && !carImgs.includes(specificCar.imagen)) {
+          carImgs.unshift(specificCar.imagen);
+        }
+        if (carImgs.length >= 3) return carImgs.slice(0, 3);
+        const catCars = VEHICULOS_MOCK.filter((v) => v.categoria === specificCar.categoria && v.id !== specificCar.id);
+        for (const v of catCars) {
+          const img = (v.imagenes && v.imagenes[0]) || v.imagen;
+          if (img && !carImgs.includes(img)) carImgs.push(img);
+          if (carImgs.length >= 3) break;
+        }
+        return carImgs.slice(0, 3);
+      }
+    }
+
+    const cat = cpx.reglas?.categoriasValidas?.[0];
+    const imgs: string[] = [];
+
+    if (cat && cat.toLowerCase() !== "todos") {
+      const matchingCars = VEHICULOS_MOCK.filter((v) => v.categoria.toLowerCase() === cat.toLowerCase());
+      for (const v of matchingCars) {
+        const img = (v.imagenes && v.imagenes[0]) || v.imagen;
+        if (img && !imgs.includes(img)) imgs.push(img);
+        if (imgs.length >= 3) break;
+      }
+    }
+
+    for (const v of VEHICULOS_MOCK) {
+      const img = (v.imagenes && v.imagenes[0]) || v.imagen;
+      if (img && !imgs.includes(img)) imgs.push(img);
+      if (imgs.length >= 3) break;
+    }
+
+    return imgs.slice(0, 3);
   };
 
   // Helper: Format ISO date -> human readable date + time
@@ -285,7 +315,7 @@ export default function NotificationsScreen() {
 
           {cupones.map((cpx) => {
             const isApplied = appliedCoupons.includes(cpx.codigo);
-            const carImages = getVehicleImagesByCategory(cpx.reglas?.categoriasValidas?.[0]);
+            const carImages = getCouponVehicleImages(cpx);
 
 
             // Calculate coupon text dynamically
@@ -477,6 +507,7 @@ export default function NotificationsScreen() {
                 <Text style={[styles.modalSubtitle, { color: primaryAccent, fontWeight: "800", fontSize: 16, marginBottom: 4 }]}>
                   {t(selectedConditionsCoupon.tituloPremio, { defaultValue: selectedConditionsCoupon.tituloPremio })}
                 </Text>
+
                 <Text style={[styles.modalDescription, { color: c.textSecondary, lineHeight: 20, marginBottom: 12 }]}>
                   {t(selectedConditionsCoupon.recompensaDetalle, { defaultValue: selectedConditionsCoupon.recompensaDetalle })}
                 </Text>
@@ -487,6 +518,7 @@ export default function NotificationsScreen() {
                   {t("coupon.termsTitle", "Términos y condiciones:")}
                 </Text>
                 <Text style={[styles.conditionText, { color: c.textSecondary, lineHeight: 20 }]}>
+                  • Código: {selectedConditionsCoupon.codigo}{"\n"}
                   {t("coupon.term1", "• Válido para pagos digitales e iniciales.")}{"\n"}
                   {t("coupon.term2", "• No transferible a otros usuarios.")}{"\n"}
                   {t("coupon.term3", "• Solo se puede aplicar un cupón por reserva.")}

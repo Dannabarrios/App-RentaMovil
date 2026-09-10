@@ -22,12 +22,26 @@ export default function TarjetaVerificacionDocumental({ tipoDocumento, docsVerif
   const c = useTemaColores();
   const { t } = useTranslation();
 
-  const etiquetaDocumentoId = tipoDocumento
+  const nombreDocumento = tipoDocumento
     ? t(
         `reserva.datosPersonales.tiposDocumento.${tipoDocumento === "Doc. Extranjero" ? "DocExtranjero" : tipoDocumento}`,
-        { defaultValue: t("reserva.documentos.cedulaEtiqueta") }
+        { defaultValue: tipoDocumento }
       )
-    : t("reserva.documentos.cedulaEtiqueta");
+    : t("reserva.documentos.documentoGenerico", { defaultValue: "Documento de Identidad" });
+
+  const etiquetaDocumentoId = nombreDocumento;
+
+  const ayudaDocumento = React.useMemo(() => {
+    if (tipoDocumento === "Pasaporte") {
+      return t("reserva.documentos.pasaporteAyuda", {
+        defaultValue: "Sube tu pasaporte vigente en formato PDF (página de datos y foto, máx 5MB)",
+      });
+    }
+    return t("reserva.documentos.documentoGenericoAyuda", {
+      doc: nombreDocumento,
+      defaultValue: `Sube tu ${nombreDocumento.toLowerCase()} en un solo archivo PDF (ambos lados incluidos si aplica, máx 5MB)`,
+    });
+  }, [tipoDocumento, nombreDocumento, t]);
 
   const [errorCedula, setErrorCedula] = useState("");
   const [errorLicencia, setErrorLicencia] = useState("");
@@ -68,75 +82,113 @@ export default function TarjetaVerificacionDocumental({ tipoDocumento, docsVerif
   };
 
   return (
-    <View>
-      {/* Título fuera de la tarjeta, mismo patrón que "Datos personales" */}
-      <Text style={[styles.seccionLabel, { color: c.textMuted }]}>
-        {docsVerificados ? t("reserva.documentos.seccionLabelVerificados") : t("reserva.documentos.seccionLabel")}
+    <View style={[styles.cardForm, { backgroundColor: c.oscuro ? c.bgCard : "#FFFFFF", borderColor: c.border }]}>
+      <View style={styles.cardHeaderFila}>
+        <Ionicons name="card" size={14} color={primaryAccent} />
+        <Text style={[styles.cardHeaderTitulo, { color: primaryAccent }]}>
+          {docsVerificados ? t("reserva.documentos.seccionLabelVerificados") : t("reserva.documentos.seccionLabel")}
+        </Text>
+      </View>
+
+      <Text style={[styles.cardSubtitulo, { color: c.textMuted }]}>
+        {docsVerificados
+          ? t("reserva.documentos.subtituloVerificados", {
+              defaultValue:
+                "Ya verificamos tus documentos en una reserva anterior. Si quieres, puedes reemplazarlos subiendo nuevos archivos PDF.",
+            })
+          : t("reserva.documentos.subtitulo", {
+              defaultValue:
+                "Sube los documentos requeridos para verificar tu identidad y habilitar la reserva del vehículo.",
+            })}
       </Text>
 
-      <View style={[styles.card, { backgroundColor: c.bgCard }]}>
-        {docsVerificados && (
-          <View style={[styles.avisoVerificado, { backgroundColor: "#f0fdf4", borderColor: "#bbf7d0" }]}>
-            <Ionicons name="checkmark-circle" size={18} color="#16a34a" style={styles.notaIcono} />
-            <Text style={[styles.avisoVerificadoTexto, { color: "#166534" }]}>
-              {t("reserva.documentos.yaVerificadosAviso")}
-            </Text>
-          </View>
-        )}
-
-        {/* Cédula/documento arriba, licencia abajo — apiladas, no lado a lado */}
-        <View style={styles.columnaSubtarjetas}>
-          <CampoSubidaDocumento
-            etiqueta={etiquetaDocumentoId}
-            ayuda={t("reserva.documentos.cedulaAyuda")}
-            archivo={documentos.cedulaFrente}
-            cargando={cargandoCedula}
-            error={errorCedula}
-            requerido={!docsVerificados}
-            onSeleccionar={() => seleccionarArchivo("cedulaFrente", setCargandoCedula, setErrorCedula)}
-            onQuitar={() => actualizarDocumento("cedulaFrente", null)}
-          />
-          <CampoSubidaDocumento
-            etiqueta={t("reserva.documentos.licenciaEtiqueta")}
-            ayuda={t("reserva.documentos.licenciaAyuda")}
-            archivo={documentos.licenciaConduccion}
-            cargando={cargandoLicencia}
-            error={errorLicencia}
-            requerido={!docsVerificados}
-            onSeleccionar={() => seleccionarArchivo("licenciaConduccion", setCargandoLicencia, setErrorLicencia)}
-            onQuitar={() => actualizarDocumento("licenciaConduccion", null)}
-          />
-        </View>
-
-        {/* Nota: dentro de la tarjeta, pero FUERA de las subtarjetas */}
-        <View style={[styles.nota, { backgroundColor: c.primaryBg, borderColor: c.border }]}>
-          <Ionicons name="information-circle-outline" size={18} color={primaryAccent} style={styles.notaIcono} />
-          <Text style={[styles.notaTexto, { color: c.textSecondary }]}>
-            {t("reserva.documentos.nota")}
+      {docsVerificados && (
+        <View
+          style={[
+            styles.avisoVerificado,
+            {
+              backgroundColor: c.oscuro ? "#17255433" : "#EFF6FF",
+              borderColor: c.oscuro ? "#1D4ED8" : "#BFDBFE",
+            },
+          ]}
+        >
+          <Ionicons name="checkmark-circle" size={16} color={primaryAccent} style={styles.notaIcono} />
+          <Text style={[styles.avisoVerificadoTexto, { color: primaryAccent }]}>
+            <Text style={{ fontWeight: "700" }}>Documentos ya registrados: </Text>
+            {t("reserva.documentos.yaVerificadosAvisoCuerpo", {
+              defaultValue:
+                "Ya has subido tu cédula y licencia de conducción anteriormente. No es obligatorio volver a cargarlos, pero si lo deseas puedes reemplazarlos subiendo nuevos archivos PDF.",
+            })}
           </Text>
         </View>
+      )}
+
+      {/* Cédula/documento arriba, licencia abajo — apiladas */}
+      <View style={styles.columnaSubtarjetas}>
+        <CampoSubidaDocumento
+          etiqueta={etiquetaDocumentoId}
+          ayuda={ayudaDocumento}
+          archivo={documentos.cedulaFrente}
+          cargando={cargandoCedula}
+          error={errorCedula}
+          requerido={!docsVerificados}
+          onSeleccionar={() => seleccionarArchivo("cedulaFrente", setCargandoCedula, setErrorCedula)}
+          onQuitar={() => actualizarDocumento("cedulaFrente", null)}
+        />
+        <CampoSubidaDocumento
+          etiqueta={t("reserva.documentos.licenciaEtiqueta")}
+          ayuda={t("reserva.documentos.licenciaAyuda")}
+          archivo={documentos.licenciaConduccion}
+          cargando={cargandoLicencia}
+          error={errorLicencia}
+          requerido={!docsVerificados}
+          onSeleccionar={() => seleccionarArchivo("licenciaConduccion", setCargandoLicencia, setErrorLicencia)}
+          onQuitar={() => actualizarDocumento("licenciaConduccion", null)}
+        />
+      </View>
+
+      {/* Banner de nota explicativa */}
+      <View
+        style={[
+          styles.nota,
+          {
+            backgroundColor: c.primaryBg,
+            borderColor: c.oscuro ? "#334155" : "#BFDBFE",
+          },
+        ]}
+      >
+        <Ionicons name="radio-button-on" size={14} color={primaryAccent} style={styles.notaIcono} />
+        <Text style={[styles.notaTexto, { color: primaryAccent }]}>
+          {t("reserva.documentos.nota")}
+        </Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  seccionLabel: {
-    fontSize: 12,
+  cardForm: {
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+  },
+  cardHeaderFila: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  cardHeaderTitulo: {
+    fontSize: 13,
     fontWeight: "800",
     letterSpacing: 0.3,
-    textTransform: "uppercase",
-    marginBottom: 8,
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
-  card: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+  cardSubtitulo: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    marginBottom: 14,
   },
   columnaSubtarjetas: {
     gap: 12,
@@ -153,28 +205,23 @@ const styles = StyleSheet.create({
   },
   avisoVerificadoTexto: {
     flex: 1,
-    fontSize: 12,
-    lineHeight: 17,
-    fontWeight: "600",
-  },
-  filaSubtarjetas: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 14,
-  },
-  subtarjetaFlex: { flex: 1 },
-  nota: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-  },
-  notaIcono: { marginTop: 1 },
-  notaTexto: {
-    flex: 1,
     fontSize: 11.5,
     lineHeight: 16,
+    fontWeight: "600",
+  },
+  nota: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+  },
+  notaIcono: {},
+  notaTexto: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "500",
   },
 });
