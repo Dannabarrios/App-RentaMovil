@@ -18,6 +18,8 @@ import { useTranslation } from "react-i18next";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { COLOR_MARCA } from "@/modules/catalog/constants/catalog.constants";
 import {
+  aCentavos,
+  construirUrlCheckout,
   consultarTransaccionWompi,
 } from "@/modules/reservation/services/wompiService";
 import { reservaPersistService } from "@/modules/reservation/services/reservationPersistService";
