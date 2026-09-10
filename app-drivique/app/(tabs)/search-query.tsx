@@ -9,12 +9,12 @@ import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   Image,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BusquedaScreen() {
   const usuario = useAuthStore((state) => state.usuario);

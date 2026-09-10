@@ -6,7 +6,6 @@ import {
   FlatList,
   Modal,
   Platform,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { GRADIENTES } from "@/constants/gradients";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
