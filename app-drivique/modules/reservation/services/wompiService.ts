@@ -1,9 +1,7 @@
-// modules/reserva/services/wompiService.ts
-//
-// Réplica de la integración de Wompi Web Checkout que ya existe en la web
-// (src/services/wompiService.js). Mismas llaves de Sandbox, mismo orden de
-// concatenación para la firma y misma URL de checkout (checkout.wompi.co/p/).
 import { sha256Hex, utf8ToBinaryString } from "./sha256";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import { Platform } from "react-native";
 
 /**
  * Llaves de Sandbox (pub_test_ / test_integrity_) — son las mismas que usa
@@ -163,4 +161,47 @@ export async function consultarTransaccionWompi(transactionId: string): Promise<
     console.warn("[wompiService] Error consultando transaccion:", error);
     return null;
   }
+}
+
+/**
+ * Abre el flujo de Web Checkout de Wompi de forma robusta con WebBrowser (Chrome Custom Tabs / Safari).
+ * Evita bloqueos de Modal en React Native, soporta pasarelas bancarias PSE y retorna el resultado.
+ */
+export async function iniciarFlujoWompi({
+  reference,
+  amountInCents,
+  redirectUrl = "https://localtest.me/respuesta",
+}: {
+  reference: string;
+  amountInCents: number;
+  redirectUrl?: string;
+}): Promise<{ transactionId?: string | null; reference: string; cancelado?: boolean }> {
+  const url = await construirUrlCheckout({
+    reference,
+    amountInCents,
+    redirectUrl,
+  });
+
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.location.href = url;
+    return { reference, transactionId: null };
+  }
+
+  const res = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
+
+  let txId: string | null = null;
+  if (res.type === "success" && (res as any).url) {
+    try {
+      const parsed = Linking.parse((res as any).url);
+      txId = (parsed.queryParams?.id as string) || null;
+      if (!txId) {
+        const match = (res as any).url.match(/[?&]id=([^&#]+)/);
+        if (match && match[1]) txId = decodeURIComponent(match[1]);
+      }
+    } catch (e) {
+      console.warn("[wompiService] Error parseando retorno de WebBrowser:", e);
+    }
+  }
+
+  return { transactionId: txId, reference, cancelado: res.type === "cancel" || res.type === "dismiss" };
 }

@@ -25,6 +25,7 @@ import {
   construirUrlCheckout,
   consultarTransaccionWompi,
   generarReferenciaUnica,
+  iniciarFlujoWompi,
 } from "../services/wompiService";
 import {
   HORAS_LIMITE_PAGO_EFECTIVO,
@@ -313,17 +314,16 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     setProcesandoPago(true);
 
     try {
-      const redirectUrl = "https://localtest.me/respuesta";
       const amountInCents = aCentavos(total);
-
-      const url = await construirUrlCheckout({
+      const resultado = await iniciarFlujoWompi({
         reference: referenciaActual,
         amountInCents,
-        redirectUrl,
       });
 
-      setWompiCheckoutUrl(url);
-      setModalWompiVisible(true);
+      await handleWompiComplete({
+        transactionId: resultado.transactionId,
+        reference: resultado.reference,
+      });
     } catch (error) {
       console.error("[FormDatosPersonales] Error iniciando checkout de Wompi", error);
       Alert.alert(

@@ -34,7 +34,7 @@ import { fmt, fechaCorta } from "@/modules/reservation/components/BookingSummary
 import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { AlertModal } from "@/components/ui/AlertModal";
 import { useUsuarioStore } from "@/store/userStore";
-import { aCentavos, construirUrlCheckout, consultarTransaccionWompi } from "@/modules/reservation/services/wompiService";
+import { aCentavos, construirUrlCheckout, consultarTransaccionWompi, iniciarFlujoWompi } from "@/modules/reservation/services/wompiService";
 import { WompiCheckoutModal } from "@/modules/reservation/components/WompiCheckoutModal";
 
 const COLOR_GRUPO: Record<GrupoReserva, string> = {
@@ -198,17 +198,17 @@ export default function MisReservasScreen() {
 
   const handlePagarWompi = async (reserva: ReservaGuardada) => {
     try {
-      const redirectUrl = "https://localtest.me/respuesta";
       const amountInCents = aCentavos(reserva.total);
       const attemptRef = `${reserva.referencia}_${Date.now()}`;
-      const url = await construirUrlCheckout({
+      setReservaWompiActual(reserva);
+      const resWompi = await iniciarFlujoWompi({
         reference: attemptRef,
         amountInCents,
-        redirectUrl,
       });
-      setReservaWompiActual(reserva);
-      setWompiCheckoutUrl(url);
-      setWompiModalVisible(true);
+      await handleWompiComplete({
+        transactionId: resWompi.transactionId,
+        reference: attemptRef,
+      });
     } catch (err) {
       console.error("[my-bookings] Error abriendo Wompi", err);
       Alert.alert(
