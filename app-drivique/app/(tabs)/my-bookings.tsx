@@ -208,31 +208,13 @@ export default function MisReservasScreen() {
         return;
       }
 
-      const resWompi = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
-      let txId: string | null = null;
-      if (resWompi.type === "success" && (resWompi as any).url) {
-        const parsed = Linking.parse((resWompi as any).url);
-        txId = typeof parsed.queryParams?.id === "string" ? parsed.queryParams.id : null;
-        if (!txId) {
-          const match = (resWompi as any).url.match(/[?&]id=([^&#]+)/);
-          if (match && match[1]) txId = decodeURIComponent(match[1]);
-        }
-      }
-
-      const refBase = reserva.referencia;
-      if (txId) {
-        try {
-          const txData = await consultarTransaccionWompi(txId);
-          if (txData?.status === "APPROVED") {
-            await reservaPersistService.actualizarEstado(refBase, "CONFIRMADA", txId);
-          } else if (txData?.payment_method_type === "BANCOLOMBIA_COLLECT") {
-            await reservaPersistService.actualizarEstado(refBase, "PENDIENTE_EFECTIVO", txId);
-          }
-        } catch (e) {
-          console.warn("[my-bookings] Error actualizando transaccion Wompi:", e);
-        }
-      }
-      router.push(`/payment-response?ref=${encodeURIComponent(refBase)}${txId ? `&id=${encodeURIComponent(txId)}` : ""}`);
+      router.push({
+        pathname: "/wompi-checkout",
+        params: {
+          url: encodeURIComponent(url),
+          ref: encodeURIComponent(reserva.referencia),
+        },
+      });
     } catch (err) {
       console.error("[my-bookings] Error abriendo Wompi", err);
       Alert.alert(

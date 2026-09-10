@@ -321,47 +321,20 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         redirectUrl,
       });
 
-      let transactionId: string | null = null;
+      limpiarReserva();
 
       if (Platform.OS === "web" && typeof window !== "undefined") {
         window.location.href = url;
         return;
       }
 
-      const resultado = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
-
-      if (resultado.type === "success" && (resultado as any).url) {
-        const parsed = Linking.parse((resultado as any).url);
-        transactionId = typeof parsed.queryParams?.id === "string" ? parsed.queryParams.id : null;
-        if (!transactionId) {
-          const match = (resultado as any).url.match(/[?&]id=([^&#]+)/);
-          if (match && match[1]) transactionId = decodeURIComponent(match[1]);
-        }
-
-        if (transactionId) {
-          try {
-            const txData = await consultarTransaccionWompi(transactionId);
-            let nuevoEstado: "PENDIENTE_VALIDACION" | "PENDIENTE_EFECTIVO" | "CONFIRMADA" = "PENDIENTE_VALIDACION";
-            if (txData?.payment_method_type === "BANCOLOMBIA_COLLECT") {
-              nuevoEstado = "PENDIENTE_EFECTIVO";
-            } else if (txData?.status === "APPROVED") {
-              nuevoEstado = "CONFIRMADA";
-            }
-            await reservaPersistService.actualizarEstado(
-              referenciaActual,
-              nuevoEstado,
-              transactionId
-            );
-          } catch (error) {
-            console.error("[FormDatosPersonales] Error consultando transaccion de Wompi:", error);
-          }
-        }
-      }
-
-      limpiarReserva();
-      router.replace(
-        `/payment-response?ref=${encodeURIComponent(referenciaActual)}${transactionId ? `&id=${encodeURIComponent(transactionId)}` : ""}`
-      );
+      router.push({
+        pathname: "/wompi-checkout",
+        params: {
+          url: encodeURIComponent(url),
+          ref: encodeURIComponent(referenciaActual),
+        },
+      });
     } catch (error) {
       console.error("[FormDatosPersonales] Error iniciando checkout de Wompi", error);
       Alert.alert(

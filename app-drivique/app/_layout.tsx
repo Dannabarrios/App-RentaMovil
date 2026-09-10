@@ -23,6 +23,7 @@ export default function RootLayout() {
           <Stack.Screen name="vehicle/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="payment-response" options={{ headerShown: false }} />
           <Stack.Screen name="contract-view" options={{ headerShown: false }} />
+          <Stack.Screen name="wompi-checkout" options={{ headerShown: false }} />
         </Stack>
 
         <StatusBar style={temaActual === "oscuro" ? "light" : "dark"} /> 
