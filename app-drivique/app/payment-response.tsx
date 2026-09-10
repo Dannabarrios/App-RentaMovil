@@ -429,7 +429,7 @@ export default function PagoRespuestaScreen() {
     const claveNormalizada = claveIngresada.replace(/\D/g, "");
     if ((numeroDocumento && claveNormalizada === numeroDocumento) || (docReserva && claveIngresada.trim() === docReserva.trim())) {
       setErrorClave("");
-      setClaveDesbloqueada(true);
+      setClaveIngresada("");
       router.push(`/contract-view?ref=${encodeURIComponent(reserva.referencia)}&unlocked=true`);
     } else {
       setErrorClave(t("misReservas.claveIncorrecta", { defaultValue: "Número de documento incorrecto." }));
@@ -892,8 +892,8 @@ export default function PagoRespuestaScreen() {
             </View>
           </View>
         </View>
-      ) : !claveDesbloqueada ? (
-        /* Estado 2: Contrato firmado, protegido con clave (Activo para ingresar documento) */
+      ) : (
+        /* Tarjeta de presentación: Contrato firmado protegido con documento */
         <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, alignItems: "center" }]}>
           <Ionicons name="lock-closed-outline" size={32} color={primaryAccent} style={{ marginBottom: 10 }} />
           <Text style={[styles.tituloCandado, { color: c.textPrimary }]}>
@@ -925,83 +925,6 @@ export default function PagoRespuestaScreen() {
             >
               <Text style={styles.btnTexto}>{t("misReservas.verContrato")}</Text>
             </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        /* Estado 3: Contrato firmado y desbloqueado */
-        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, alignItems: "center" }]}>
-          <View
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: c.oscuro ? "rgba(37, 99, 235, 0.18)" : "#EFF6FF",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 10,
-            }}
-          >
-            <Ionicons name="checkmark-circle" size={26} color={primaryAccent} />
-          </View>
-          <Text style={[styles.tituloCandado, { color: c.textPrimary }]}>
-            {t("misReservas.contratoDesbloqueadoTitulo", { defaultValue: "Contrato de alquiler" })}
-          </Text>
-          <Text style={[styles.textoCandado, { color: c.textSecondary, marginBottom: 14 }]}>
-            {t("misReservas.contratoDesbloqueadoTexto", {
-              defaultValue: "Tu contrato digital está firmado y verificado. Puedes descargarlo en formato PDF.",
-            })}
-          </Text>
-          <TouchableOpacity
-            style={[styles.btnWrap, { marginBottom: 8 }]}
-            onPress={handleDescargarPdf}
-            activeOpacity={0.85}
-            disabled={generandoPdf}
-          >
-            <LinearGradient
-              colors={GRADIENTES.boton.colors}
-              start={GRADIENTES.boton.start}
-              end={GRADIENTES.boton.end}
-              style={[styles.btn, { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 }]}
-            >
-              {generandoPdf ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Ionicons name="document-text-outline" size={18} color="#FFFFFF" />
-              )}
-              <Text style={styles.btnTexto}>
-                {generandoPdf
-                  ? t("misReservas.generandoPdf", { defaultValue: "Generando PDF..." })
-                  : t("misReservas.descargarContrato", { defaultValue: "Descargar Contrato (PDF)" })}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.btnWrap,
-              {
-                borderWidth: 1,
-                borderColor: c.border,
-                borderRadius: 12,
-                backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC",
-                paddingVertical: 13,
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "center",
-                gap: 6,
-              },
-            ]}
-            onPress={() =>
-              router.push(
-                `/contract-view?ref=${encodeURIComponent(reserva.referencia)}&unlocked=true`
-              )
-            }
-            activeOpacity={0.8}
-          >
-            <Ionicons name="eye-outline" size={17} color={primaryAccent} />
-            <Text style={{ color: primaryAccent, fontSize: 13.5, fontWeight: "700" }}>
-              {t("misReservas.leerContrato", { defaultValue: "Ver Contrato Completo" })}
-            </Text>
           </TouchableOpacity>
         </View>
       )}
