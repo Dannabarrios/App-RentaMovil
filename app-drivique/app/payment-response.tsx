@@ -56,6 +56,7 @@ import {
   WompiTransactionResponse,
 } from "@/modules/reservation/services/wompiService";
 import { WompiCheckoutModal } from "@/modules/reservation/components/WompiCheckoutModal";
+import { documentosService, RegistroDocumentos } from "@/modules/reservation/services/documentsService";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 
@@ -68,6 +69,7 @@ export default function PagoRespuestaScreen() {
 
   const [cargando, setCargando] = useState(true);
   const [reserva, setReserva] = useState<ReservaGuardada | null>(null);
+  const [docsUsuario, setDocsUsuario] = useState<RegistroDocumentos | null>(null);
   const [contratoFirmado, setContratoFirmado] = useState(false);
   const [contratoActual, setContratoActual] = useState<ContratoGuardado | null>(null);
   const [generandoPdf, setGenerandoPdf] = useState(false);
@@ -134,6 +136,10 @@ export default function PagoRespuestaScreen() {
 
       const refParaContrato = encontrada?.referencia || cleanRef || rawRef || "";
       const contrato = await contratoService.obtenerPorReserva(refParaContrato);
+      if (encontrada?.usuarioId) {
+        const docs = await documentosService.obtenerDocumentos(encontrada.usuarioId);
+        if (activo) setDocsUsuario(docs);
+      }
       if (activo) {
         setReserva(encontrada ?? null);
         setContratoFirmado(!!contrato);
@@ -297,6 +303,21 @@ export default function PagoRespuestaScreen() {
     const planesSnap2 = reserva.planesSnapshot as DatosPlanes | undefined;
 
     if (vehiculoSnap2 && datosPersonalesSnap2 && fechasLugarSnap2 && planesSnap2) {
+      const nombreLicenciaSnap2 =
+        datosDocumentosSnap2?.licenciaConduccion?.nombre ||
+        docsUsuario?.licencia?.nombre ||
+        "Licencia verificada en perfil";
+      const nombreCedulaSnap2 =
+        datosDocumentosSnap2?.cedulaFrente?.nombre ||
+        docsUsuario?.identificacion?.nombre ||
+        null;
+
+      const datosDocumentosParaFirma: DatosDocumentos = {
+        cedulaFrente: nombreCedulaSnap2 ? { nombre: nombreCedulaSnap2 } : null,
+        cedulaReverso: datosDocumentosSnap2?.cedulaReverso ?? null,
+        licenciaConduccion: { nombre: nombreLicenciaSnap2 },
+      };
+
       return (
         <View style={{ flex: 1, backgroundColor: c.bg }}>
           <HeaderDetalle
@@ -308,9 +329,7 @@ export default function PagoRespuestaScreen() {
           <FirmaContrato
             vehiculo={vehiculoSnap2}
             datosPersonales={datosPersonalesSnap2}
-            datosDocumentos={
-              datosDocumentosSnap2 ?? { cedulaFrente: null, cedulaReverso: null, licenciaConduccion: null }
-            }
+            datosDocumentos={datosDocumentosParaFirma}
             fechasLugar={fechasLugarSnap2}
             planes={planesSnap2}
             total={reserva.total}
@@ -365,6 +384,21 @@ export default function PagoRespuestaScreen() {
   const fechasLugarSnap = reserva.fechasLugarSnapshot as DatosFechasLugar | undefined;
   const planesSnap = reserva.planesSnapshot as DatosPlanes | undefined;
   const foto = vehiculoSnap?.imagenes?.[0];
+
+  const nombreLicenciaSnap =
+    datosDocumentosSnap?.licenciaConduccion?.nombre ||
+    docsUsuario?.licencia?.nombre ||
+    "Licencia verificada en perfil";
+  const nombreCedulaSnap =
+    datosDocumentosSnap?.cedulaFrente?.nombre ||
+    docsUsuario?.identificacion?.nombre ||
+    null;
+
+  const datosDocumentosEfectivos: DatosDocumentos = {
+    cedulaFrente: nombreCedulaSnap ? { nombre: nombreCedulaSnap } : null,
+    cedulaReverso: datosDocumentosSnap?.cedulaReverso ?? null,
+    licenciaConduccion: { nombre: nombreLicenciaSnap },
+  };
 
   const formatLugar = (lugar: string | undefined | null, modo: "entrega" | "devolucion") => {
     if (!lugar || lugar.trim() === "") return "—";
@@ -424,7 +458,7 @@ export default function PagoRespuestaScreen() {
           contrato: contratoActual,
           vehiculo: vehiculoSnap,
           datosPersonales: datosPersonalesSnap,
-          datosDocumentos: datosDocumentosSnap ?? { cedulaFrente: null, cedulaReverso: null, licenciaConduccion: null },
+          datosDocumentos: datosDocumentosEfectivos,
           fechasLugar: fechasLugarSnap,
           planes: planesSnap,
           total: reserva.total,
@@ -474,9 +508,7 @@ export default function PagoRespuestaScreen() {
           <FirmaContrato
             vehiculo={vehiculoSnap}
             datosPersonales={datosPersonalesSnap}
-            datosDocumentos={
-              datosDocumentosSnap ?? { cedulaFrente: null, cedulaReverso: null, licenciaConduccion: null }
-            }
+            datosDocumentos={datosDocumentosEfectivos}
             fechasLugar={fechasLugarSnap}
             planes={planesSnap}
             total={reserva.total}

@@ -78,6 +78,7 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<stri
     contrato,
     vehiculo,
     datosPersonales,
+    datosDocumentos,
     fechasLugar,
     planes,
     total,
@@ -90,9 +91,20 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<stri
 
   const { marca, modelo } = separarMarcaModelo(vehiculo?.nombre);
   const esDomicilioRetiro = fechasLugar.lugarRetiro === "domicilio";
+  const esDomicilioDevolucion = fechasLugar.lugarDevolucion === "domicilio";
   const sucursalRetiroNombre = esDomicilioRetiro ? vehiculo?.sucursal ?? "" : fechasLugar.lugarRetiro;
   const ciudadSucursal = sucursalRetiroNombre ? getCiudadPorSucursal(sucursalRetiroNombre) ?? "" : "";
   const direccionSucursal = sucursalRetiroNombre ? getDireccionSucursal(sucursalRetiroNombre) ?? "" : "";
+
+  const direccionCompleta = esDomicilioRetiro
+    ? [fechasLugar.direccionRetiro, fechasLugar.barrioRetiro, ciudadSucursal].filter(Boolean).join(", ") + (fechasLugar.referenciasRetiro ? ` (Ref: ${fechasLugar.referenciasRetiro})` : "")
+    : esDomicilioDevolucion
+    ? [fechasLugar.direccionDevolucion, fechasLugar.barrioDevolucion, ciudadSucursal].filter(Boolean).join(", ") + (fechasLugar.referenciasDevolucion ? ` (Ref: ${fechasLugar.referenciasDevolucion})` : "")
+    : "No aplica (Entrega en sucursal)";
+
+  const nombreLicencia =
+    datosDocumentos?.licenciaConduccion?.nombre ||
+    "Licencia verificada en perfil";
 
   const svgFirma = trazosASvgPaths(contrato.firmaTrazos);
 
@@ -156,6 +168,8 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<stri
         <div class="campo"><div class="campo-label">${esc(tx.document)}</div><div class="campo-valor">${esc(tipoDocumentoTexto)} ${esc(datosPersonales.numeroDocumento)}</div></div>
         <div class="campo"><div class="campo-label">${esc(tx.email)}</div><div class="campo-valor">${esc(datosPersonales.correo)}</div></div>
         <div class="campo"><div class="campo-label">${esc(tx.phone)}</div><div class="campo-valor">${esc(datosPersonales.celular)}</div></div>
+        <div class="campo"><div class="campo-label">${esc(tx.address || "Dirección")}</div><div class="campo-valor">${esc(direccionCompleta)}</div></div>
+        <div class="campo"><div class="campo-label">${esc(tx.license || "Licencia")}</div><div class="campo-valor">${esc(nombreLicencia)}</div></div>
       </div>
 
       <h2>${esc(tx.reservationTitle)}</h2>

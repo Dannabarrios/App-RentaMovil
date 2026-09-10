@@ -131,8 +131,14 @@ export default function FirmaContrato({
   };
 
   const direccionCompleta = esDomicilioRetiro
-    ? `${fechasLugar.direccionRetiro || ""}, ${fechasLugar.barrioRetiro || ""}, ${ciudadSucursal} (Ref: ${fechasLugar.referenciasRetiro || ""})`
-    : t("reserva.contrato.notProvided");
+    ? [fechasLugar.direccionRetiro, fechasLugar.barrioRetiro, ciudadSucursal].filter(Boolean).join(", ") + (fechasLugar.referenciasRetiro ? ` (Ref: ${fechasLugar.referenciasRetiro})` : "")
+    : esDomicilioDevolucion
+    ? [fechasLugar.direccionDevolucion, fechasLugar.barrioDevolucion, ciudadSucursal].filter(Boolean).join(", ") + (fechasLugar.referenciasDevolucion ? ` (Ref: ${fechasLugar.referenciasDevolucion})` : "")
+    : "No aplica (Entrega en sucursal)";
+
+  const licenciaTexto =
+    datosDocumentos?.licenciaConduccion?.nombre ||
+    "Licencia verificada en perfil";
 
   const serviciosTexto = useMemo(() => {
     const nombres = (vehiculo?.servicios || [])
@@ -280,7 +286,7 @@ export default function FirmaContrato({
               <Campo label={t("reserva.contrato.address")} valor={direccionCompleta} c={c} />
               <Campo
                 label={t("reserva.contrato.license")}
-                valor={datosDocumentos.licenciaConduccion?.nombre || t("reserva.contrato.notProvided")}
+                valor={licenciaTexto}
                 c={c}
               />
             </View>

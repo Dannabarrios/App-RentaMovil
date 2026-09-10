@@ -232,6 +232,16 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       });
     }
 
+    const docsGuardados = await documentosService.obtenerDocumentos(usuarioGlobal.id);
+    const nombreLicencia =
+      documentos.licenciaConduccion?.nombre ||
+      docsGuardados?.licencia?.nombre ||
+      "Licencia verificada en perfil";
+    const nombreCedula =
+      documentos.cedulaFrente?.nombre ||
+      docsGuardados?.identificacion?.nombre ||
+      null;
+
     await reservaPersistService.guardarReserva({
       referencia,
       usuarioId: usuarioGlobal.id,
@@ -249,9 +259,8 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       vehiculoSnapshot: vehiculo,
       datosPersonalesSnapshot: datosPersonales,
       datosDocumentosSnapshot: {
-        licenciaConduccion: documentos.licenciaConduccion
-          ? { nombre: documentos.licenciaConduccion.nombre }
-          : null,
+        cedulaFrente: nombreCedula ? { nombre: nombreCedula } : null,
+        licenciaConduccion: nombreLicencia ? { nombre: nombreLicencia } : null,
       },
       fechasLugarSnapshot: fechasLugar,
       planesSnapshot: planes,
@@ -375,7 +384,10 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       <FirmaContrato
         vehiculo={vehiculo}
         datosPersonales={datosPersonales}
-        datosDocumentos={documentos}
+        datosDocumentos={{
+          ...documentos,
+          licenciaConduccion: documentos.licenciaConduccion || { nombre: "Licencia verificada en perfil" },
+        }}
         fechasLugar={fechasLugar}
         planes={planes}
         total={total}

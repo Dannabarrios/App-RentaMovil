@@ -69,9 +69,11 @@ export default function CampoSubidaDocumento({
             <Text style={[styles.archivoNombre, { color: c.textPrimary }]} numberOfLines={1}>
               {archivo.nombre}
             </Text>
-            <Text style={[styles.archivoTamano, { color: c.textMuted }]}>
-              {(archivo.tamanoBytes / 1024 / 1024).toFixed(2)} MB
-            </Text>
+            {archivo.tamanoBytes != null ? (
+              <Text style={[styles.archivoTamano, { color: c.textMuted }]}>
+                {(archivo.tamanoBytes / 1024 / 1024).toFixed(2)} MB
+              </Text>
+            ) : null}
           </View>
           <TouchableOpacity onPress={onQuitar} hitSlop={8}>
             <Ionicons name="trash-outline" size={16} color={c.oscuro ? "#9CA3AF" : "#6B7280"} />

@@ -9,22 +9,22 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "drivique_documentos_usuario";
 
-interface MetaArchivo {
+export interface MetaArchivo {
   nombre: string;
   tamanoKb: number;
 }
 
-interface RegistroDocumentos {
+export interface RegistroDocumentos {
   identificacion: MetaArchivo | null;
   licencia: MetaArchivo | null;
   actualizadoEn: string;
 }
 
-function metaDeArchivo(archivo: { nombre: string; tamanoBytes: number } | null): MetaArchivo | null {
+function metaDeArchivo(archivo: { nombre: string; tamanoBytes?: number } | null): MetaArchivo | null {
   if (!archivo) return null;
   return {
     nombre: archivo.nombre,
-    tamanoKb: Math.round(archivo.tamanoBytes / 1024),
+    tamanoKb: Math.round((archivo.tamanoBytes || 0) / 1024),
   };
 }
 
@@ -62,8 +62,8 @@ export const documentosService = {
   guardarDocumentos: async (
     idUsuario: string | null | undefined,
     datos: {
-      identificacion?: { nombre: string; tamanoBytes: number } | null;
-      licencia?: { nombre: string; tamanoBytes: number } | null;
+      identificacion?: { nombre: string; tamanoBytes?: number } | null;
+      licencia?: { nombre: string; tamanoBytes?: number } | null;
     }
   ): Promise<RegistroDocumentos | null> => {
     if (!idUsuario) return null;
