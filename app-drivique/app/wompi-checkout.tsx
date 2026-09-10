@@ -32,7 +32,9 @@ export default function WompiCheckoutScreen() {
   
   const rawRef = params.ref ? String(params.ref) : "";
   const referencia = rawRef.includes("%") ? decodeURIComponent(rawRef) : rawRef;
-  const refDestino = referencia || rawRef;
+  const refDestino = (referencia || rawRef).includes("_")
+    ? (referencia || rawRef).split("_")[0]
+    : (referencia || rawRef);
 
   const getInitialUrl = () => {
     if (params.url) {

@@ -86,14 +86,20 @@ export async function construirUrlCheckout({
 }: ConstruirUrlCheckoutParams): Promise<string> {
   const currency = wompiConfig.currency;
   const montoEntero = Math.round(Number(amountInCents));
+  
+  // Limpiar referencia base y garantizar que cada intento de pago tenga un identificador
+  // único para Wompi (_TX<timestamp>), evitando el error de Wompi "La referencia ya ha sido usada"
   const cleanRef = reference.trim().replace(/\s+/g, "_");
-  const firma = await generarFirmaIntegridad(cleanRef, montoEntero, currency);
+  const baseRef = cleanRef.includes("_TX") ? cleanRef.split("_TX")[0] : (cleanRef.includes("_") ? cleanRef.split("_")[0] : cleanRef);
+  const uniqueWompiRef = `${baseRef}_TX${Date.now()}`;
+  
+  const firma = await generarFirmaIntegridad(uniqueWompiRef, montoEntero, currency);
 
   const params = new URLSearchParams({
     "public-key": wompiConfig.publicKey,
     currency,
     "amount-in-cents": String(montoEntero),
-    reference: cleanRef,
+    reference: uniqueWompiRef,
     "signature:integrity": firma,
   });
 
