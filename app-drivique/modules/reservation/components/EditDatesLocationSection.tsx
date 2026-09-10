@@ -224,7 +224,7 @@ export default function EditDatesLocationSection({
         style={styles.headerGradient}
       >
         <Text style={styles.headerTitulo}>
-          {t("reserva.edicion.editarFechasYLugares", { defaultValue: "Editar Fechas y Lugares" })}
+          {t("reserva.edicion.editarFechasYLugares", { defaultValue: "Editar Fechas y Ubicación" })}
         </Text>
         <TouchableOpacity onPress={onCancelar} hitSlop={10}>
           <Ionicons name="close" size={20} color="#FFFFFF" />
@@ -255,7 +255,16 @@ export default function EditDatesLocationSection({
                     activo && [styles.metodoCardActivo, { borderColor: primaryAccent, backgroundColor: c.primaryBg }],
                   ]}
                   onPress={() => {
-                    setDraft((prev) => ({ ...prev, metodoPago: metodo.id }));
+                    setDraft((prev) => ({
+                      ...prev,
+                      metodoPago: metodo.id,
+                      ...(metodo.id === "efectivo"
+                        ? {
+                            lugarRetiro: nombreSucursal,
+                            lugarDevolucion: nombreSucursal,
+                          }
+                        : {}),
+                    }));
                     if (metodo.id === "efectivo") setAlertaEfectivoVisible(true);
                   }}
                   activeOpacity={0.8}

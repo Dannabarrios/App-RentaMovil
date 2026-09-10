@@ -398,30 +398,30 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       {/* Tarjeta Padre Contenedora */}
       <View style={[styles.cardPadre, { backgroundColor: c.bgCard, borderColor: c.border }]}>
         {/* Tarjeta de Formulario de Datos Personales */}
-        <View style={[styles.cardForm, { backgroundColor: c.oscuro ? c.bgCard : "#FFFFFF", borderColor: c.border }]}>
+        <View style={[styles.cardForm, { backgroundColor: c.oscuro ? "#111827" : "#FFFFFF", borderColor: c.oscuro ? "#334155" : "#E2E8F0" }]}>
           <View style={styles.cardHeaderFila}>
-            <Ionicons name="person" size={14} color={primaryAccent} />
+            <Ionicons name="person" size={15} color={primaryAccent} />
             <Text style={[styles.cardHeaderTitulo, { color: primaryAccent }]}>
               {t("reserva.datosPersonales.titulo", { defaultValue: "Datos personales" })}
             </Text>
           </View>
 
-          <Text style={[styles.cardSubtitulo, { color: c.textMuted }]}>
+          <Text style={[styles.cardSubtitulo, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
             {t("reserva.datosPersonales.subtitulo", {
               defaultValue: "Completa tus datos de contacto para la reserva y el contrato digital",
             })}
           </Text>
 
-          <View style={[styles.divider, { backgroundColor: c.border }]} />
+          <View style={[styles.divider, { backgroundColor: c.oscuro ? c.border : "#E2E8F0" }]} />
 
           <View style={styles.campo}>
-            <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
+            <Text style={[styles.inputLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
               {t("reserva.datosPersonales.nombreCompleto", { defaultValue: "Nombre completo *" })}
             </Text>
             <TextInput
               style={[
                 styles.input,
-                { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
+                { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0", color: c.oscuro ? "#F8FAFC" : "#0F172A" },
               ]}
               value={datosPersonales.nombreCompleto}
               onChangeText={(v) => {
@@ -429,7 +429,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
                 const { nombres, apellidos } = separarNombreCompleto(v);
                 actualizarUsuarioGlobal({ nombres, apellidos });
               }}
-              placeholder="Cliente Drivique"
+              placeholder="Ej. Juan Pérez"
               placeholderTextColor={c.textMuted}
               autoCapitalize="words"
             />
@@ -444,7 +444,6 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
               onSeleccionar={(id) => {
                 actualizarDatosPersonales({ nacionalidad: id });
                 actualizarUsuarioGlobal({ nacionalidad: id });
-                // Si el tipo de documento previo no es compatible con la nueva nacionalidad, resetear a null para que seleccione
                 if (id === "Colombia") {
                   if (
                     datosPersonales.tipoDocumento &&
@@ -467,13 +466,13 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
           </View>
 
           <View style={styles.campo}>
-            <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
+            <Text style={[styles.inputLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
               {t("reserva.datosPersonales.correoElectronico", { defaultValue: "Correo electrónico *" })}
             </Text>
             <TextInput
               style={[
                 styles.input,
-                { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
+                { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0", color: c.oscuro ? "#F8FAFC" : "#0F172A" },
               ]}
               value={datosPersonales.correo}
               onChangeText={(v) => {
@@ -488,7 +487,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
           </View>
 
           <View style={styles.campo}>
-            <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
+            <Text style={[styles.inputLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
               {t("reserva.datosPersonales.numeroCelular", { defaultValue: "Teléfono celular *" })}
             </Text>
             {hayPrefijo ? (
@@ -496,10 +495,10 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
                 <View
                   style={[
                     styles.prefijoBox,
-                    { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border },
+                    { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0" },
                   ]}
                 >
-                  <Text style={[styles.prefijoText, { color: c.textPrimary }]}>
+                  <Text style={[styles.prefijoText, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
                     {prefijoTelefono}
                   </Text>
                 </View>
@@ -507,7 +506,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
                   style={[
                     styles.input,
                     styles.inputCelular,
-                    { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
+                    { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0", color: c.oscuro ? "#F8FAFC" : "#0F172A" },
                   ]}
                   value={datosPersonales.celular}
                   onChangeText={(v) => {
@@ -553,7 +552,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
           </View>
 
           <View style={[styles.campo, { marginBottom: 0 }]}>
-            <Text style={[styles.inputLabel, { color: c.textPrimary }]}>
+            <Text style={[styles.inputLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
               {t("reserva.datosPersonales.numeroDeDocumento", { defaultValue: "Número de documento *" })}
             </Text>
             {datosPersonales.tipoDocumento ? (
@@ -561,10 +560,10 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
                 <View
                   style={[
                     styles.prefijoBox,
-                    { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border },
+                    { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0" },
                   ]}
                 >
-                  <Text style={[styles.prefijoText, { color: c.textPrimary }]}>
+                  <Text style={[styles.prefijoText, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
                     {getSiglaDocumento(datosPersonales.tipoDocumento)}
                   </Text>
                 </View>
@@ -572,7 +571,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
                   style={[
                     styles.input,
                     styles.inputCelular,
-                    { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border, color: c.textPrimary },
+                    { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0", color: c.oscuro ? "#F8FAFC" : "#0F172A" },
                   ]}
                   value={datosPersonales.numeroDocumento}
                   onChangeText={(v) => {
@@ -739,62 +738,64 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardForm: {
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     borderWidth: 1,
   },
   cardHeaderFila: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginBottom: 6,
+    gap: 7,
+    marginBottom: 4,
   },
   cardHeaderTitulo: {
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.3,
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 0,
     includeFontPadding: false,
     textAlignVertical: "center",
   },
   cardSubtitulo: {
-    fontSize: 11,
-    lineHeight: 15,
-    marginBottom: 10,
+    fontSize: 12.5,
+    fontWeight: "400",
+    lineHeight: 17.5,
+    marginBottom: 12,
   },
   divider: {
     height: 1,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   campo: {
-    marginBottom: 12,
+    marginBottom: 14,
   },
   inputLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-    marginBottom: 5,
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 12,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 46,
+    fontSize: 14,
+    fontWeight: "400",
   },
   filaCelular: {
     flexDirection: "row",
     gap: 8,
   },
   prefijoBox: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 46,
     justifyContent: "center",
     alignItems: "center",
-    minWidth: 48,
+    minWidth: 50,
   },
   prefijoText: {
-    fontSize: 12,
+    fontSize: 13.5,
     fontWeight: "600",
   },
   inputCelular: {

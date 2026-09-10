@@ -37,12 +37,12 @@ export default function CampoSelectorLista({
 
   return (
     <View style={styles.contenedor}>
-      <Text style={[styles.selectLabel, { color: c.textPrimary }]}>{etiqueta}</Text>
+      <Text style={[styles.selectLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{etiqueta}</Text>
 
       <TouchableOpacity
         style={[
           styles.selectBox,
-          { backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", borderColor: c.border },
+          { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0" },
           deshabilitado && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", opacity: 0.8 },
         ]}
         onPress={() => !deshabilitado && setAbierto(true)}
@@ -52,7 +52,7 @@ export default function CampoSelectorLista({
         <Text
           style={[
             styles.selectValue,
-            { color: c.textPrimary },
+            { color: c.oscuro ? "#F8FAFC" : "#0F172A" },
             (!opcionActual || deshabilitado) && { color: c.textMuted, fontWeight: "400" },
           ]}
           numberOfLines={1}
@@ -114,24 +114,25 @@ export default function CampoSelectorLista({
 }
 
 const styles = StyleSheet.create({
-  contenedor: { flex: 1 },
-
+  contenedor: {
+    width: "100%",
+  },
   selectLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-    marginBottom: 5,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748b",
+    marginBottom: 6,
   },
   selectBox: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 46,
   },
-  selectValue: { fontSize: 12, fontWeight: "400", flex: 1, marginRight: 6 },
+  selectValue: { fontSize: 14, fontWeight: "400", flex: 1, marginRight: 6 },
   placeholder: { fontWeight: "400" },
 
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },

@@ -194,7 +194,15 @@ export default function FormFechasLugar({ vehiculo }: Props) {
                 activo && [styles.metodoCardActivo, { borderColor: primaryAccent, backgroundColor: c.primaryBg }],
               ]}
               onPress={() => {
-                actualizarFechasLugar({ metodoPago: metodo.id });
+                actualizarFechasLugar({
+                  metodoPago: metodo.id,
+                  ...(metodo.id === "efectivo"
+                    ? {
+                        lugarRetiro: nombreSucursal,
+                        lugarDevolucion: nombreSucursal,
+                      }
+                    : {}),
+                });
                 if (metodo.id === "efectivo") setAlertaEfectivoVisible(true);
               }}
               activeOpacity={0.8}

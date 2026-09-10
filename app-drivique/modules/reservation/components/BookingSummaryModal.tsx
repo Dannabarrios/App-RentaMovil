@@ -275,7 +275,7 @@ export default function ResumenReservaModal({
             <View style={styles.seccionCard}>
               <View style={styles.seccionHeaderFila}>
                 <Text style={[styles.seccionTituloAzul, { color: primaryAccent }]}>
-                  {t("reserva.resumen.fechasYLugares", { defaultValue: "FECHAS Y LUGARES" })}
+                  {t("reserva.resumen.fechasYLugares", { defaultValue: "FECHAS Y UBICACIÓN" })}
                 </Text>
                 {permitirEditar && (
                   <TouchableOpacity
