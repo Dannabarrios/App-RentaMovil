@@ -3,10 +3,8 @@ import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { useReservaStore } from "@/store/reservationStore";
 import { useUsuarioStore } from "@/store/userStore";
 import React, { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as WebBrowser from "expo-web-browser";
-import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { AlertModal } from "../../../components/ui/AlertModal";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
@@ -149,82 +147,90 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     if (!datosPersonales.numeroDocumento && usuarioGlobal.numeroDocumento) {
       precarga.numeroDocumento = usuarioGlobal.numeroDocumento;
     }
-    if (!datosPersonales.telefono && usuarioGlobal.telefono) {
-      precarga.telefono = usuarioGlobal.telefono;
-    }
-    if (!datosPersonales.direccion && usuarioGlobal.direccion) {
-      precarga.direccion = usuarioGlobal.direccion;
+    if (!datosPersonales.celular && usuarioGlobal.telefono) {
+      precarga.celular = usuarioGlobal.telefono;
     }
     if (Object.keys(precarga).length > 0) {
       actualizarDatosPersonales(precarga);
     }
-  }, [usuarioGlobal]);
+  }, []);
 
-  const validarFormulario = (): boolean => {
-    if (
-      !datosPersonales.nombreCompleto ||
-      !datosPersonales.correo ||
-      !datosPersonales.nacionalidad ||
-      !datosPersonales.tipoDocumento ||
-      !datosPersonales.numeroDocumento ||
-      !datosPersonales.telefono ||
-      !datosPersonales.direccion ||
-      !datosPersonales.ciudad ||
-      !datosPersonales.paisResidencia ||
-      !datosPersonales.metodoPago
-    ) {
-      setAlertaFaltantesVisible(true);
-      return false;
-    }
-    return true;
-  };
+  const prefijoTelefono = getPrefijoPorNacionalidad(
+    datosPersonales.nacionalidad || null,
+  );
+  const hayPrefijo = prefijoTelefono !== "";
 
-  const { subtotal, totalDescuento, cargosAdmin, iva, total } =
-    useMemo(() => {
-      const dias = Math.max(
-        1,
-        diasEntre(fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion),
-      );
-      const precioPorDia = vehiculo.precio;
-      const costoVehiculo = precioPorDia * dias;
-      const costoProteccion = planes.proteccion ? planes.proteccion.precio * dias : 0;
-      const costoKm = planes.tipoKilometraje?.precio ? planes.tipoKilometraje.precio * dias : 0;
-      const sub =
-        costoVehiculo + costoProteccion + costoKm + RECARGO_LOGISTICO;
+  const datosCompletos =
+    !!datosPersonales.nombreCompleto.trim() &&
+    !!datosPersonales.nacionalidad &&
+    !!datosPersonales.correo.trim() &&
+    !!datosPersonales.celular.trim() &&
+    !!datosPersonales.tipoDocumento &&
+    !!datosPersonales.numeroDocumento.trim() &&
+    (docsVerificados || !!documentos.cedulaFrente) &&
+    (docsVerificados || !!documentos.licenciaConduccion) &&
+    !!datosPersonales.terminosAceptados;
 
-      let desc = 0;
-      if (cuponAplicado) {
-        if (cuponAplicado.descuentoPorcentaje) {
-          desc = (sub * cuponAplicado.descuentoPorcentaje) / 100;
-        } else if (cuponAplicado.descuentoFijo) {
-          desc = cuponAplicado.descuentoFijo;
-        }
+  const total = useMemo(() => {
+    const seguros = vehiculo.seguros ?? [];
+    const kmLimitado = vehiculo.tarifas?.kmLimitado;
+    const kmIlimitado = vehiculo.tarifas?.kmIlimitado;
+    const servicios = (vehiculo.servicios ?? []).filter(
+      (s) => !s.nombre.toLowerCase().includes("otra ciudad")
+    );
+
+    const seguroElegido =
+      seguros.find((s) => s.nombre === planes.proteccion) ?? null;
+    const kmElegido =
+      planes.tipoKilometraje === "limitado"
+        ? kmLimitado
+        : planes.tipoKilometraje === "ilimitado"
+          ? kmIlimitado
+          : null;
+
+    const dias = diasEntre(
+      fechasLugar.fechaRetiro,
+      fechasLugar.fechaDevolucion,
+    );
+    const diarias = vehiculo.precio * dias;
+    const proteccion = seguroElegido ? seguroElegido.precio * dias : 0;
+    const kilometraje = kmElegido ? kmElegido.precio * dias : 0;
+    const servAdic = servicios
+      .filter((s) => planes.serviciosSeleccionados.includes(s.nombre))
+      .reduce((a, s) => a + s.precio * dias, 0);
+    const subtotalBase = diarias + proteccion + kilometraje + servAdic;
+    const cargos = Math.round(subtotalBase * PORCENTAJE_CARGOS_ADMINISTRATIVOS);
+    const subtotalBruto = subtotalBase + cargos + RECARGO_LOGISTICO;
+      
+    let descuentoCupon = 0;
+    if (cuponAplicado) {
+      if (cuponAplicado.descuentoPorcentaje) {
+        descuentoCupon = Math.round(subtotalBruto * (cuponAplicado.descuentoPorcentaje / 100));
+      } else if (cuponAplicado.descuentoFijo) {
+        descuentoCupon = cuponAplicado.descuentoFijo;
       }
-
-      const baseImponible = Math.max(0, sub - desc);
-      const cargos = (baseImponible * PORCENTAJE_CARGOS_ADMINISTRATIVOS) / 100;
-      const imp = (baseImponible * PORCENTAJE_IVA) / 100;
-      const tot = baseImponible + cargos + imp;
-
-      return {
-        subtotal: sub,
-        totalDescuento: desc,
-        cargosAdmin: cargos,
-        iva: imp,
-        total: tot,
-      };
-    }, [vehiculo, fechasLugar, planes, cuponAplicado]);
+    }
+    
+    const subtotal = Math.max(subtotalBruto - descuentoCupon, 0);
+    const iva = Math.round(subtotal * PORCENTAJE_IVA);
+    return subtotal + iva;
+  }, [vehiculo, fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion, planes, cuponAplicado]);
 
   const handleConfirmarReserva = async () => {
-    if (!validarFormulario()) return;
-
-    if (!docsVerificados) {
+    if (!datosCompletos) {
       setAlertaFaltantesVisible(true);
       return;
     }
 
     const referencia = generarReferenciaUnica();
-    const metodoPago = datosPersonales.metodoPago;
+    const metodoPago = fechasLugar.metodoPago;
+
+    if (documentos.cedulaFrente || documentos.licenciaConduccion || !docsVerificados) {
+      await documentosService.guardarDocumentos(usuarioGlobal.id, {
+        identificacion: documentos.cedulaFrente,
+        licencia: documentos.licenciaConduccion,
+      });
+    }
 
     await reservaPersistService.guardarReserva({
       referencia,
@@ -238,8 +244,8 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       fechaDevolucion: fechasLugar.fechaDevolucion,
       lugarRetiro: fechasLugar.lugarRetiro,
       lugarDevolucion: fechasLugar.lugarDevolucion,
-      proteccion: planes.proteccion?.nombre,
-      tipoKilometraje: planes.tipoKilometraje?.nombre,
+      proteccion: planes.proteccion,
+      tipoKilometraje: planes.tipoKilometraje,
       vehiculoSnapshot: vehiculo,
       datosPersonalesSnapshot: datosPersonales,
       datosDocumentosSnapshot: {
@@ -256,18 +262,53 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     if (metodoPago === "efectivo") {
       setModalInstruccionesEfectivoVisible(true);
     } else {
-      handlePagarWompi(referencia);
+      setModalReservaVisible(true);
     }
   };
 
-  const handlePagarWompi = async (referencia: string) => {
+  const handleIrAMisReservas = () => {
+    setModalInstruccionesEfectivoVisible(false);
+    limpiarReserva();
+    router.replace("/(tabs)/my-bookings");
+  };
+
+  const handleVolverAlInicio = () => {
+    setModalInstruccionesEfectivoVisible(false);
+    limpiarReserva();
+    router.replace("/(tabs)");
+  };
+
+  const handlePagarMasTarde = () => {
+    setModalReservaVisible(false);
+    limpiarReserva();
+    router.replace("/(tabs)/my-bookings");
+  };
+
+  const handleConfirmarCancelarProceso = () => {
+    setAlertaCancelarProcesoVisible(false);
+    limpiarReserva();
+    router.replace("/(tabs)");
+  };
+
+  const handleContratoFirmado = async () => {
+    if (referenciaActual) {
+      await reservaPersistService.actualizarEstado(referenciaActual, "CONFIRMADA");
+    }
+    setMostrarContrato(false);
+    setAlertaEfectivoVisible(true);
+  };
+
+  const handlePagarWompi = async () => {
+    if (!referenciaActual) return;
+    setModalReservaVisible(false);
     setProcesandoPago(true);
+
     try {
       const redirectUrl = "https://localtest.me/respuesta";
       const amountInCents = aCentavos(total);
 
       const url = await construirUrlCheckout({
-        reference: referencia,
+        reference: referenciaActual,
         amountInCents,
         redirectUrl,
       });
