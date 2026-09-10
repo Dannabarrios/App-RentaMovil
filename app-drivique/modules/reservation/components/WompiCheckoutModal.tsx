@@ -38,13 +38,24 @@ export function WompiCheckoutModal({
   const [cargando, setCargando] = useState(true);
   const procesadoRef = useRef(false);
 
-  // Reiniciar estado cuando se abre el modal
+  // Reiniciar estado cuando se abre el modal y timer de seguridad para quitar overlay
   React.useEffect(() => {
     if (visible) {
       procesadoRef.current = false;
       setCargando(true);
+
+      // Si estamos en Web, redirigir directamente para evitar bloqueo de iframes (X-Frame-Options de Wompi)
+      if (Platform.OS === "web" && typeof window !== "undefined" && checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        setCargando(false);
+      }, 3500);
+      return () => clearTimeout(timer);
     }
-  }, [visible]);
+  }, [visible, checkoutUrl]);
 
   const extraerTransactionId = (url: string): string | null => {
     try {
@@ -62,22 +73,21 @@ export function WompiCheckoutModal({
     return null;
   };
 
+  const handleAbrirEnNavegador = async () => {
+    if (!checkoutUrl) return;
+    try {
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.open(checkoutUrl, "_blank");
+      } else {
+        await Linking.openURL(checkoutUrl);
+      }
+    } catch (e) {
+      console.warn("[WompiCheckoutModal] Error abriendo URL externa:", e);
+    }
+  };
+
   const handleInterceptUrl = (url: string): boolean => {
     if (!url) return true;
-
-    // Si estamos dentro del dominio y flujo de pago de Wompi, permitir la navegación
-    const esDominioWompi =
-      url.includes("checkout.wompi.co") ||
-      url.includes("wompi.co") ||
-      url.includes("wompi.com") ||
-      url.includes("cloudfront.net") ||
-      url.includes("pse.com.co") ||
-      url.includes("bancolombia.com") ||
-      url.includes("nequi.com.co");
-
-    if (esDominioWompi) {
-      return true;
-    }
 
     // Interceptar cuando la navegación sale de Wompi hacia la URL de retorno (localtest.me, respuesta, etc.)
     const esRetornoComercio =
@@ -92,7 +102,7 @@ export function WompiCheckoutModal({
         transactionId: txId,
         reference: referencia,
       });
-      return false; // Detener carga en WebView para evitar error de conexión a 127.0.0.1
+      return false; // Detener carga en WebView para evitar error de conexión
     }
 
     return true;
@@ -132,7 +142,13 @@ export function WompiCheckoutModal({
             </Text>
           </View>
 
-          <View style={{ width: 36 }} />
+          <TouchableOpacity
+            style={[styles.btnCerrar, { backgroundColor: c.oscuro ? "rgba(255,255,255,0.08)" : "#f1f5f9" }]}
+            onPress={handleAbrirEnNavegador}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="open-outline" size={18} color={c.primary} />
+          </TouchableOpacity>
         </View>
 
         {/* Contenido WebView */}
@@ -149,8 +165,15 @@ export function WompiCheckoutModal({
           <WebView
             source={{ uri: checkoutUrl }}
             style={{ flex: 1, backgroundColor: c.bg }}
-            onLoadStart={() => setCargando(true)}
+            onLoadStart={() => {}}
+            onLoadProgress={({ nativeEvent }) => {
+              if (nativeEvent.progress > 0.5) {
+                setCargando(false);
+              }
+            }}
             onLoadEnd={() => setCargando(false)}
+            onError={() => setCargando(false)}
+            onHttpError={() => setCargando(false)}
             onShouldStartLoadWithRequest={(request) => {
               return handleInterceptUrl(request.url);
             }}
@@ -159,8 +182,11 @@ export function WompiCheckoutModal({
             }}
             javaScriptEnabled={true}
             domStorageEnabled={true}
-            startInLoadingState={true}
+            setSupportMultipleWindows={false}
+            javaScriptCanOpenWindowsAutomatically={true}
+            startInLoadingState={false}
             originWhitelist={["*"]}
+            userAgent="Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
           />
         </View>
       </SafeAreaView>
