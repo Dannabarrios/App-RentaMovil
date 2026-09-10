@@ -446,6 +446,7 @@ const styles = StyleSheet.create({
   },
   detallesTextWrap: {
     borderBottomWidth: 1.5,
+    borderBottomColor: "#2563eb",
     paddingBottom: 2,
   },
   detallesBtnText: {
