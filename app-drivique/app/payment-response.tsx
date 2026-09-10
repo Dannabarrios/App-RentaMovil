@@ -42,9 +42,8 @@ import {
 import { fechaCorta, fmt } from "@/modules/reservation/components/BookingSummaryModal.pieces";
 import { contratoService, ContratoGuardado } from "@/modules/reservation/services/contractService";
 import {
-  compartirPdfOriginal,
+  compartirContratoPdf,
   crearTextosContrato,
-  descargarContratoVisible,
   generarContratoPdf,
 } from "@/modules/reservation/services/pdfService";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -438,53 +437,48 @@ export default function PagoRespuestaScreen() {
     }
     setGenerandoPdf(true);
     try {
-      if (Platform.OS === "web") {
-        await descargarContratoVisible(`contrato-${reserva.referencia}.pdf`);
-        return;
-      }
       if (!vehiculoSnap || !datosPersonalesSnap || !fechasLugarSnap || !planesSnap) {
-        Alert.alert(t("misReservas.contratoNoDisponibleTitulo"), t("misReservas.contratoNoDisponible"));
+        Alert.alert(
+          t("misReservas.contratoNoDisponibleTitulo", { defaultValue: "Contrato no disponible" }),
+          t("misReservas.contratoNoDisponible", { defaultValue: "Faltan datos de la reserva para generar el documento." })
+        );
         return;
       }
-      let pdfBase64 = contratoActual.contratoPdfBase64;
-      let pdfNombre = contratoActual.contratoPdfNombre || `contrato-${reserva.referencia}.pdf`;
-      let pdfUri: string | undefined = undefined;
 
-      if (!pdfBase64) {
-        const tipoDocumentoTexto = datosPersonalesSnap.tipoDocumento
-          ? t(`reserva.datosPersonales.tiposDocumento.${datosPersonalesSnap.tipoDocumento === "Doc. Extranjero" ? "DocExtranjero" : datosPersonalesSnap.tipoDocumento}`, { defaultValue: datosPersonalesSnap.tipoDocumento })
-          : "";
-        const resPdf = await generarContratoPdf({
-          contrato: contratoActual,
-          vehiculo: vehiculoSnap,
-          datosPersonales: datosPersonalesSnap,
-          datosDocumentos: datosDocumentosEfectivos,
-          fechasLugar: fechasLugarSnap,
-          planes: planesSnap,
-          total: reserva.total,
-          referencia: reserva.referencia,
-          formatPrecio: fmt,
-          formatearFecha: (iso: string | null) => (iso ? fechaCorta(iso) : "—"),
-          tipoDocumentoTexto,
-          textos: crearTextosContrato((key: string) => t(key)),
-        });
-        pdfBase64 = resPdf.base64;
-        pdfUri = resPdf.uri;
-        if (pdfBase64) {
-          const actualizado = await contratoService.guardarPdfContrato(reserva.referencia, pdfBase64, pdfNombre);
-          if (actualizado) setContratoActual(actualizado);
-        }
+      const pdfNombre = contratoActual.contratoPdfNombre || `contrato-${reserva.referencia}.pdf`;
+      const tipoDocumentoTexto = datosPersonalesSnap.tipoDocumento
+        ? t(`reserva.datosPersonales.tiposDocumento.${datosPersonalesSnap.tipoDocumento === "Doc. Extranjero" ? "DocExtranjero" : datosPersonalesSnap.tipoDocumento}`, { defaultValue: datosPersonalesSnap.tipoDocumento })
+        : "";
+
+      const resPdf = await generarContratoPdf({
+        contrato: contratoActual,
+        vehiculo: vehiculoSnap,
+        datosPersonales: datosPersonalesSnap,
+        datosDocumentos: datosDocumentosEfectivos,
+        fechasLugar: fechasLugarSnap,
+        planes: planesSnap,
+        total: reserva.total,
+        referencia: reserva.referencia,
+        formatPrecio: fmt,
+        formatearFecha: (iso: string | null) => (iso ? fechaCorta(iso) : "—"),
+        tipoDocumentoTexto,
+        textos: crearTextosContrato((key: string) => t(key)),
+      });
+
+      if (resPdf?.base64 && !contratoActual.contratoPdfBase64) {
+        const actualizado = await contratoService.guardarPdfContrato(reserva.referencia, resPdf.base64, pdfNombre);
+        if (actualizado) setContratoActual(actualizado);
       }
-      if (pdfBase64 || pdfUri) {
-        await compartirPdfOriginal(
-          pdfBase64 || "",
-          pdfNombre,
-          pdfUri
-        );
+
+      if (resPdf?.uri) {
+        await compartirContratoPdf(resPdf.uri, pdfNombre);
       }
     } catch (error) {
       console.error("[pago-respuesta] Error generando el PDF", error);
-      Alert.alert(t("misReservas.errorPdfTitulo"), t("misReservas.errorPdfMensaje"));
+      Alert.alert(
+        t("misReservas.errorPdfTitulo", { defaultValue: "Error" }),
+        t("misReservas.errorPdfMensaje", { defaultValue: "No fue posible generar o descargar el PDF del contrato." })
+      );
     } finally {
       setGenerandoPdf(false);
     }
