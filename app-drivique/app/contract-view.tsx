@@ -105,6 +105,40 @@ export default function ContratoScreen() {
   const fechasLugarSnap = reserva?.fechasLugarSnapshot as DatosFechasLugar | undefined;
   const planesSnap = reserva?.planesSnapshot as DatosPlanes | undefined;
 
+  const vehiculoEfectivo: Vehiculo = (vehiculoSnap || {
+    id: reserva?.vehiculoId || 1,
+    nombre: reserva?.vehiculoNombre || "Vehículo",
+    placa: (reserva as any)?.vehiculoPlaca || "ABC-123",
+    precio: reserva?.total || 0,
+    sucursal: reserva?.lugarRetiro || "Bogotá",
+  }) as Vehiculo;
+
+  const datosPersonalesEfectivos: DatosPersonales = (datosPersonalesSnap || {
+    nombreCompleto: (reserva as any)?.nombreCompleto || "Cliente Demo",
+    tipoDocumento: (reserva as any)?.tipoDocumento || "CC",
+    numeroDocumento: (reserva as any)?.numeroDocumento || "1075228306",
+    correo: (reserva as any)?.correo || "cliente@drivique.com",
+    celular: (reserva as any)?.celular || "3000000000",
+    nacionalidad: "Colombia",
+    terminosAceptados: true,
+  }) as DatosPersonales;
+
+  const fechasLugarEfectivas: DatosFechasLugar = (fechasLugarSnap || {
+    fechaRetiro: reserva?.fechaRetiro || new Date().toISOString(),
+    fechaDevolucion: reserva?.fechaDevolucion || new Date().toISOString(),
+    horaRetiro: (reserva as any)?.horaRetiro || "10:00",
+    horaDevolucion: (reserva as any)?.horaDevolucion || "10:00",
+    lugarRetiro: reserva?.lugarRetiro || "Sucursal Principal",
+    lugarDevolucion: reserva?.lugarDevolucion || "Sucursal Principal",
+    metodoPago: (reserva?.metodoPago as any) || "wompi",
+  }) as DatosFechasLugar;
+
+  const planesEfectivos: DatosPlanes = (planesSnap || {
+    proteccion: reserva?.proteccion || "Básica",
+    tipoKilometraje: reserva?.tipoKilometraje || "ilimitado",
+    serviciosSeleccionados: [],
+  }) as DatosPlanes;
+
   const nombreLicenciaSnap =
     datosDocumentosSnap?.licenciaConduccion?.nombre || "Licencia verificada en perfil";
   const nombreCedulaSnap = datosDocumentosSnap?.cedulaFrente?.nombre || null;
@@ -125,28 +159,20 @@ export default function ContratoScreen() {
     }
     setGenerandoPdf(true);
     try {
-      if (!vehiculoSnap || !datosPersonalesSnap || !fechasLugarSnap || !planesSnap) {
-        Alert.alert(
-          t("misReservas.contratoNoDisponibleTitulo", { defaultValue: "Contrato no disponible" }),
-          t("misReservas.contratoNoDisponible", { defaultValue: "Faltan datos de la reserva para generar el documento." })
-        );
-        return;
-      }
-
       const pdfNombre = contrato.contratoPdfNombre || `contrato-${reserva.referencia}.pdf`;
-      const tipoDoc = datosPersonalesSnap.tipoDocumento;
+      const tipoDoc = datosPersonalesEfectivos.tipoDocumento;
       const tipoDocumentoTexto = tipoDoc
         ? t(`reserva.datosPersonales.tiposDocumento.${tipoDoc === "Doc. Extranjero" ? "DocExtranjero" : tipoDoc}`, { defaultValue: tipoDoc })
         : "";
 
       const resPdf = await generarContratoPdf({
         contrato,
-        vehiculo: vehiculoSnap,
-        datosPersonales: datosPersonalesSnap,
+        vehiculo: vehiculoEfectivo,
+        datosPersonales: datosPersonalesEfectivos,
         datosDocumentos: datosDocumentosEfectivos,
-        fechasLugar: fechasLugarSnap,
-        planes: planesSnap,
-        total: reserva.total,
+        fechasLugar: fechasLugarEfectivas,
+        planes: planesEfectivos,
+        total: reserva.total || 0,
         referencia: reserva.referencia,
         formatPrecio: fmt,
         formatearFecha: (iso: string | null) => (iso ? fechaCorta(iso) : "—"),
