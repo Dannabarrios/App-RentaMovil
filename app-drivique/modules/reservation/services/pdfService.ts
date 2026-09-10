@@ -154,15 +154,15 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<Resu
       <div class="badge">${esc(tx.badgeLabel)}</div>
       <div class="meta"><b>${esc(tx.contractCode)}:</b> ${esc(contrato.codigo)}</div>
       <div class="meta"><b>${esc(tx.status)}:</b> ${esc(tx.statusSigned)}</div>
-      <div class="meta"><b>${esc(tx.generationDate)}:</b> ${esc(formatearFecha(contrato.fecha.slice(0, 10)))}</div>
-      <div class="meta"><b>${esc(tx.reservationCode)}:</b> ${esc(referencia)}</div>
+      <div class="meta"><b>${esc(tx.generationDate || "Fecha")}:</b> ${esc(formatearFecha(contrato?.fecha ? String(contrato.fecha).slice(0, 10) : null))}</div>
+      <div class="meta"><b>${esc(tx.reservationCode || "Reserva")}:</b> ${esc(referencia)}</div>
 
       <div class="intro">
         ${esc(
-          tx.intro
-            .replace("{{nombre}}", datosPersonales.nombreCompleto)
-            .replace("{{tipoDoc}}", tipoDocumentoTexto)
-            .replace("{{numDoc}}", datosPersonales.numeroDocumento)
+          (tx.intro || "Entre {{nombre}}, identificado con {{tipoDoc}} No. {{numDoc}}, y DRIVIQUE SAS...")
+            .replace("{{nombre}}", String(datosPersonales?.nombreCompleto || "—"))
+            .replace("{{tipoDoc}}", String(tipoDocumentoTexto || "—"))
+            .replace("{{numDoc}}", String(datosPersonales?.numeroDocumento || "—"))
         )}
       </div>
 
@@ -273,9 +273,9 @@ const CLAVES_CONTRATO = [
   "footerNote1", "footerNote2", "paymentMethodCash", "paymentMethodWompi", "noneAdded",
 ] as const;
 
-export function crearTextosContrato(t: (key: string) => string): Record<string, string> {
+export function crearTextosContrato(t: (key: string, opts?: any) => string): Record<string, string> {
   return CLAVES_CONTRATO.reduce<Record<string, string>>((textos, clave) => {
-    textos[clave] = t(`reserva.contrato.${clave}`);
+    textos[clave] = t(`reserva.contrato.${clave}`, { defaultValue: clave }) || clave;
     return textos;
   }, {});
 }

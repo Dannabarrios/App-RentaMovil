@@ -425,6 +425,7 @@ export default function PagoRespuestaScreen() {
     if (numeroDocumento && claveNormalizada === numeroDocumento) {
       setErrorClave("");
       setClaveDesbloqueada(true);
+      router.push(`/contract-view?ref=${encodeURIComponent(reserva.referencia)}&unlocked=true`);
     } else {
       setErrorClave(t("misReservas.claveIncorrecta"));
     }
@@ -493,30 +494,6 @@ export default function PagoRespuestaScreen() {
         onVolver={irAMisReservas}
       />
 
-      {mostrarLectorContrato && contratoActual && claveDesbloqueada && vehiculoSnap && datosPersonalesSnap && fechasLugarSnap && planesSnap ? (
-        <View style={{ flex: 1, backgroundColor: c.bg }}>
-          <HeaderDetalle
-            insets={insets}
-            c={c}
-            titulo={t("reserva.contrato.title", { defaultValue: "Contrato de Alquiler" })}
-            onVolver={() => setMostrarLectorContrato(false)}
-          />
-          <FirmaContrato
-            vehiculo={vehiculoSnap}
-            datosPersonales={datosPersonalesSnap}
-            datosDocumentos={datosDocumentosEfectivos}
-            fechasLugar={fechasLugarSnap}
-            planes={planesSnap}
-            total={reserva.total}
-            referencia={reserva.referencia}
-            onFirmado={() => {}}
-            soloLectura
-            contratoFirmado={contratoActual}
-            onDescargar={handleDescargarPdf}
-            descargando={generandoPdf}
-          />
-        </View>
-      ) : (
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -1016,7 +993,11 @@ export default function PagoRespuestaScreen() {
                 gap: 6,
               },
             ]}
-            onPress={() => setMostrarLectorContrato(true)}
+            onPress={() =>
+              router.push(
+                `/contract-view?ref=${encodeURIComponent(reserva.referencia)}&unlocked=true`
+              )
+            }
             activeOpacity={0.8}
           >
             <Ionicons name="eye-outline" size={17} color={primaryAccent} />
@@ -1027,9 +1008,8 @@ export default function PagoRespuestaScreen() {
         </View>
       )}
 
-    </ScrollView>
+        </ScrollView>
       </KeyboardAvoidingView>
-      )}
 
       <WompiCheckoutModal
         visible={wompiModalVisible}
