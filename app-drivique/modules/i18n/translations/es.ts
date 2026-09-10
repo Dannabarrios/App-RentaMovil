@@ -481,6 +481,8 @@ export default {
     resenas: {
       titulo: 'Reseñas de clientes',
       sinResenas: 'Este vehículo todavía no tiene reseñas.',
+      sinResenasTitulo: 'Este vehículo aún no tiene reseñas',
+      sinResenasSubtitulo: '¡Anímate a reservarlo y sé el primero en compartir tu experiencia!',
       verMas: 'Ver más',
       ocultar: 'Ocultar',
       verMenos: 'Ocultar',
@@ -559,6 +561,7 @@ export default {
       tituloFinalizada: 'Reserva finalizada',
       tituloCancelada: 'Reserva cancelada',
       tituloPendienteEfectivo: 'Pendiente de pago en efectivo',
+      tituloPagoDigitalPendiente: 'Pago Digital Pendiente',
       tituloPendienteValidacion: 'Pago en validación',
       tituloPendiente: 'Reserva pendiente',
       lugar: 'Lugar de retiro',

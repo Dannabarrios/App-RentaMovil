@@ -62,6 +62,24 @@ export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
   const colorScore = c.oscuro ? "#93C5FD" : "#1E3A8A";
   const colorBorde = c.oscuro ? c.border : COLOR_BORDE_CARD;
 
+  if (total === 0) {
+    return (
+      <View style={{ marginBottom: 14 }}>
+        <Text style={[s.tituloPrincipal, { color: colorScore, marginBottom: 10 }]}>
+          {t("vehiculo.resenas.titulo", { defaultValue: "Reseñas de clientes" })}
+        </Text>
+        <View style={[s.cardVacio, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
+          <Text style={[s.vacioTitulo, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>
+            {t("vehiculo.resenas.sinResenasTitulo", { defaultValue: "Este vehículo aún no tiene reseñas" })}
+          </Text>
+          <Text style={[s.vacioSubtitulo, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+            {t("vehiculo.resenas.sinResenasSubtitulo", { defaultValue: "¡Anímate a reservarlo y sé el primero en compartir tu experiencia!" })}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
       {/* Título de la sección */}
@@ -110,40 +128,32 @@ export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
       {total > 0 && <View style={[s.divisor, { backgroundColor: colorBorde }]} />}
 
       {/* Lista de Reseñas */}
-      {total === 0 ? (
-        <View style={s.vacioWrap}>
-          <Text style={[s.vacioTexto, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
-            {t("vehiculo.resenas.sinResenas", { defaultValue: "Aún no hay reseñas registradas para este vehículo." })}
-          </Text>
-        </View>
-      ) : (
-        <View style={s.listaComentarios}>
-          {listaComentarios.slice(0, visibles).map((r, i) => (
-            <View key={i} style={[s.comentarioItem, i > 0 && { borderTopWidth: 1, borderTopColor: colorBorde, paddingTop: 14 }]}>
-              {/* Avatar circular con iniciales */}
-              <View style={[s.avatarWrap, { backgroundColor: c.oscuro ? "#334155" : "#F1F5F9" }]}>
-                <Text style={[s.avatarTexto, { color: c.oscuro ? "#93C5FD" : "#1E3A8A" }]}>
-                  {inicialesDe(r.autor)}
-                </Text>
-              </View>
-
-              {/* Contenido de la reseña */}
-              <View style={s.comentarioCuerpo}>
-                <View style={s.comentarioHeaderRow}>
-                  <Text style={[s.autorNombre, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>{r.autor}</Text>
-                  <Estrellas valor={r.calificacion} tamano={13} />
-                </View>
-
-                {!!r.fecha && (
-                  <Text style={[s.fechaTexto, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{r.fecha}</Text>
-                )}
-
-                <Text style={[s.comentarioTexto, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>{r.texto}</Text>
-              </View>
+      <View style={s.listaComentarios}>
+        {listaComentarios.slice(0, visibles).map((r, i) => (
+          <View key={i} style={[s.comentarioItem, i > 0 && { borderTopWidth: 1, borderTopColor: colorBorde, paddingTop: 14 }]}>
+            {/* Avatar circular con iniciales */}
+            <View style={[s.avatarWrap, { backgroundColor: c.oscuro ? "#334155" : "#F1F5F9" }]}>
+              <Text style={[s.avatarTexto, { color: c.oscuro ? "#93C5FD" : "#1E3A8A" }]}>
+                {inicialesDe(r.autor)}
+              </Text>
             </View>
-          ))}
-        </View>
-      )}
+
+            {/* Contenido de la reseña */}
+            <View style={s.comentarioCuerpo}>
+              <View style={s.comentarioHeaderRow}>
+                <Text style={[s.autorNombre, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>{r.autor}</Text>
+                <Estrellas valor={r.calificacion} tamano={13} />
+              </View>
+
+              {!!r.fecha && (
+                <Text style={[s.fechaTexto, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{r.fecha}</Text>
+              )}
+
+              <Text style={[s.comentarioTexto, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>{r.texto}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
 
       {/* Botón Ver más / Ocultar */}
       {total > 2 && (
@@ -242,13 +252,30 @@ const s = StyleSheet.create({
     width: "100%",
     marginVertical: 14,
   },
-  vacioWrap: {
-    paddingVertical: 12,
+  cardVacio: {
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingVertical: 26,
+    paddingHorizontal: 20,
     alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  vacioTexto: {
-    fontSize: 13,
+  vacioTitulo: {
+    fontSize: 14.5,
+    fontWeight: "700",
     textAlign: "center",
+    marginBottom: 6,
+  },
+  vacioSubtitulo: {
+    fontSize: 12.5,
+    fontWeight: "400",
+    textAlign: "center",
+    lineHeight: 18,
   },
   listaComentarios: {
     gap: 14,

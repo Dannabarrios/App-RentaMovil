@@ -308,7 +308,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     setProcesandoPago(true);
 
     try {
-      const redirectUrl = Linking.createURL("pago-respuesta");
+      const redirectUrl = "https://localtest.me/respuesta";
       const amountInCents = aCentavos(total);
 
       const url = await construirUrlCheckout({
@@ -352,27 +352,18 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
           nuevoEstado,
           transactionId
         );
-
-        limpiarReserva();
-
-        if (nuevoEstado === "PENDIENTE_EFECTIVO") {
-          router.replace("/(tabs)/my-bookings");
-        } else {
-          router.replace(`/payment-response?ref=${encodeURIComponent(referenciaActual)}`);
-        }
-      } else {
-        // El usuario canceló el checkout o Wompi no completó la redirección.
-        // Borramos la reserva de la base de datos para no dejar reservas fantasma.
-        // Los datos del formulario se mantienen en memoria para que pueda reintentar.
-        await reservaPersistService.eliminarReserva(referenciaActual);
-        setAlertaErrorPagoVisible(true);
       }
+
+      limpiarReserva();
+      router.replace(
+        `/payment-response?ref=${encodeURIComponent(referenciaActual)}${transactionId ? `&id=${encodeURIComponent(transactionId)}` : ""}`
+      );
     } catch (error) {
       console.error("[FormDatosPersonales] Error en el pago con Wompi", error);
+      limpiarReserva();
       if (referenciaActual) {
-        await reservaPersistService.eliminarReserva(referenciaActual);
+        router.replace(`/payment-response?ref=${encodeURIComponent(referenciaActual)}`);
       }
-      setAlertaErrorPagoVisible(true);
     } finally {
       setProcesandoPago(false);
     }

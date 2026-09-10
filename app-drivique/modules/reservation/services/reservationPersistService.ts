@@ -190,8 +190,11 @@ export const reservaPersistService = {
   obtenerPorReferencia: async (
     referencia: string
   ): Promise<ReservaGuardada | undefined> => {
+    if (!referencia) return undefined;
     const reservas = await leer();
-    return reservas.find((r) => r.referencia === referencia);
+    const clean = referencia.trim();
+    const base = clean.includes("_") ? clean.split("_")[0] : clean;
+    return reservas.find((r) => r.referencia === clean || r.referencia === base);
   },
 
   actualizarEstado: async (
@@ -199,8 +202,11 @@ export const reservaPersistService = {
     nuevoEstado: EstadoReserva,
     paymentId?: string | null
   ): Promise<boolean> => {
+    if (!referencia) return false;
     const reservas = await leer();
-    const index = reservas.findIndex((r) => r.referencia === referencia);
+    const clean = referencia.trim();
+    const base = clean.includes("_") ? clean.split("_")[0] : clean;
+    const index = reservas.findIndex((r) => r.referencia === clean || r.referencia === base);
     if (index !== -1) {
       reservas[index].estado = nuevoEstado;
       if (paymentId) reservas[index].paymentId = paymentId;
@@ -214,8 +220,11 @@ export const reservaPersistService = {
     referencia: string,
     cambios: Partial<ReservaGuardada>
   ): Promise<boolean> => {
+    if (!referencia) return false;
     const reservas = await leer();
-    const index = reservas.findIndex((r) => r.referencia === referencia);
+    const clean = referencia.trim();
+    const base = clean.includes("_") ? clean.split("_")[0] : clean;
+    const index = reservas.findIndex((r) => r.referencia === clean || r.referencia === base);
     if (index !== -1) {
       reservas[index] = { ...reservas[index], ...cambios };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));
@@ -229,8 +238,11 @@ export const reservaPersistService = {
   },
 
   eliminarReserva: async (referencia: string): Promise<boolean> => {
+    if (!referencia) return false;
     const reservas = await leer();
-    const index = reservas.findIndex((r) => r.referencia === referencia);
+    const clean = referencia.trim();
+    const base = clean.includes("_") ? clean.split("_")[0] : clean;
+    const index = reservas.findIndex((r) => r.referencia === clean || r.referencia === base);
     if (index !== -1) {
       reservas.splice(index, 1);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));

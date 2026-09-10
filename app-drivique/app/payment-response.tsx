@@ -56,6 +56,7 @@ import {
   WompiTransactionResponse,
 } from "@/modules/reservation/services/wompiService";
 import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 
 export default function PagoRespuestaScreen() {
   const insets = useSafeAreaInsets();
@@ -78,29 +79,37 @@ export default function PagoRespuestaScreen() {
   useEffect(() => {
     let activo = true;
     (async () => {
-      let refBuscada = ref;
+      let rawRef = ref;
       let txData: WompiTransactionResponse | null = null;
 
       if (id) {
         txData = await consultarTransaccionWompi(id);
         if (txData?.reference) {
-          refBuscada = txData.reference;
+          rawRef = txData.reference;
         }
       }
 
-      if (!refBuscada) {
+      const cleanRef = rawRef ? (rawRef.includes("_") ? rawRef.split("_")[0] : rawRef) : undefined;
+
+      if (!cleanRef && !rawRef) {
         setCargando(false);
         return;
       }
 
-      let encontrada = await reservaPersistService.obtenerPorReferencia(refBuscada);
+      let encontrada = await reservaPersistService.obtenerPorReferencia(cleanRef || rawRef!);
+      if (!encontrada && rawRef) {
+        encontrada = await reservaPersistService.obtenerPorReferencia(rawRef);
+      }
 
       if (encontrada && txData) {
         const cambios: Partial<ReservaGuardada> = { paymentId: txData.id };
         if (txData.status === "APPROVED") {
           cambios.estado = "CONFIRMADA";
         } else if (txData.status === "PENDING") {
-          cambios.estado = "PENDIENTE_EFECTIVO";
+          cambios.estado =
+            txData.payment_method_type === "BANCOLOMBIA_COLLECT"
+              ? "PENDIENTE_EFECTIVO"
+              : "PENDIENTE_VALIDACION";
           cambios.metodoPagoDetalle =
             txData.payment_method_type === "BANCOLOMBIA_COLLECT"
               ? "Corresponsales Bancolombia"
@@ -116,11 +125,12 @@ export default function PagoRespuestaScreen() {
         } else if (txData.status === "DECLINED" || txData.status === "ERROR") {
           cambios.estado = "CANCELADA";
         }
-        await reservaPersistService.actualizarReserva(refBuscada, cambios);
-        encontrada = await reservaPersistService.obtenerPorReferencia(refBuscada);
+        await reservaPersistService.actualizarReserva(encontrada.referencia, cambios);
+        encontrada = await reservaPersistService.obtenerPorReferencia(encontrada.referencia);
       }
 
-      const contrato = await contratoService.obtenerPorReserva(refBuscada);
+      const refParaContrato = encontrada?.referencia || cleanRef || rawRef || "";
+      const contrato = await contratoService.obtenerPorReserva(refParaContrato);
       if (activo) {
         setReserva(encontrada ?? null);
         setContratoFirmado(!!contrato);
@@ -139,18 +149,76 @@ export default function PagoRespuestaScreen() {
   const handlePagarWompi = async () => {
     if (!reserva) return;
     try {
-      const redirectUrl = Linking.createURL("pago-respuesta");
+      const redirectUrl = "https://localtest.me/respuesta";
       const amountInCents = aCentavos(reserva.total);
+      const attemptRef = `${reserva.referencia}_${Date.now()}`;
       const url = await construirUrlCheckout({
-        reference: reserva.referencia,
+        reference: attemptRef,
         amountInCents,
         redirectUrl,
       });
-      await Linking.openURL(url);
+
+      const resultado = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
+      if (resultado.type === "success" && resultado.url) {
+        const { queryParams } = Linking.parse(resultado.url);
+        const transactionId = typeof queryParams?.id === "string" ? queryParams.id : null;
+        if (transactionId) {
+          const txData = await consultarTransaccionWompi(transactionId);
+          if (txData?.status === "APPROVED") {
+            await reservaPersistService.actualizarEstado(reserva.referencia, "CONFIRMADA", transactionId);
+          } else if (txData?.status === "PENDING") {
+            await reservaPersistService.actualizarReserva(reserva.referencia, {
+              estado:
+                txData.payment_method_type === "BANCOLOMBIA_COLLECT"
+                  ? "PENDIENTE_EFECTIVO"
+                  : "PENDIENTE_VALIDACION",
+              paymentId: transactionId,
+            });
+          }
+        }
+      }
+      const actualizada = await reservaPersistService.obtenerPorReferencia(reserva.referencia);
+      if (actualizada) {
+        setReserva(actualizada);
+      }
     } catch (err) {
       console.error("[payment-response] Error abriendo Wompi", err);
       Alert.alert(t("comun.error", { defaultValue: "Error" }), t("reserva.confirmacion.errorWompi", { defaultValue: "No se pudo abrir la pasarela de pago de Wompi." }));
     }
+  };
+
+  const resolverMedioPagoTexto = (r: ReservaGuardada): string => {
+    const mp = (r.metodoPago || "").toLowerCase();
+    const det = (
+      (r as any).metodoPagoDetalle ||
+      (r as any).subMetodoPago ||
+      (r as any).wompiMetodo ||
+      (r as any).formaPago ||
+      ""
+    ).toLowerCase();
+
+    if (esPendienteEfectivo || mp === "efectivo" || mp.includes("sucursal")) {
+      return "Efectivo en sucursal";
+    }
+    if (det.includes("nequi") || mp.includes("nequi")) {
+      return "Pago Wompi - Nequi";
+    }
+    if (det.includes("pse") || mp.includes("pse")) {
+      return "Pago Wompi - PSE";
+    }
+    if (det.includes("tarjeta") || det.includes("card") || det.includes("credito") || mp.includes("tarjeta")) {
+      return "Pago Wompi - Tarjeta";
+    }
+    if (det.includes("bancolombia") || mp.includes("bancolombia")) {
+      return "Pago Wompi - Bancolombia";
+    }
+    if (det.includes("daviplata") || mp.includes("daviplata")) {
+      return "Pago Wompi - Daviplata";
+    }
+    if (mp === "wompi" || det.includes("wompi")) {
+      return (r as any).metodoPagoDetalle || "Pago Wompi";
+    }
+    return r.metodoPago ? r.metodoPago.charAt(0).toUpperCase() + r.metodoPago.slice(1) : "Pago Wompi";
   };
 
   const sucursalNombre = reserva?.lugarRetiro || (reserva?.fechasLugarSnapshot as any)?.lugarRetiro || "";
@@ -259,10 +327,12 @@ export default function PagoRespuestaScreen() {
       color: "#f59e0b",
       titulo:
         reserva.estado === "PENDIENTE_EFECTIVO"
-          ? t("misReservas.detalle.tituloPendienteEfectivo")
+          ? t("misReservas.detalle.tituloPendienteEfectivo", { defaultValue: "Pendiente de pago en efectivo" })
           : reserva.estado === "PENDIENTE_VALIDACION"
-          ? t("misReservas.detalle.tituloPendienteValidacion")
-          : t("misReservas.detalle.tituloPendiente"),
+          ? t("misReservas.detalle.tituloPendienteValidacion", { defaultValue: "Pago en validación" })
+          : reserva.metodoPago === "wompi" || reserva.estado === "PENDIENTE"
+          ? t("misReservas.detalle.tituloPagoDigitalPendiente", { defaultValue: "Pago Digital Pendiente" })
+          : t("misReservas.detalle.tituloPendiente", { defaultValue: "Reserva pendiente" }),
     },
     confirmada: { icono: "checkmark-done-circle-outline", color: COLOR_MARCA, titulo: t("misReservas.detalle.tituloConfirmada") },
     en_curso: { icono: "navigate-circle-outline", color: "#16a34a", titulo: t("misReservas.detalle.tituloEnCurso") },
@@ -463,11 +533,7 @@ export default function PagoRespuestaScreen() {
           <InfoTile
             icono="card"
             label={t("reserva.confirmacion.respuesta.medioPago", { defaultValue: "Medio de pago" })}
-            valor={
-              esPendienteEfectivo || reserva.metodoPago === "efectivo"
-                ? "Efectivo en sucursal"
-                : (reserva as any).metodoPagoDetalle || (reserva.metodoPago === "wompi" ? "Wompi (En línea)" : reserva.metodoPago || "Tarjeta")
-            }
+            valor={resolverMedioPagoTexto(reserva)}
             c={c}
           />
           <InfoTile
@@ -634,7 +700,20 @@ export default function PagoRespuestaScreen() {
       )}
 
       {reserva.metodoPago === "wompi" && !esPendienteEfectivo && reserva.estado === "PENDIENTE" && (
-        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, marginTop: 4, marginBottom: 16 }]}>
+        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border, marginTop: 4, marginBottom: 16, alignItems: "center" }]}>
+          <View
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 26,
+              backgroundColor: c.oscuro ? "rgba(96, 165, 250, 0.18)" : "rgba(37, 99, 235, 0.1)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Ionicons name="card-outline" size={26} color={primaryAccent} />
+          </View>
           <Text style={[styles.tituloEfectivo, { color: c.textPrimary, fontSize: 18, marginBottom: 6 }]}>
             {t("reserva.confirmacion.pagoPendienteTitulo", { defaultValue: "Pago Digital Pendiente" })}
           </Text>
@@ -654,7 +733,7 @@ export default function PagoRespuestaScreen() {
               <Text style={[styles.etiquetaTotalEfectivo, { color: c.textSecondary }]}>
                 {t("reserva.confirmacion.totalAPagar", { defaultValue: "TOTAL A PAGAR" })}:
               </Text>
-              <Text style={[styles.valorTotalEfectivo, { color: primaryAccent }]}>{fmt(reserva.total)}</Text>
+              <Text style={[styles.valorTotalEfectivo, { color: primaryAccent }]}>{fmt(reserva.total)} COP</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.btnWrap} onPress={handlePagarWompi} activeOpacity={0.88}>

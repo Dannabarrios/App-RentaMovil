@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { GRADIENTES } from "@/constants/gradients";
@@ -161,14 +162,21 @@ export default function MisReservasScreen() {
 
   const handlePagarWompi = async (reserva: ReservaGuardada) => {
     try {
-      const redirectUrl = Linking.createURL("pago-respuesta");
+      const redirectUrl = "https://localtest.me/respuesta";
       const amountInCents = aCentavos(reserva.total);
+      const attemptRef = `${reserva.referencia}_${Date.now()}`;
       const url = await construirUrlCheckout({
-        reference: reserva.referencia,
+        reference: attemptRef,
         amountInCents,
         redirectUrl,
       });
-      await Linking.openURL(url);
+      const resultado = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
+      let txId: string | null = null;
+      if (resultado.type === "success" && resultado.url) {
+        const { queryParams } = Linking.parse(resultado.url);
+        txId = typeof queryParams?.id === "string" ? queryParams.id : null;
+      }
+      router.push(`/payment-response?ref=${encodeURIComponent(reserva.referencia)}${txId ? `&id=${encodeURIComponent(txId)}` : ""}`);
     } catch (err) {
       console.error("[my-bookings] Error abriendo Wompi", err);
       Alert.alert(

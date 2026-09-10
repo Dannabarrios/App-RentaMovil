@@ -97,24 +97,8 @@ export default function VehiculoDetallePage() {
   const direccionCompleta = ciudadSucursal ? `${direccionBase}, ${ciudadSucursal}` : direccionBase;
   const horarioAtencion = HORARIO_ATENCION_SUCURSAL || "Lun a sáb, 7:00 am - 7:00 pm";
 
-  // Comentarios con fallback realista
-  const comentariosMostrar =
-    vehiculo.comentarios && vehiculo.comentarios.length > 0
-      ? vehiculo.comentarios
-      : [
-          {
-            autor: "Camila R.",
-            calificacion: 5,
-            fecha: "13 jun 2026",
-            texto: "Muy cómodo para viajes cortos, sin problemas mecánicos y el proceso de entrega fue rápido.",
-          },
-          {
-            autor: "Juan P.",
-            calificacion: 4,
-            fecha: "29 may 2026",
-            texto: "Buen carro y buen precio, aunque el aire tardó un poco en enfriar el primer día.",
-          },
-        ];
+  // Comentarios reales del vehículo (sin mock forzado)
+  const comentariosMostrar = vehiculo.comentarios ?? [];
 
   // Equipamiento unificado (Confort + Tecnología)
   const equipamiento: {

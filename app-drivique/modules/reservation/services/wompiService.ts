@@ -77,7 +77,9 @@ interface ConstruirUrlCheckoutParams {
 
 /**
  * Construye la URL del Web Checkout de Wompi (redirección directa a /p/)
- * con todos los parámetros requeridos, incluida la firma de integridad.
+ * con todos los parámetros requeridos, incluida la firma de integridad
+ * y el manejo seguro de redirección (reemplazando localhost por localtest.me
+ * para evitar bloqueos del WAF/CloudFront de Wompi).
  */
 export async function construirUrlCheckout({
   reference,
@@ -85,19 +87,38 @@ export async function construirUrlCheckout({
   redirectUrl,
 }: ConstruirUrlCheckoutParams): Promise<string> {
   const currency = wompiConfig.currency;
-  const firma = await generarFirmaIntegridad(reference, amountInCents, currency);
+  const montoEntero = Math.round(Number(amountInCents));
+  const cleanRef = reference.trim().replace(/\s+/g, "_");
+  const firma = await generarFirmaIntegridad(cleanRef, montoEntero, currency);
 
   const params = new URLSearchParams({
     "public-key": wompiConfig.publicKey,
     currency,
-    "amount-in-cents": String(amountInCents),
-    reference,
+    "amount-in-cents": String(montoEntero),
+    reference: cleanRef,
     "signature:integrity": firma,
   });
 
-  if (redirectUrl) {
-    params.set("redirect-url", redirectUrl);
+  // Validación estricta para evitar error "redirectUrl: URL inválida" en Wompi
+  let targetRedirect = "https://localtest.me/respuesta";
+
+  if (redirectUrl && typeof redirectUrl === "string" && redirectUrl.trim() !== "") {
+    let clean = redirectUrl.trim();
+    if (clean.startsWith("http://") || clean.startsWith("https://")) {
+      if (clean.includes("localhost")) {
+        clean = clean.replace(/localhost/g, "localtest.me");
+      }
+      if (clean.startsWith("http://")) {
+        clean = clean.replace(/^http:\/\//, "https://");
+      }
+      targetRedirect = clean;
+    } else {
+      // Esquemas móviles como exp:// o rutas personalizadas se homologan a la URL HTTPS válida
+      targetRedirect = "https://localtest.me/respuesta";
+    }
   }
+
+  params.set("redirect-url", targetRedirect);
 
   return `https://checkout.wompi.co/p/?${params.toString()}`;
 }
