@@ -629,8 +629,16 @@ export default function PagoRespuestaScreen() {
           />
           <InfoTile
             icono="receipt"
-            label={t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia" })}
-            valor={reserva.referencia}
+            label={
+              esPendienteEfectivo && (reserva as any).referenciaWompi
+                ? "Ref. de pago"
+                : t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia" })
+            }
+            valor={
+              esPendienteEfectivo && (reserva as any).referenciaWompi
+                ? (reserva as any).referenciaWompi
+                : reserva.referencia
+            }
             c={c}
           />
           <InfoTile

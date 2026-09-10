@@ -194,6 +194,26 @@ export default function WompiCheckoutScreen() {
       }
 
       if (typeof data === "object" && data !== null) {
+        // Captura directa de datos de Corresponsal Bancario desde el DOM de Wompi
+        if (data.type === "WOMPI_COLLECT_DATA" || data.type === "WOMPI_FINALIZAR_CLICK") {
+          const convenio = data.convenio || "00000";
+          const refPago = data.referenciaPago || "";
+          if (refDestino && refPago) {
+            reservaPersistService.actualizarReserva(refDestino, {
+              estado: "PENDIENTE_EFECTIVO",
+              paymentMethodType: "BANCOLOMBIA_COLLECT",
+              metodoPagoDetalle: "Efectivo en Bancolombia",
+              convenioWompi: convenio,
+              referenciaWompi: refPago,
+            });
+          }
+          if (data.type === "WOMPI_FINALIZAR_CLICK") {
+            const idFinal = data.id || ultimoTransactionIdRef.current;
+            handleFinalizarPago(idFinal);
+            return;
+          }
+        }
+
         const txId =
           data.transaction?.id ||
           data.data?.transaction?.id ||
@@ -347,11 +367,46 @@ export default function WompiCheckoutScreen() {
                   }
                 } catch (e) {}
               }
+
+              function extractCollectData(isClickFinalizar) {
+                try {
+                  var text = document.body ? (document.body.innerText || document.body.textContent || '') : '';
+                  var convMatch = text.match(/N[uú]mero\s+de\s+convenio\s*[:\n\r\t]*\s*([0-9]+)/i);
+                  var refMatch = text.match(/Referencia\s+de\s+pago\s*[:\n\r\t]*\s*([0-9]+)/i);
+
+                  var convenio = convMatch ? convMatch[1] : null;
+                  var refPago = refMatch ? refMatch[1] : null;
+
+                  if (refPago) {
+                    notify({
+                      type: isClickFinalizar ? 'WOMPI_FINALIZAR_CLICK' : 'WOMPI_COLLECT_DATA',
+                      convenio: convenio || '00000',
+                      referenciaPago: refPago
+                    });
+                  }
+                } catch (err) {}
+              }
+
+              setInterval(function() {
+                extractCollectData(false);
+              }, 800);
+
+              document.addEventListener('click', function(e) {
+                var target = e.target;
+                var targetText = target ? (target.innerText || target.textContent || '').trim().toLowerCase() : '';
+                if (targetText.includes('finalizar') || targetText.includes('terminar') || targetText.includes('listo')) {
+                  extractCollectData(true);
+                } else {
+                  setTimeout(function() { extractCollectData(false); }, 300);
+                }
+              }, true);
+
               window.addEventListener('message', function(event) {
                 if (event && event.data) {
                   notify(event.data);
                 }
               });
+
               var originalPush = history.pushState;
               history.pushState = function() {
                 originalPush.apply(this, arguments);
