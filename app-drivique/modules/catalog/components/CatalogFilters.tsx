@@ -3,14 +3,15 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import {
   CATEGORIAS,
@@ -33,6 +34,9 @@ interface Props {
   totalFavoritos: number;
 }
 
+const COLOR_AZUL = "#1E3A8A";
+const COLOR_AZUL_ACTIVO = "#2563EB";
+
 function Chip({
   label,
   activo,
@@ -47,17 +51,18 @@ function Chip({
   return (
     <TouchableOpacity
       onPress={onPress}
+      activeOpacity={0.75}
       style={[
         styles.chip,
-        { backgroundColor: c.bgInput },
-        activo && { backgroundColor: c.oscuro ? "#3B82F6" : "#2f4ea2" },
+        { backgroundColor: c.oscuro ? "#1E293B" : "#F1F5F9" },
+        activo && { backgroundColor: COLOR_AZUL_ACTIVO },
       ]}
     >
       <Text
         style={[
           styles.chipText,
-          { color: c.textSecondary },
-          activo && { color: "#FFFFFF" },
+          { color: c.oscuro ? "#CBD5E1" : "#334155" },
+          activo && { color: "#FFFFFF", fontWeight: "700" },
         ]}
       >
         {label}
@@ -76,8 +81,8 @@ function Seccion({
   c: ReturnType<typeof useTemaColores>;
 }) {
   return (
-    <View style={[styles.seccion, { borderBottomColor: c.border }]}>
-      <Text style={[styles.seccionLabel, { color: c.textSecondary }]}>{label}</Text>
+    <View style={[styles.seccion, { borderBottomColor: c.oscuro ? c.border : "#E2E8F0" }]}>
+      <Text style={[styles.seccionLabel, { color: c.oscuro ? "#94A3B8" : "#475569" }]}>{label}</Text>
       {children}
     </View>
   );
@@ -96,32 +101,34 @@ export default function FiltrosCatalogo({
   onToggleSoloFavoritos,
   totalFavoritos,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [dropdownAbierto, setDropdownAbierto] = useState<DropdownAbierto>(null);
   const c = useTemaColores();
   const { t } = useTranslation();
 
-  const primaryAccent = c.oscuro ? "#60A5FA" : "#2f4ea2";
+  const colorTitulo = c.oscuro ? "#93C5FD" : COLOR_AZUL;
+  const colorBorde = c.oscuro ? c.border : "#E2E8F0";
 
   const catLabels: Record<string, string> = {
-    Todos: t("catalogo.filtrosModal.todasCategorias"),
-    Sedan: t("catalogo.categoriaValores.Sedan"),
-    SUV: t("catalogo.categoriaValores.SUV"),
-    Económico: t("catalogo.categoriaValores.Económico"),
-    Deportivo: t("catalogo.categoriaValores.Deportivo"),
+    Todos: "Todos",
+    Sedan: "Sedan",
+    SUV: "SUV",
+    Económico: "Económico",
+    Deportivo: "Deportivo",
   };
 
   const transLabels: Record<string, string> = {
-    Todas: t("catalogo.transmisionValores.Todas"),
-    Automática: t("catalogo.transmisionValores.Automática"),
-    Manual: t("catalogo.transmisionValores.Manual"),
+    Todas: "Todas",
+    Automática: "Automática",
+    Manual: "Manual",
   };
 
   const fuelLabels: Record<string, string> = {
-    Todos: t("catalogo.combustibleValores.Todos"),
-    Gasolina: t("catalogo.combustibleValores.Gasolina"),
-    Diesel: t("catalogo.combustibleValores.Diesel"),
-    Híbrido: t("catalogo.combustibleValores.Híbrido"),
-    Eléctrico: t("catalogo.combustibleValores.Eléctrico"),
+    Todos: "Todos",
+    Gasolina: "Gasolina",
+    Diesel: "Diesel",
+    Híbrido: "Híbrido",
+    Eléctrico: "Eléctrico",
   };
 
   const toggleDropdown = (campo: "ciudad" | "sucursal") => {
@@ -131,355 +138,511 @@ export default function FiltrosCatalogo({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      animationType="fade"
+      transparent={true}
       onRequestClose={onClose}
     >
-      <SafeAreaView style={[styles.container, { backgroundColor: c.bg }]}>
-        <View style={[styles.header, { borderBottomColor: c.border }]}>
-          <Text style={[styles.headerTitle, { color: c.textPrimary }]}>{t("catalogo.filtrosModal.titulo")}</Text>
-          <TouchableOpacity onPress={limpiar}>
-            <Text style={[styles.limpiarBtn, { color: primaryAccent }]}>{t("catalogo.limpiarFiltros")}</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.modalOverlay}>
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.backdrop} />
+        </TouchableWithoutFeedback>
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+        <View
+          style={[
+            styles.sheetContainer,
+            {
+              backgroundColor: c.bgCard,
+              borderColor: colorBorde,
+            },
+          ]}
         >
-          {usuario && (
-            <Seccion label={t("catalogo.filtrosModal.misFavoritos").toUpperCase()} c={c}>
+          {/* Header */}
+          <View style={[styles.header, { borderBottomColor: colorBorde }]}>
+            <Text style={[styles.headerTitle, { color: colorTitulo }]}>
+              {t("catalogo.filtrosModal.titulo", { defaultValue: "Filtros" })}
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.limpiarPillBtn, { borderColor: colorBorde, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+              onPress={limpiar}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.limpiarPillText, { color: colorTitulo }]}>
+                {t("catalogo.filtrosModal.limpiar", { defaultValue: "Limpiar" })}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Cuerpo Scrolleable */}
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled
+          >
+            {/* FAVORITOS */}
+            {usuario && (
+              <Seccion label="FAVORITOS" c={c}>
+                <TouchableOpacity
+                  style={[
+                    styles.favoritoBtn,
+                    {
+                      backgroundColor: soloFavoritos
+                        ? COLOR_AZUL_ACTIVO
+                        : c.oscuro
+                        ? "#1E293B"
+                        : "#F1F5F9",
+                      borderColor: soloFavoritos ? COLOR_AZUL_ACTIVO : colorBorde,
+                    },
+                  ]}
+                  onPress={onToggleSoloFavoritos}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="star"
+                    size={14}
+                    color={soloFavoritos ? "#FFFFFF" : c.oscuro ? "#94A3B8" : "#475569"}
+                  />
+                  <Text
+                    style={[
+                      styles.favoritoBtnText,
+                      { color: soloFavoritos ? "#FFFFFF" : c.oscuro ? "#CBD5E1" : "#334155" },
+                    ]}
+                  >
+                    Mis favoritos
+                  </Text>
+                  {totalFavoritos > 0 && (
+                    <View
+                      style={[
+                        styles.badge,
+                        {
+                          backgroundColor: soloFavoritos
+                            ? "rgba(255,255,255,0.3)"
+                            : COLOR_AZUL_ACTIVO,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.badgeText}>{totalFavoritos}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </Seccion>
+            )}
+
+            {/* CATEGORÍA */}
+            <Seccion label="CATEGORÍA" c={c}>
+              <View style={styles.chipsRow}>
+                {CATEGORIAS.map((cat) => (
+                  <Chip
+                    key={cat}
+                    label={catLabels[cat] ?? cat}
+                    activo={filtros.categoria === cat}
+                    onPress={() => setFiltro("categoria", cat)}
+                    c={c}
+                  />
+                ))}
+              </View>
+            </Seccion>
+
+            {/* CIUDAD */}
+            <Seccion label="CIUDAD" c={c}>
               <TouchableOpacity
                 style={[
-                  styles.favoritoBtn,
-                  { backgroundColor: c.primaryBg, borderColor: c.border },
-                  soloFavoritos && { backgroundColor: c.oscuro ? "#3B82F6" : "#2f4ea2", borderColor: c.oscuro ? "#3B82F6" : "#2f4ea2" },
+                  styles.selectorBtn,
+                  {
+                    backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF",
+                    borderColor: colorBorde,
+                  },
                 ]}
-                onPress={onToggleSoloFavoritos}
-                activeOpacity={0.8}
+                onPress={() => toggleDropdown("ciudad")}
+                activeOpacity={0.7}
               >
-                <Ionicons
-                  name="heart"
-                  size={15}
-                  color={soloFavoritos ? "#fff" : "#ef4444"}
-                />
-                <Text
-                  style={[
-                    styles.favoritoBtnText,
-                    { color: primaryAccent },
-                    soloFavoritos && { color: "#fff" },
-                  ]}
-                >
-                  {t("catalogo.filtrosModal.misFavoritos")}
+                <Text style={[styles.selectorText, { color: c.textPrimary }]} numberOfLines={1}>
+                  {filtros.ciudad}
                 </Text>
-                {totalFavoritos > 0 && (
-                  <View
-                    style={[styles.badge, { backgroundColor: primaryAccent }, soloFavoritos && { backgroundColor: "rgba(255,255,255,0.3)" }]}
-                  >
-                    <Text
-                      style={[
-                        styles.badgeText,
-                        soloFavoritos && { color: "#fff" },
-                      ]}
-                    >
-                      {totalFavoritos}
-                    </Text>
-                  </View>
-                )}
+                <Ionicons
+                  name={dropdownAbierto === "ciudad" ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={c.oscuro ? "#94A3B8" : "#64748B"}
+                />
               </TouchableOpacity>
+
+              {dropdownAbierto === "ciudad" && (
+                <View style={[styles.dropdownList, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
+                  <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                    {CIUDADES_FILTRO.map((item) => {
+                      const esSeleccionada = filtros.ciudad === item;
+                      return (
+                        <TouchableOpacity
+                          key={item}
+                          style={[
+                            styles.dropdownItem,
+                            { borderBottomColor: colorBorde },
+                            esSeleccionada && { backgroundColor: c.oscuro ? "#1E3A8A44" : "#EFF6FF" },
+                          ]}
+                          onPress={() => {
+                            setFiltro("ciudad", item);
+                            setDropdownAbierto(null);
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.dropdownItemText,
+                              { color: esSeleccionada ? colorTitulo : c.textPrimary },
+                              esSeleccionada && { fontWeight: "700" },
+                            ]}
+                          >
+                            {item}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
             </Seccion>
-          )}
 
-          <Seccion label={t("catalogo.filtrosModal.categoria")} c={c}>
-            <View style={styles.chipsRow}>
-              {CATEGORIAS.map((cat) => (
-                <Chip
-                  key={cat}
-                  label={catLabels[cat] ?? cat}
-                  activo={filtros.categoria === cat}
-                  onPress={() => setFiltro("categoria", cat)}
-                  c={c}
+            {/* SUCURSAL */}
+            <Seccion label="SUCURSAL" c={c}>
+              <TouchableOpacity
+                style={[
+                  styles.selectorBtn,
+                  {
+                    backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF",
+                    borderColor: colorBorde,
+                  },
+                ]}
+                onPress={() => toggleDropdown("sucursal")}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.selectorText, { color: c.textPrimary }]} numberOfLines={1}>
+                  {filtros.sucursal}
+                </Text>
+                <Ionicons
+                  name={dropdownAbierto === "sucursal" ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={c.oscuro ? "#94A3B8" : "#64748B"}
                 />
-              ))}
-            </View>
-          </Seccion>
+              </TouchableOpacity>
 
-          <Seccion label={t("catalogo.filtrosModal.ciudad")} c={c}>
+              {dropdownAbierto === "sucursal" && (
+                <View style={[styles.dropdownList, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
+                  <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                    {SUCURSALES.map((s) => {
+                      const esSeleccionada = filtros.sucursal === s;
+                      return (
+                        <TouchableOpacity
+                          key={s}
+                          style={[
+                            styles.dropdownItem,
+                            { borderBottomColor: colorBorde },
+                            esSeleccionada && { backgroundColor: c.oscuro ? "#1E3A8A44" : "#EFF6FF" },
+                          ]}
+                          onPress={() => {
+                            setFiltro("sucursal", s);
+                            setDropdownAbierto(null);
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.dropdownItemText,
+                              { color: esSeleccionada ? colorTitulo : c.textPrimary },
+                              esSeleccionada && { fontWeight: "700" },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {s}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
+            </Seccion>
+
+            {/* PRECIO POR DÍA ($COP) */}
+            <Seccion label="PRECIO POR DÍA ($COP)" c={c}>
+              <View style={styles.precioRow}>
+                <TextInput
+                  style={[
+                    styles.precioInput,
+                    {
+                      backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF",
+                      borderColor: colorBorde,
+                      color: c.textPrimary,
+                    },
+                  ]}
+                  placeholder="Mínimo"
+                  placeholderTextColor={c.textMuted}
+                  keyboardType="numeric"
+                  value={filtros.precioMin}
+                  onChangeText={(v) => setFiltro("precioMin", v.replace(/[^0-9]/g, ""))}
+                />
+                <TextInput
+                  style={[
+                    styles.precioInput,
+                    {
+                      backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF",
+                      borderColor: colorBorde,
+                      color: c.textPrimary,
+                    },
+                  ]}
+                  placeholder="Máximo"
+                  placeholderTextColor={c.textMuted}
+                  keyboardType="numeric"
+                  value={filtros.precioMax}
+                  onChangeText={(v) => setFiltro("precioMax", v.replace(/[^0-9]/g, ""))}
+                />
+              </View>
+            </Seccion>
+
+            {/* TRANSMISIÓN */}
+            <Seccion label="TRANSMISIÓN" c={c}>
+              <View style={styles.chipsRow}>
+                {TRANSMISIONES.map((tr) => (
+                  <Chip
+                    key={tr}
+                    label={transLabels[tr] ?? tr}
+                    activo={filtros.transmision === tr}
+                    onPress={() => setFiltro("transmision", tr)}
+                    c={c}
+                  />
+                ))}
+              </View>
+            </Seccion>
+
+            {/* COMBUSTIBLE */}
+            <Seccion label="COMBUSTIBLE" c={c}>
+              <View style={styles.chipsRow}>
+                {COMBUSTIBLES.map((comb) => (
+                  <Chip
+                    key={comb}
+                    label={fuelLabels[comb] ?? comb}
+                    activo={filtros.combustible === comb}
+                    onPress={() => setFiltro("combustible", comb)}
+                    c={c}
+                  />
+                ))}
+              </View>
+            </Seccion>
+          </ScrollView>
+
+          {/* Footer con 2 Botones: Cerrar y Aplicar */}
+          <View style={[styles.footer, { borderTopColor: colorBorde, backgroundColor: c.bgCard }]}>
             <TouchableOpacity
-              style={[styles.selectorBtn, { backgroundColor: c.bgInput, borderColor: c.border }]}
-              onPress={() => toggleDropdown("ciudad")}
+              style={[
+                styles.btnCerrar,
+                {
+                  borderColor: colorTitulo,
+                  backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF",
+                },
+              ]}
+              onPress={onClose}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.selectorText, { color: c.textPrimary }]}>{filtros.ciudad}</Text>
-              <Text style={[styles.selectorArrow, { color: c.textSecondary }]}>
-                {dropdownAbierto === "ciudad" ? "▲" : "▼"}
+              <Text style={[styles.btnCerrarTexto, { color: colorTitulo }]}>
+                {t("reserva.flujo.cerrar", { defaultValue: "Cerrar" })}
               </Text>
             </TouchableOpacity>
-            {dropdownAbierto === "ciudad" && (
-              <View style={[styles.dropdownList, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-                <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
-                  {CIUDADES_FILTRO.map((item) => (
-                    <TouchableOpacity
-                      key={item}
-                      style={[
-                        styles.dropdownItem,
-                        { borderBottomColor: c.borderLight },
-                        filtros.ciudad === item && { backgroundColor: c.primaryBg },
-                      ]}
-                      onPress={() => {
-                        setFiltro("ciudad", item);
-                        setDropdownAbierto(null);
-                      }}
-                    >
-                      <Text
-                        style={[
-                          styles.dropdownItemText,
-                          { color: c.textPrimary },
-                          filtros.ciudad === item && { color: primaryAccent, fontWeight: "700" },
-                        ]}
-                      >
-                        {item}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-          </Seccion>
 
-          <Seccion label={t("catalogo.filtrosModal.sucursal")} c={c}>
             <TouchableOpacity
-              style={[styles.selectorBtn, { backgroundColor: c.bgInput, borderColor: c.border }]}
-              onPress={() => toggleDropdown("sucursal")}
+              style={[styles.btnAplicar, { backgroundColor: COLOR_AZUL }]}
+              onPress={onClose}
+              activeOpacity={0.85}
             >
-              <Text style={[styles.selectorText, { color: c.textPrimary }]} numberOfLines={1}>
-                {filtros.sucursal}
-              </Text>
-              <Text style={[styles.selectorArrow, { color: c.textSecondary }]}>
-                {dropdownAbierto === "sucursal" ? "▲" : "▼"}
+              <Text style={styles.btnAplicarTexto}>
+                {t("catalogo.filtrosModal.aplicarFiltros", { defaultValue: "Aplicar filtros" })}
               </Text>
             </TouchableOpacity>
-            {dropdownAbierto === "sucursal" && (
-              <View style={[styles.dropdownList, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-                <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
-                  {SUCURSALES.map((s) => (
-                    <TouchableOpacity
-                      key={s}
-                      style={[
-                        styles.dropdownItem,
-                        { borderBottomColor: c.borderLight },
-                        filtros.sucursal === s && { backgroundColor: c.primaryBg },
-                      ]}
-                      onPress={() => {
-                        setFiltro("sucursal", s);
-                        setDropdownAbierto(null);
-                      }}
-                    >
-                      <Text
-                        style={[
-                          styles.dropdownItemText,
-                          { color: c.textPrimary },
-                          filtros.sucursal === s && { color: primaryAccent, fontWeight: "700" },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {s}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-          </Seccion>
-
-          <Seccion label={t("catalogo.filtrosModal.precioPorDia")} c={c}>
-            <View style={styles.precioRow}>
-              <TextInput
-                style={[styles.precioInput, { backgroundColor: c.bgInput, borderColor: c.border, color: c.textPrimary }]}
-                placeholder={t("catalogo.filtrosModal.min")}
-                placeholderTextColor={c.textMuted}
-                keyboardType="numeric"
-                value={filtros.precioMin}
-                onChangeText={(v) =>
-                  setFiltro("precioMin", v.replace(/[^0-9]/g, ""))
-                }
-              />
-              <TextInput
-                style={[styles.precioInput, { backgroundColor: c.bgInput, borderColor: c.border, color: c.textPrimary }]}
-                placeholder={t("catalogo.filtrosModal.max")}
-                placeholderTextColor={c.textMuted}
-                keyboardType="numeric"
-                value={filtros.precioMax}
-                onChangeText={(v) =>
-                  setFiltro("precioMax", v.replace(/[^0-9]/g, ""))
-                }
-              />
-            </View>
-          </Seccion>
-
-          <Seccion label={t("catalogo.filtrosModal.transmisionLbl")} c={c}>
-            <View style={styles.chipsRow}>
-              {TRANSMISIONES.map((tr) => (
-                <Chip
-                  key={tr}
-                  label={transLabels[tr] ?? tr}
-                  activo={filtros.transmision === tr}
-                  onPress={() => setFiltro("transmision", tr)}
-                  c={c}
-                />
-              ))}
-            </View>
-          </Seccion>
-
-          <Seccion label={t("catalogo.filtrosModal.combustibleLbl")} c={c}>
-            <View style={styles.chipsRow}>
-              {COMBUSTIBLES.map((comb) => (
-                <Chip
-                  key={comb}
-                  label={fuelLabels[comb] ?? comb}
-                  activo={filtros.combustible === comb}
-                  onPress={() => setFiltro("combustible", comb)}
-                  c={c}
-                />
-              ))}
-            </View>
-          </Seccion>
-        </ScrollView>
-
-        <View style={[styles.footerBtn, { borderTopColor: c.border, backgroundColor: c.bgCard }]}>
-          <TouchableOpacity style={[styles.aplicarBtn, { backgroundColor: c.oscuro ? "#3B82F6" : "#2f4ea2" }]} onPress={onClose}>
-            <Text style={styles.aplicarBtnText}>{t("catalogo.filtrosModal.aplicarFiltros")}</Text>
-          </TouchableOpacity>
+          </View>
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sheetContainer: {
+    width: "100%",
+    maxWidth: 400,
+    maxHeight: "84%",
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 10,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
   },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#111827" },
-  limpiarBtn: { fontSize: 13, fontWeight: "700", color: "#2f4ea2" },
-  scroll: { flex: 1 },
-  scrollContent: { padding: 20, paddingBottom: 8 },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  limpiarPillBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  limpiarPillText: {
+    fontSize: 12.5,
+    fontWeight: "700",
+  },
+  scroll: {
+    flexGrow: 0,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
   seccion: {
-    marginBottom: 22,
-    paddingBottom: 22,
+    marginBottom: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
   },
   seccionLabel: {
     fontSize: 11,
-    fontWeight: "700",
-    color: "#6B7280",
+    fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     marginBottom: 10,
   },
-  chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: "#F3F4F6",
-    marginBottom: 4,
+    borderRadius: 20,
   },
-  chipActivo: { backgroundColor: "#2f4ea2" },
-  chipText: { fontSize: 13, fontWeight: "600", color: "#374151" },
-  chipTextoActivo: { color: "#fff" },
+  chipText: {
+    fontSize: 12.5,
+    fontWeight: "600",
+  },
+  favoritoBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  favoritoBtnText: {
+    fontSize: 12.5,
+    fontWeight: "600",
+  },
+  badge: {
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    fontSize: 10.5,
+    fontWeight: "800",
+    color: "#fff",
+  },
   selectorBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1.5,
-    borderColor: "#D1D5DB",
+    borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    backgroundColor: "#F9FAFB",
   },
-  selectorText: { fontSize: 13, color: "#374151", flex: 1 },
-  selectorArrow: { fontSize: 11, color: "#6B7280", marginLeft: 8 },
+  selectorText: {
+    fontSize: 13,
+    flex: 1,
+  },
   dropdownList: {
     marginTop: 4,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
     borderRadius: 10,
-    backgroundColor: "#fff",
     overflow: "hidden",
   },
-  dropdownScroll: { maxHeight: 220 },
+  dropdownScroll: {
+    maxHeight: 180,
+  },
   dropdownItem: {
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
   },
-  dropdownItemActivo: { backgroundColor: "#EEF2FF" },
-  dropdownItemText: { fontSize: 13, color: "#374151" },
-  dropdownItemTextActivo: { color: "#2f4ea2", fontWeight: "700" },
-  precioRow: { flexDirection: "row", gap: 10 },
+  dropdownItemText: {
+    fontSize: 13,
+  },
+  precioRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
   precioInput: {
     flex: 1,
-    borderWidth: 1.5,
-    borderColor: "#D1D5DB",
+    borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 9,
     fontSize: 13,
-    color: "#374151",
-    backgroundColor: "#F9FAFB",
   },
-  footerBtn: {
-    padding: 16,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-  },
-  aplicarBtn: {
-    backgroundColor: "#2f4ea2",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  aplicarBtnText: { color: "#fff", fontSize: 15, fontWeight: "800" },
-  favoritoBtn: {
+  footer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    alignSelf: "flex-start",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "#EEF2FF",
-    borderWidth: 1.5,
-    borderColor: "#BFDBFE",
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderTopWidth: 1,
   },
-  favoritoBtnActivo: {
-    backgroundColor: "#2f4ea2",
-    borderColor: "#2f4ea2",
-  },
-  favoritoBtnText: { fontSize: 13, fontWeight: "700", color: "#2f4ea2" },
-  favoritoBtnTextActivo: { color: "#fff" },
-  badge: {
-    backgroundColor: "#2f4ea2",
+  btnCerrar: {
+    flex: 1,
+    height: 44,
     borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: "center",
+    borderWidth: 1.5,
     alignItems: "center",
-    paddingHorizontal: 5,
+    justifyContent: "center",
   },
-  badgeActivo: { backgroundColor: "rgba(255,255,255,0.3)" },
-  badgeText: { fontSize: 11, fontWeight: "800", color: "#fff" },
-  badgeTextActivo: { color: "#fff" },
+  btnCerrarTexto: {
+    fontSize: 13.5,
+    fontWeight: "700",
+  },
+  btnAplicar: {
+    flex: 1.3,
+    height: 44,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnAplicarTexto: {
+    color: "#FFFFFF",
+    fontSize: 13.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
 });

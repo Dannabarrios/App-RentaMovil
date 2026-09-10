@@ -85,13 +85,14 @@ export interface BeneficioProteccion {
 export function getBeneficiosProteccion(
   t: (key: string, opts?: any) => any
 ): Record<string, BeneficioProteccion[]> {
-  const tipos: BeneficioProteccion["tipo"][] = ["check", "check", "check", "warning", "cross"];
+  const tiposObligatoria: BeneficioProteccion["tipo"][] = ["check", "check", "check", "warning", "cross"];
+  const tiposTotal: BeneficioProteccion["tipo"][] = ["check", "check", "check", "check", "check", "cross"];
   const obligatoria = (t("reserva.planes.beneficiosProteccionObligatoria", {
     returnObjects: true,
-  }) as string[]).map((texto, i) => ({ tipo: tipos[i], texto }));
+  }) as string[]).map((texto, i) => ({ tipo: tiposObligatoria[i] ?? "check", texto }));
   const total = (t("reserva.planes.beneficiosProteccionTotal", {
     returnObjects: true,
-  }) as string[]).map((texto, i) => ({ tipo: tipos[i], texto }));
+  }) as string[]).map((texto, i) => ({ tipo: tiposTotal[i] ?? "check", texto }));
 
   return {
     "Protección Obligatoria": obligatoria,
@@ -124,8 +125,12 @@ export function getBeneficiosKilometraje(
 export const ICONO_SERVICIO_DEFECTO = "add-circle-outline";
 export const ICONOS_SERVICIOS: Record<string, string> = {
   GPS: "navigate-outline",
+  "GPS Integrado": "navigate-outline",
   "Silla bebé": "body-outline",
+  "Silla de bebé": "body-outline",
   "Conductor adicional": "person-add-outline",
+  "Lavado de auto post-entrega": "sparkles-outline",
+  "Devolución con tanque vacío": "color-fill-outline",
   "Entrega en otra ciudad": "map-outline",
   "WiFi portátil": "wifi-outline",
 };
@@ -136,14 +141,33 @@ export const ICONOS_SERVICIOS: Record<string, string> = {
 // Pasaporte). El id ahora tipa contra TipoDocumento (importado de
 // perfil.types.ts) en vez de ser un literal local — así el compilador
 // avisa si algún día los enums se vuelven a desalinear.
+export const SIGLA_DOCUMENTO: Record<string, string> = {
+  CC: "CC",
+  CE: "CE",
+  Pasaporte: "PAS",
+  DNI: "DNI",
+  PPT: "PPT",
+  PEP: "PEP",
+  TI: "TI",
+  "Doc. Extranjero": "DOC",
+};
+
+export function getSiglaDocumento(tipo: string | null | undefined): string {
+  if (!tipo) return "";
+  return SIGLA_DOCUMENTO[tipo] || tipo;
+}
+
 export function getTiposDocumento(
   t: (key: string) => string
 ): { id: TipoDocumento; label: string }[] {
   return [
     { id: "CC", label: t("reserva.datosPersonales.tiposDocumento.CC") },
-    { id: "TI", label: t("reserva.datosPersonales.tiposDocumento.TI") },
-    { id: "Doc. Extranjero", label: t("reserva.datosPersonales.tiposDocumento.DocExtranjero") },
+    { id: "CE", label: t("reserva.datosPersonales.tiposDocumento.CE") },
     { id: "Pasaporte", label: t("reserva.datosPersonales.tiposDocumento.Pasaporte") },
+    { id: "DNI", label: t("reserva.datosPersonales.tiposDocumento.DNI") },
+    { id: "PPT", label: t("reserva.datosPersonales.tiposDocumento.PPT") },
+    { id: "PEP", label: t("reserva.datosPersonales.tiposDocumento.PEP") },
+    { id: "TI", label: t("reserva.datosPersonales.tiposDocumento.TI") },
   ];
 }
 

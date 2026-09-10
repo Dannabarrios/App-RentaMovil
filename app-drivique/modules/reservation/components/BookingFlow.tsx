@@ -9,7 +9,6 @@ import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { useReservaStore } from "@/store/reservationStore";
 import { GRADIENTES } from "@/constants/gradients";
 import { COLOR_MARCA, COLORES } from "../constants/reservation.constants";
-import VehiculoResumenCard from "./VehicleSummaryCard";
 import FormFechasLugar from "./DatesLocationForm";
 import ResumenReservaModal from "./BookingSummaryModal";
 import TabsSeccion, { SeccionReserva } from "./SectionTabs";
@@ -133,10 +132,6 @@ export default function FlujoReserva({ vehiculo }: Props) {
         >
           {seccionActiva === "fechas" && (
             <>
-              <Text style={[styles.seccionLabel, { color: c.textMuted }]}>{t("reserva.flujo.datosVehiculo")}</Text>
-              <VehiculoResumenCard vehiculo={vehiculo} />
-
-              <Text style={[styles.seccionLabel, { color: c.textMuted, marginTop: 20 }]}>{t("reserva.flujo.seleccionarFechasLugar")}</Text>
               <FormFechasLugar vehiculo={vehiculo} />
 
               <TouchableOpacity style={styles.continuarBtnWrap} onPress={handleVerPlanes} activeOpacity={0.85}>
@@ -161,12 +156,13 @@ export default function FlujoReserva({ vehiculo }: Props) {
       </View>
 
       <ResumenReservaModal
-  visible={modalResumenVisible}
-  vehiculo={vehiculo}
-  mostrarPlanes={seccionesAlcanzadas.planes}
-  seccionFechasCompleta={puedeContinuarAPlanes}
-  onCerrar={() => setModalResumenVisible(false)}
-/>
+        visible={modalResumenVisible}
+        vehiculo={vehiculo}
+        mostrarPlanes={seccionesAlcanzadas.planes}
+        seccionFechasCompleta={puedeContinuarAPlanes}
+        permitirEditar={seccionActiva === "datos"}
+        onCerrar={() => setModalResumenVisible(false)}
+      />
 
       <AlertModal
         visible={alertaFaltantesVisible}
@@ -217,6 +213,11 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 16, flexGrow: 1 },
 
+  separadorTarjetas: {
+    height: 1,
+    width: "100%",
+    marginVertical: 16,
+  },
   seccionLabel: {
     fontSize: 12,
     fontWeight: "800",

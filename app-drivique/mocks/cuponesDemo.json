@@ -1,178 +1,112 @@
 [
   {
-    "id": "c1",
-    "codigo": "A8X2F9",
-    "titulo": "Cupón de bienvenida",
-    "descuentoPorcentaje": 15,
-    "descripcion": "mockCoupons.c1Desc",
+    "id": "promo-1",
+    "codigo": "BIENVENIDO10",
+    "tag": "PROMO-BIENVENIDA",
+    "titulo": "Cupón de Bienvenida Drivique",
+    "tituloPremio": "Cupón de Bienvenida Drivique",
+    "descripcion": "Cupón de Bienvenida Drivique",
+    "recompensaDetalle": "Válido para cualquier categoría de vehículo en tu reserva.",
+    "condicionesDetalladas": "Válido para cualquier categoría de vehículo en tu reserva. Audiencia: Todos los usuarios.",
+    "descuentoPorcentaje": 10,
+    "descuentoTexto": "10% OFF",
+    "regla": "Todos los vehículos",
+    "destacada": true,
     "estado": "activo",
+    "fechaOtorgado": "2026-01-01T00:00:00Z",
     "fechaExpiracion": "2026-12-31T23:59:59Z",
-    "fechaOtorgado": "2026-08-01T09:00:00Z",
-    "tituloPremio": "mockCoupons.p1Title",
-    "recompensaDetalle": "mockCoupons.p1Desc",
-    "condicionesDetalladas": "15% de descuento en tu primera reserva. Válido exclusivamente en vehículos SUV y Sedán pagando por Wompi.",
-    "descuentoTexto": "15% OFF",
-    "regla": "Solo primera reserva",
     "reglas": {
-      "soloPrimeraReserva": true,
-      "categoriasValidas": [
-        "SUV",
-        "SEDAN"
-      ],
-      "metodosPagoValidos": [
-        "wompi"
-      ]
+      "categoriasValidas": []
     }
   },
   {
-    "id": "c2",
-    "codigo": "W4K7P2",
-    "titulo": "Fin de semana especial",
+    "id": "promo-2",
+    "codigo": "SUV20",
+    "tag": "PROMO-SUV-20",
+    "titulo": "Especial Aventura SUV",
+    "tituloPremio": "Especial Aventura SUV",
+    "descripcion": "Especial Aventura SUV",
+    "recompensaDetalle": "Aplica únicamente para vehículos de la categoría SUV.",
+    "condicionesDetalladas": "Aplica únicamente para vehículos de la categoría SUV. Audiencia: Todos los usuarios.",
     "descuentoPorcentaje": 20,
-    "descripcion": "mockCoupons.c2Desc",
-    "estado": "a_punto_de_agotar",
-    "fechaExpiracion": "2026-09-08T23:59:59Z",
-    "fechaOtorgado": "2026-08-01T09:00:00Z",
-    "tituloPremio": "mockCoupons.p2Title",
-    "recompensaDetalle": "mockCoupons.p2Desc",
-    "condicionesDetalladas": "20% de descuento para alquileres de fin de semana (mínimo 2 días) en SUV y Pickups.",
     "descuentoTexto": "20% OFF",
-    "regla": "Mínimo 2 días",
-    "reglas": {
-      "minimoDias": 2,
-      "categoriasValidas": [
-        "SUV",
-        "PICKUP"
-      ]
-    }
-  },
-  {
-    "id": "c3",
-    "codigo": "Z9M3R1",
-    "titulo": "Alquiler prolongado",
-    "descuentoFijo": 50000,
-    "descripcion": "mockCoupons.c3Desc",
+    "regla": "Categoría: SUV",
+    "destacada": true,
     "estado": "activo",
-    "fechaExpiracion": "2026-11-30T23:59:59Z",
-    "fechaOtorgado": "2026-08-01T09:00:00Z",
-    "tituloPremio": "mockCoupons.p3Title",
-    "recompensaDetalle": "mockCoupons.p3Msg",
-    "condicionesDetalladas": "$50.000 COP de descuento en alquileres mayores a 5 días en categorías Deportivo y SUV.",
-    "descuentoTexto": "-$50.000",
-    "regla": "Mínimo 5 días",
+    "fechaOtorgado": "2026-01-01T00:00:00Z",
+    "fechaExpiracion": "2026-12-31T23:59:59Z",
     "reglas": {
-      "minimoDias": 5,
       "categoriasValidas": [
-        "DEPORTIVO",
         "SUV"
       ]
     }
   },
   {
-    "id": "c4",
-    "codigo": "C3P9X1",
-    "descuentoPorcentaje": 18,
-    "descripcion": "promoCoupons.c1Desc",
-    "estado": "a_punto_de_agotar",
-    "fechaExpiracion": "2026-09-10T23:59:59Z",
-    "fechaOtorgado": "2026-08-10T09:00:00Z",
-    "tituloPremio": "promoCoupons.c1Title",
-    "recompensaDetalle": "promoCoupons.c1Desc",
-    "condicionesDetalladas": "Válido únicamente para pagos a través de medios digitales (Wompi). No aplica en pago en sucursal ni efectivo.",
-    "descuentoTexto": "18% OFF",
-    "regla": "Monto min $500.000",
-    "reglas": {
-      "minimoValor": 500000,
-      "categoriasValidas": [
-        "SUV",
-        "PREMIUM"
-      ],
-      "metodosPagoValidos": [
-        "wompi"
-      ]
-    }
-  },
-  {
-    "id": "c5",
-    "codigo": "F1D8L5",
+    "id": "promo-3",
+    "codigo": "COROLLA15",
+    "tag": "PROMO-COROLLA-15",
+    "titulo": "Toyota Corolla Exclusivo",
+    "tituloPremio": "Toyota Corolla Exclusivo",
+    "descripcion": "Toyota Corolla Exclusivo",
+    "recompensaDetalle": "Descuento del 15% exclusivo para reservas del vehículo Toyota Corolla 2024.",
+    "condicionesDetalladas": "Descuento del 15% exclusivo para reservas del vehículo Toyota Corolla 2024. Audiencia: Todos los usuarios.",
     "descuentoPorcentaje": 15,
-    "descripcion": "promoCoupons.c2Desc",
-    "estado": "activo",
-    "fechaExpiracion": "2026-10-15T23:59:59Z",
-    "fechaOtorgado": "2026-08-12T10:30:00Z",
-    "tituloPremio": "promoCoupons.c2Title",
-    "recompensaDetalle": "promoCoupons.c2Desc",
-    "condicionesDetalladas": "promoCoupons.c2Terms",
     "descuentoTexto": "15% OFF",
-    "regla": "Monto min $150.000",
-    "reglas": {
-      "minimoValor": 150000,
-      "categoriasValidas": [
-        "ECONOMICO"
-      ]
-    }
-  },
-  {
-    "id": "c6",
-    "codigo": "O2T9N4",
-    "descuentoPorcentaje": 10,
-    "descripcion": "promoCoupons.c3Desc",
+    "regla": "Toyota Corolla 2024",
+    "destacada": false,
     "estado": "activo",
-    "fechaExpiracion": "2026-10-31T23:59:59Z",
-    "fechaOtorgado": "2026-08-15T08:15:00Z",
-    "tituloPremio": "promoCoupons.c3Title",
-    "recompensaDetalle": "promoCoupons.c3Desc",
-    "condicionesDetalladas": "promoCoupons.c3Terms",
-    "descuentoTexto": "10% OFF",
-    "regla": "Sin mínimo",
+    "fechaOtorgado": "2026-01-01T00:00:00Z",
+    "fechaExpiracion": "2026-12-31T23:59:59Z",
     "reglas": {
+      "vehiculoId": 1,
       "categoriasValidas": [
-        "SEDAN"
+        "Sedan"
       ]
     }
   },
   {
-    "id": "c7",
-    "codigo": "V4P8D7",
+    "id": "promo-4",
+    "codigo": "MUSTANG25",
+    "tag": "PROMO-MUSTANG-25",
+    "titulo": "Ford Mustang GT Deportivo VIP",
+    "tituloPremio": "Ford Mustang GT Deportivo VIP",
+    "descripcion": "Ford Mustang GT Deportivo VIP",
+    "recompensaDetalle": "Descuento del 25% exclusivo para reservas del vehículo Ford Mustang GT 2023.",
+    "condicionesDetalladas": "Descuento del 25% exclusivo para reservas del vehículo Ford Mustang GT 2023. Audiencia: Todos los usuarios.",
+    "descuentoPorcentaje": 25,
+    "descuentoTexto": "25% OFF",
+    "regla": "Ford Mustang GT 2023",
+    "destacada": false,
+    "estado": "activo",
+    "fechaOtorgado": "2026-01-01T00:00:00Z",
+    "fechaExpiracion": "2026-12-31T23:59:59Z",
+    "reglas": {
+      "vehiculoId": 4,
+      "categoriasValidas": [
+        "Deportivo"
+      ]
+    }
+  },
+  {
+    "id": "promo-5",
+    "codigo": "DRIVIQUE50K",
+    "tag": "PROMO-VIP-50K",
+    "titulo": "Bono Fijo de Alquiler",
+    "tituloPremio": "Bono Fijo de Alquiler",
+    "descripcion": "Bono Fijo de Alquiler",
+    "recompensaDetalle": "Bono directo de $50.000 COP aplicable a reservas en cualquier categoría de vehículo.",
+    "condicionesDetalladas": "Bono directo de $50.000 COP aplicable a reservas en cualquier categoría de vehículo. Audiencia: Todos los usuarios.",
     "descuentoFijo": 50000,
-    "descripcion": "promoCoupons.c4Desc",
-    "estado": "activo",
-    "fechaExpiracion": "2026-11-20T23:59:59Z",
-    "fechaOtorgado": "2026-08-18T14:45:00Z",
-    "tituloPremio": "promoCoupons.c4Title",
-    "recompensaDetalle": "promoCoupons.c4Desc",
-    "condicionesDetalladas": "promoCoupons.c4Terms",
+    "valorFijo": 50000,
     "descuentoTexto": "-$50.000",
-    "regla": "Monto min $200.000",
+    "regla": "Todos los vehículos",
+    "destacada": false,
+    "estado": "activo",
+    "fechaOtorgado": "2026-01-01T00:00:00Z",
+    "fechaExpiracion": "2026-12-31T23:59:59Z",
     "reglas": {
-      "minimoValor": 200000,
-      "categoriasValidas": [
-        "ECONOMICO",
-        "SEDAN"
-      ]
-    }
-  },
-  {
-    "id": "c8",
-    "codigo": "OLD50",
-    "descuentoPorcentaje": 15,
-    "descripcion": "Cupón de temporada pasada",
-    "estado": "expirado",
-    "fechaExpiracion": "2025-01-01T00:00:00Z",
-    "fechaOtorgado": "2024-01-01T00:00:00Z",
-    "tituloPremio": "Cupón de temporada pasada",
-    "recompensaDetalle": "Promoción finalizada",
-    "condicionesDetalladas": "Expiró en 2025.",
-    "descuentoTexto": "15% OFF",
-    "regla": "Expirado",
-    "reglas": {
-      "metodosPagoValidos": [
-        "efectivo"
-      ],
-      "categoriasValidas": [
-        "SUV",
-        "DEPORTIVO"
-      ]
+      "descuentoFijo": 50000,
+      "categoriasValidas": []
     }
   }
 ]

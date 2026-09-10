@@ -102,58 +102,90 @@ export const useNotificationStore = create<NotificationState>((set) => ({
     {
       id: "p1",
       tipo: "promocion",
-      titulo: "mockCoupons.p1Title",
-      mensaje: "mockCoupons.p1Msg",
-      fecha: "2026-09-01T08:00:00Z",
+      titulo: "Cupón de Bienvenida Drivique",
+      mensaje: "Usa el cupón BIENVENIDO10 para obtener 10% de descuento en tu alquiler. Válido para cualquier categoría.",
+      fecha: "2026-01-01T08:00:00Z",
       leido: false,
       icono: "ticket-outline",
       expiracion: "2026-12-31T23:59:59Z",
       cupon: {
-        codigo: "A8X2F9",
-        descuentoPorcentaje: 15,
-        descripcion: "mockCoupons.p1Desc",
+        codigo: "BIENVENIDO10",
+        descuentoPorcentaje: 10,
+        descripcion: "10% de descuento en tu reserva.",
         reglas: {
-          soloPrimeraReserva: true,
-          categoriasValidas: ["SUV", "SEDAN"],
-          metodosPagoValidos: ["wompi"]
+          categoriasValidas: []
         }
       }
     },
     {
       id: "p2",
       tipo: "promocion",
-      titulo: "mockCoupons.p2Title",
-      mensaje: "mockCoupons.p2Msg",
-      fecha: "2026-09-01T10:00:00Z",
-      leido: true,
+      titulo: "Especial Aventura SUV",
+      mensaje: "Aprovecha 20% de descuento con el código SUV20 en toda la categoría SUV.",
+      fecha: "2026-01-01T10:00:00Z",
+      leido: false,
       icono: "calendar-outline",
-      expiracion: "2026-09-30T23:59:59Z",
+      expiracion: "2026-12-31T23:59:59Z",
       cupon: {
-        codigo: "W4K7P2",
+        codigo: "SUV20",
         descuentoPorcentaje: 20,
-        descripcion: "mockCoupons.p2Desc",
+        descripcion: "20% OFF en vehículos categoría SUV.",
         reglas: {
-          minimoDias: 2,
-          categoriasValidas: ["SUV", "PICKUP"]
+          categoriasValidas: ["SUV"]
         }
       }
     },
     {
       id: "p3",
       tipo: "promocion",
-      titulo: "mockCoupons.p3Title",
-      mensaje: "mockCoupons.p3Msg",
-      fecha: "2026-09-01T07:30:00Z",
+      titulo: "Toyota Corolla Exclusivo",
+      mensaje: "Descuento del 15% exclusivo para reservas del vehículo Toyota Corolla 2024 con el código COROLLA15.",
+      fecha: "2026-01-01T07:30:00Z",
       leido: true,
       icono: "star-outline",
-      expiracion: "2026-11-30T23:59:59Z",
+      expiracion: "2026-12-31T23:59:59Z",
       cupon: {
-        codigo: "Z9M3R1",
-        descuentoFijo: 50000,
-        descripcion: "mockCoupons.p3Msg",
+        codigo: "COROLLA15",
+        descuentoPorcentaje: 15,
+        descripcion: "15% de descuento en Toyota Corolla 2024.",
         reglas: {
-          minimoDias: 5,
-          categoriasValidas: ["DEPORTIVO", "SUV"]
+          categoriasValidas: ["Sedan"]
+        }
+      }
+    },
+    {
+      id: "p4",
+      tipo: "promocion",
+      titulo: "Ford Mustang GT Deportivo VIP",
+      mensaje: "Descuento del 25% exclusivo para reservas del Ford Mustang GT 2023 con el cupón MUSTANG25.",
+      fecha: "2026-01-01T09:00:00Z",
+      leido: true,
+      icono: "speedometer-outline",
+      expiracion: "2026-12-31T23:59:59Z",
+      cupon: {
+        codigo: "MUSTANG25",
+        descuentoPorcentaje: 25,
+        descripcion: "25% de descuento en Ford Mustang GT.",
+        reglas: {
+          categoriasValidas: ["Deportivo"]
+        }
+      }
+    },
+    {
+      id: "p5",
+      tipo: "promocion",
+      titulo: "Bono Fijo de Alquiler",
+      mensaje: "Bono directo de $50.000 COP aplicable a reservas con el cupón DRIVIQUE50K.",
+      fecha: "2026-01-01T11:00:00Z",
+      leido: true,
+      icono: "gift-outline",
+      expiracion: "2026-12-31T23:59:59Z",
+      cupon: {
+        codigo: "DRIVIQUE50K",
+        descuentoFijo: 50000,
+        descripcion: "$50.000 COP de bono en tu reserva.",
+        reglas: {
+          categoriasValidas: []
         }
       }
     },

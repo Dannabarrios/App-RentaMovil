@@ -34,11 +34,11 @@ export function AlertaPagoEfectivo({ visible, nombreSucursal, ciudad, direccion,
         <View style={[s.caja, { backgroundColor: c.primaryBg }]}>
           <Text style={[s.nombreSucursal, { color: c.textPrimary }]}>{nombreSucursal}</Text>
           <Text style={[s.fila, { color: c.textSecondary }]}>
-            <Text style={[s.etiqueta, { color: c.textSecondary }]}>{t("reserva.confirmacion.ciudad")}</Text>
+            <Text style={[s.etiqueta, { color: c.textSecondary }]}>{t("reserva.confirmacion.ciudad")}: </Text>
             {ciudad ?? t("reserva.confirmacion.sinDefinir")}
           </Text>
           <Text style={[s.fila, { color: c.textSecondary }]}>
-            <Text style={[s.etiqueta, { color: c.textSecondary }]}>{t("reserva.confirmacion.direccion")}</Text>
+            <Text style={[s.etiqueta, { color: c.textSecondary }]}>{t("reserva.confirmacion.direccion")}: </Text>
             {direccion ?? t("reserva.confirmacion.sinDefinir")}
           </Text>
         </View>

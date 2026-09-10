@@ -145,6 +145,7 @@ export default function RegistroScreen() {
                       value={form.correo}
                       onChangeText={val => actualizarCampo('correo', val)}
                       onBlur={() => setCorreoTocado(true)}
+                      colores={c}
                       error={errorCorreo}
                     />
                     <PasswordInput

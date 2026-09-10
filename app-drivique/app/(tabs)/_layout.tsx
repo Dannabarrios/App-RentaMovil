@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, router } from "expo-router";
 import React, { useState } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/store/authStore";
 import { AlertModal } from "@/components/ui/AlertModal";
@@ -13,7 +13,7 @@ type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
 function TabIcon({ name, focused, c }: { name: IoniconName; focused: boolean; c: ReturnType<typeof useTemaColores> }) {
   return (
-    <View style={[styles.iconWrap, focused && { backgroundColor: c.primaryBg }]}>
+    <View style={styles.iconWrap}>
       <Ionicons
         name={focused ? name : (`${name}-outline` as IoniconName)}
         size={22}
@@ -43,6 +43,16 @@ export default function TabLayout() {
           headerShown: false,
           tabBarActiveTintColor: activeColor,
           tabBarInactiveTintColor: c.textMuted,
+          tabBarItemStyle: {
+            backgroundColor: "transparent",
+          },
+          tabBarButton: (props) => (
+            <Pressable
+              {...props}
+              android_ripple={{ color: "transparent" }}
+              style={props.style}
+            />
+          ),
           // En modo invitado no hay tabs reales a las que navegar (Mis
           // reservas y Perfil están bloqueadas detrás de login, y mostrar
           // la barra completa hace creer que hay una sesión iniciada).

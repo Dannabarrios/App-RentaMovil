@@ -4,7 +4,6 @@
 // dispositivo (AsyncStorage), igual que la web lo hace con localStorage
 // (src/services/reservaService.js). Esto debería migrarse a un backend.
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import reservasDemoJson from "../../../mocks/reservasDemo.json";
 
 const STORAGE_KEY = "drivique_reservas";
 
@@ -32,6 +31,11 @@ export interface ReservaGuardada {
   fechaLimitePago?: string | null;
   horasLimitePago?: number | null;
   paymentId?: string | null;
+  paymentMethodType?: string | null;
+  metodoPagoDetalle?: string | null;
+  convenioWompi?: string | null;
+  referenciaWompi?: string | null;
+  wompiExtra?: Record<string, any> | null;
   [extra: string]: unknown;
 }
 
@@ -114,19 +118,10 @@ async function leer(): Promise<ReservaGuardada[]> {
     const data = await AsyncStorage.getItem(STORAGE_KEY);
     let reservas: ReservaGuardada[] = data ? JSON.parse(data) : [];
 
-    // Cargar reservas del JSON de mocks si no están registradas aún
-    let cambio = false;
-    for (const rDemo of (reservasDemoJson as any[])) {
-      const yaExiste = reservas.some((r) => r.referencia === rDemo.referencia);
-      if (!yaExiste) {
-        reservas.push({
-          ...rDemo,
-          fechaReserva: new Date().toISOString(),
-        } as ReservaGuardada);
-        cambio = true;
-      }
-    }
-    if (cambio) {
+    // Purgar la reserva demo residual (RES-1788500200456-M7T8W2Y) si quedó guardada en el dispositivo
+    const totalOriginal = reservas.length;
+    reservas = reservas.filter((r) => r.referencia !== "RES-1788500200456-M7T8W2Y");
+    if (totalOriginal !== reservas.length) {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));
     }
 
@@ -200,8 +195,11 @@ export const reservaPersistService = {
   obtenerPorReferencia: async (
     referencia: string
   ): Promise<ReservaGuardada | undefined> => {
+    if (!referencia) return undefined;
     const reservas = await leer();
-    return reservas.find((r) => r.referencia === referencia);
+    const clean = referencia.trim();
+    const base = clean.includes("_") ? clean.split("_")[0] : clean;
+    return reservas.find((r) => r.referencia === clean || r.referencia === base);
   },
 
   actualizarEstado: async (
@@ -209,11 +207,31 @@ export const reservaPersistService = {
     nuevoEstado: EstadoReserva,
     paymentId?: string | null
   ): Promise<boolean> => {
+    if (!referencia) return false;
     const reservas = await leer();
-    const index = reservas.findIndex((r) => r.referencia === referencia);
+    const clean = referencia.trim();
+    const base = clean.includes("_") ? clean.split("_")[0] : clean;
+    const index = reservas.findIndex((r) => r.referencia === clean || r.referencia === base);
     if (index !== -1) {
       reservas[index].estado = nuevoEstado;
       if (paymentId) reservas[index].paymentId = paymentId;
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));
+      return true;
+    }
+    return false;
+  },
+
+  actualizarReserva: async (
+    referencia: string,
+    cambios: Partial<ReservaGuardada>
+  ): Promise<boolean> => {
+    if (!referencia) return false;
+    const reservas = await leer();
+    const clean = referencia.trim();
+    const base = clean.includes("_") ? clean.split("_")[0] : clean;
+    const index = reservas.findIndex((r) => r.referencia === clean || r.referencia === base);
+    if (index !== -1) {
+      reservas[index] = { ...reservas[index], ...cambios };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));
       return true;
     }
@@ -225,13 +243,20 @@ export const reservaPersistService = {
   },
 
   eliminarReserva: async (referencia: string): Promise<boolean> => {
+    if (!referencia) return false;
     const reservas = await leer();
-    const index = reservas.findIndex((r) => r.referencia === referencia);
+    const clean = referencia.trim();
+    const base = clean.includes("_") ? clean.split("_")[0] : clean;
+    const index = reservas.findIndex((r) => r.referencia === clean || r.referencia === base);
     if (index !== -1) {
       reservas.splice(index, 1);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reservas));
       return true;
     }
     return false;
+  },
+
+  limpiarTodas: async (): Promise<void> => {
+    await AsyncStorage.removeItem(STORAGE_KEY);
   },
 };

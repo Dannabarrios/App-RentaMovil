@@ -142,6 +142,7 @@ export default function OlvideContrasenaScreen() {
                   autoCapitalize="none"
                   value={form.correo}
                   onChangeText={(val) => actualizarCampo('correo', val)}
+                  colores={c}
                   error={errores.find((e) => e.campo === "correo")?.mensaje}
                 />
                 <PrimaryButton

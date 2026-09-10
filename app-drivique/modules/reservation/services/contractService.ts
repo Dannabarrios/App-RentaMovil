@@ -66,7 +66,9 @@ export const contratoService = {
   ): Promise<ContratoGuardado | null> => {
     if (!referenciaReserva) return null;
     const todos = await leerTodos();
-    return todos[referenciaReserva] || null;
+    const clean = referenciaReserva.trim();
+    const base = clean.includes("_") ? clean.split("_")[0] : clean;
+    return todos[clean] || todos[base] || null;
   },
 
   /**

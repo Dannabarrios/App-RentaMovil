@@ -1,96 +1,109 @@
 // modules/catalog/components/VehicleGallery.tsx
-//
-// Foto principal + fila de miniaturas navegables (toca una miniatura para
-// que pase a ser la foto principal). Página completa del vehículo — no es
-// el carrusel deslizable de la tarjeta del catálogo.
-
 import React, { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 
 interface Props {
   imagenes: string[];
   calificacion?: number;
+  borderColor?: string;
+  style?: any;
 }
 
-const PADDING_FILA = 12;
-const GAP_FILA = 10;
-const MINIATURA_MIN = 64;
-const MINIATURA_MAX = 110;
-
-export function VehicleGallery({ imagenes, calificacion }: Props) {
+export function VehicleGallery({ imagenes, calificacion, borderColor, style }: Props) {
   const c = useTemaColores();
-  const { width: anchoPantalla } = useWindowDimensions();
   const [activa, setActiva] = useState(0);
 
-  // Las miniaturas se agrandan para ocupar todo el ancho disponible cuando
-  // hay pocas fotos (ej. 3 fotos = cuadros grandes); si hay muchas, se
-  // limitan a un tamaño mínimo y la fila se vuelve deslizable.
-  const anchoDisponible = anchoPantalla - PADDING_FILA * 2;
-  const anchoIdeal = (anchoDisponible - GAP_FILA * (imagenes.length - 1)) / imagenes.length;
-  const miniaturaSize = Math.max(MINIATURA_MIN, Math.min(MINIATURA_MAX, anchoIdeal));
+  const finalBorderColor = borderColor || (c.oscuro ? c.border : "#E2E8F0");
 
   if (imagenes.length === 0) {
     return (
-      <View style={[s.principal, s.principalVacio, { backgroundColor: c.bgInput }]}>
-        <Ionicons name="car-outline" size={64} color={c.textMuted} />
+      <View style={[s.card, { backgroundColor: c.bgCard, borderColor: finalBorderColor }, style]}>
+        <View style={[s.principal, s.principalVacio, { backgroundColor: c.bgInput }]}>
+          <Ionicons name="car-outline" size={56} color={c.textMuted} />
+        </View>
       </View>
     );
   }
 
+  const irAnterior = () => {
+    if (imagenes.length <= 1) return;
+    setActiva((prev) => (prev > 0 ? prev - 1 : imagenes.length - 1));
+  };
+
+  const irSiguiente = () => {
+    if (imagenes.length <= 1) return;
+    setActiva((prev) => (prev < imagenes.length - 1 ? prev + 1 : 0));
+  };
+
   return (
-    <View>
-      <View>
+    <View style={[s.card, { backgroundColor: c.bgCard, borderColor: finalBorderColor }, style]}>
+      {/* Imagen Principal */}
+      <View style={[s.principalContainer, { backgroundColor: c.bgInput }]}>
         <Image source={{ uri: imagenes[activa] }} style={s.principal} resizeMode="cover" />
 
-        {calificacion && calificacion > 0 ? (
-          <View style={s.badgeCalificacion}>
-            <Ionicons name="star" size={13} color="#F59E0B" />
-            <Text style={s.badgeCalificacionTexto}>{calificacion.toFixed(1)}</Text>
-          </View>
-        ) : (
-          <View style={[s.badgeCalificacion, { backgroundColor: "rgba(17,24,39,0.7)" }]}>
-            <Ionicons name="star-outline" size={13} color="#9CA3AF" />
-            <Text style={[s.badgeCalificacionTexto, { color: "#9CA3AF", fontSize: 11 }]}>Sin reseñas</Text>
-          </View>
-        )}
+        {/* Badge Calificación / Nuevo */}
+        <View style={s.badge}>
+          <Ionicons name="star" size={12} color="#FBBF24" />
+          <Text style={s.badgeTexto}>
+            {calificacion && calificacion > 0 ? calificacion.toFixed(1) : "Nuevo"}
+          </Text>
+        </View>
 
+        {/* Flechas de navegación */}
         {imagenes.length > 1 && (
-          <View style={s.contador}>
-            <Text style={s.contadorTexto}>{activa + 1}/{imagenes.length}</Text>
-          </View>
+          <>
+            <TouchableOpacity
+              style={[s.arrowBtn, s.arrowLeft]}
+              onPress={irAnterior}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[s.arrowBtn, s.arrowRight]}
+              onPress={irSiguiente}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </>
         )}
       </View>
 
+      {/* Fila de Miniaturas */}
       {imagenes.length > 1 && (
-        <View style={[s.miniaturasContenedor, { backgroundColor: c.bgCard, borderTopColor: c.border }]}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[s.miniaturasFila, { minWidth: "100%" }]}
-          >
-            {imagenes.map((uri, i) => {
-              const esActiva = i === activa;
-              return (
-                <TouchableOpacity key={i} onPress={() => setActiva(i)} activeOpacity={0.8}>
-                  <Image
-                    source={{ uri }}
-                    style={[
-                      s.miniatura,
-                      {
-                        width: miniaturaSize,
-                        height: miniaturaSize,
-                        borderColor: esActiva ? c.primary : "transparent",
-                        opacity: esActiva ? 1 : 0.5,
-                      },
-                    ]}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+        <View style={s.miniaturasFila}>
+          {imagenes.slice(0, 3).map((uri, i) => {
+            const esActiva = i === activa;
+            return (
+              <TouchableOpacity
+                key={i}
+                onPress={() => setActiva(i)}
+                activeOpacity={0.8}
+                style={[
+                  s.miniaturaWrap,
+                  {
+                    borderColor: esActiva ? "#2563EB" : "transparent",
+                  },
+                ]}
+              >
+                <Image
+                  source={{ uri }}
+                  style={[s.miniatura, !esActiva && s.miniaturaInactiva]}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
     </View>
@@ -98,32 +111,86 @@ export function VehicleGallery({ imagenes, calificacion }: Props) {
 }
 
 const s = StyleSheet.create({
-  principal: { width: "100%", height: 280 },
-  principalVacio: { alignItems: "center", justifyContent: "center" },
-  badgeCalificacion: {
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  principalContainer: {
+    width: "100%",
+    aspectRatio: 16 / 10.5,
+    borderRadius: 14,
+    overflow: "hidden",
+    position: "relative",
+    justifyContent: "center",
+  },
+  principal: {
+    width: "100%",
+    height: "100%",
+  },
+  principalVacio: {
+    alignItems: "center",
+    justifyContent: "center",
+    aspectRatio: 16 / 10.5,
+    borderRadius: 14,
+  },
+  badge: {
     position: "absolute",
-    top: 14,
-    right: 14,
+    top: 10,
+    right: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(17,24,39,0.65)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  badgeCalificacionTexto: { color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" },
-  contador: {
-    position: "absolute",
-    bottom: 12,
-    right: 12,
-    backgroundColor: "rgba(17,24,39,0.65)",
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
     paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: 12,
   },
-  contadorTexto: { color: "#FFFFFF", fontSize: 11, fontWeight: "700" },
-  miniaturasContenedor: { borderTopWidth: 1 },
-  miniaturasFila: { gap: GAP_FILA, padding: PADDING_FILA, justifyContent: "center" },
-  miniatura: { borderRadius: 10, borderWidth: 2 },
+  badgeTexto: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  arrowBtn: {
+    position: "absolute",
+    top: "50%",
+    marginTop: -16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(15, 23, 42, 0.65)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  arrowLeft: {
+    left: 8,
+  },
+  arrowRight: {
+    right: 8,
+  },
+  miniaturasFila: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 10,
+  },
+  miniaturaWrap: {
+    flex: 1,
+    height: 56,
+    borderRadius: 8,
+    overflow: "hidden",
+    borderWidth: 2,
+  },
+  miniatura: {
+    width: "100%",
+    height: "100%",
+  },
+  miniaturaInactiva: {
+    opacity: 0.75,
+  },
 });

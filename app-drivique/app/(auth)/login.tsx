@@ -157,13 +157,19 @@ export default function LoginScreen() {
       {/* ── TOP BAR (Como en catálogo) ── */}
       <View style={[styles.topBar, { backgroundColor: c.bgHeader, borderBottomColor: c.border }]}>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Drivique</Text>
+          <Text style={[styles.headerTitle, { color: c.oscuro ? "#60A5FA" : "#1E40AF" }]}>Drivique</Text>
         </View>
         <TouchableOpacity
-          style={styles.guestBtn}
+          style={[
+            styles.guestBtn,
+            {
+              borderColor: c.oscuro ? "#3B82F6" : "#1E40AF",
+              backgroundColor: c.oscuro ? c.bgCard : "transparent",
+            },
+          ]}
           onPress={handleInvitado}
         >
-          <Text style={styles.guestBtnTexto}>{t("auth.login.modoInvitado")}</Text>
+          <Text style={[styles.guestBtnTexto, { color: c.oscuro ? "#60A5FA" : "#1E40AF" }]}>{t("auth.login.modoInvitado")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -189,25 +195,26 @@ export default function LoginScreen() {
                 c.oscuro && { borderTopWidth: 1, borderBottomWidth: 1, borderColor: c.border }
               ]}
             >
-              <Text style={[styles.marcaTagline, c.oscuro && { color: c.textSecondary }]}>
+              <Text style={[styles.marcaTagline, { color: c.oscuro ? c.textSecondary : "#93A5D1" }]}>
                 {t("auth.login.tagline")}
               </Text>
 
               {/* SWITCH DE PESTAÑAS */}
-              <View style={[styles.tabsWrapper, c.oscuro && { backgroundColor: c.bgInput }]}>
+              <View style={[styles.tabsWrapper, { backgroundColor: c.oscuro ? c.bgInput : "rgba(255,255,255,0.08)", borderColor: c.border, borderWidth: c.oscuro ? 1 : 0 }]}>
                 <TouchableOpacity
                   style={[
                     styles.tabBtn,
                     tab === "login" && styles.tabBtnActivo,
-                    tab === "login" && c.oscuro && { backgroundColor: c.bgCard },
+                    tab === "login" && { backgroundColor: c.oscuro ? c.bgCard : "#FFFFFF" },
                   ]}
                   onPress={() => setTab("login")}
                 >
                   <Text
                     style={[
-                      styles.tabBtnTexto, c.oscuro && { color: c.textSecondary },
+                      styles.tabBtnTexto,
+                      { color: c.oscuro ? c.textSecondary : "#B9C4E8" },
                       tab === "login" && styles.tabBtnTextoActivo,
-                      tab === "login" && c.oscuro && { color: c.textPrimary },
+                      tab === "login" && { color: c.oscuro ? c.textPrimary : "#1E3A8A" },
                     ]}
                   >
                     {t("auth.login.tabIniciarSesion")}
@@ -217,15 +224,16 @@ export default function LoginScreen() {
                   style={[
                     styles.tabBtn,
                     tab === "bienvenida" && styles.tabBtnActivo,
-                    tab === "bienvenida" && c.oscuro && { backgroundColor: c.bgCard },
+                    tab === "bienvenida" && { backgroundColor: c.oscuro ? c.bgCard : "#FFFFFF" },
                   ]}
                   onPress={() => setTab("bienvenida")}
                 >
                   <Text
                     style={[
-                      styles.tabBtnTexto, c.oscuro && { color: c.textSecondary },
+                      styles.tabBtnTexto,
+                      { color: c.oscuro ? c.textSecondary : "#B9C4E8" },
                       tab === "bienvenida" && styles.tabBtnTextoActivo,
-                      tab === "bienvenida" && c.oscuro && { color: c.textPrimary },
+                      tab === "bienvenida" && { color: c.oscuro ? c.textPrimary : "#1E3A8A" },
                     ]}
                   >
                     {t("auth.login.tabBienvenida")}
@@ -260,6 +268,7 @@ export default function LoginScreen() {
                         autoCapitalize="none"
                         value={form.correo}
                         onChangeText={(val) => actualizarCampo("correo", val)}
+                        colores={c}
                         error={
                           errores.find((e) => e.campo === "correo")?.mensaje
                         }
@@ -279,7 +288,7 @@ export default function LoginScreen() {
                         onPress={() => router.push("/(auth)/forgot-password")}
                         style={styles.enlaceOlvide}
                       >
-                        <Text style={styles.textoEnlace}>
+                        <Text style={[styles.textoEnlace, { color: c.oscuro ? "#60A5FA" : "#1D4ED8" }]}>
                           {t("auth.login.olvidaste")}
                         </Text>
                       </TouchableOpacity>
@@ -316,7 +325,7 @@ export default function LoginScreen() {
                       <TouchableOpacity
                         onPress={() => router.push("/(auth)/register")}
                       >
-                        <Text style={[styles.registroLink, { color: c.primary }]}>
+                        <Text style={[styles.registroLink, { color: c.oscuro ? "#60A5FA" : "#1D4ED8" }]}>
                           {t("auth.login.registrateAqui")}
                         </Text>
                       </TouchableOpacity>
@@ -349,7 +358,7 @@ export default function LoginScreen() {
                               size={24}
                               color={c.primary}
                             />
-                            <Text style={[styles.accesoBtnTextoBienvenida, { color: c.primary }]}>{a.texto}</Text>
+                            <Text style={[styles.accesoBtnTextoBienvenida, { color: c.oscuro ? c.textPrimary : c.primary }]}>{a.texto}</Text>
                           </TouchableOpacity>
                       ))}
                     </View>
@@ -359,7 +368,7 @@ export default function LoginScreen() {
                     <View style={styles.beneficiosColBienvenida}>
                       {BENEFICIOS.map((b) => (
                         <View key={b} style={styles.beneficioRow}>
-                          <Ionicons name="checkmark-sharp" size={18} color="#60A5FA" />
+                          <Ionicons name="checkmark-sharp" size={18} color={c.oscuro ? "#60A5FA" : "#2563EB"} />
                           <Text style={[styles.beneficioTextoBienvenida, { color: c.textPrimary }]}>
                             {b}
                           </Text>

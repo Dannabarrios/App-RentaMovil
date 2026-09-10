@@ -1,286 +1,290 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Image,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Vehiculo } from "@/modules/catalog/types/catalog.types";
-import { COLORES } from "../constants/reservation.constants";
-import { useMonedaStore } from "@/store/currencyStore";
-import { formatCurrency } from "@/utils/currencyUtils";
+import { COLOR_MARCA, COLORES } from "../constants/reservation.constants";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { useTranslation } from "react-i18next";
+import { useMonedaStore } from "@/store/currencyStore";
+import { formatCurrency } from "@/utils/currencyUtils";
 
 interface Props {
   vehiculo: Vehiculo;
 }
 
-function getSafeImages(vehiculo: Vehiculo): string[] {
+function getSafeImage(vehiculo: Vehiculo): string | null {
   const imgs = vehiculo.imagenes ?? [];
   const filtradas = imgs.filter(Boolean);
-  if (filtradas.length > 0) return filtradas.slice(0, 3);
-  if (vehiculo.imagen) return [vehiculo.imagen];
-  if (vehiculo.foto) return [vehiculo.foto];
-  return [];
-}
-
-function formatPrecio(precio: number): string {
-  const { monedaActual, tasaUSD } = useMonedaStore.getState();
-  return formatCurrency(precio, monedaActual, tasaUSD);
-}
-
-interface CaracteristicaItem {
-  icono: React.ReactNode;
-  label: string;
+  if (filtradas.length > 0) return filtradas[0];
+  if (vehiculo.imagen) return vehiculo.imagen;
+  if (vehiculo.foto) return vehiculo.foto;
+  return null;
 }
 
 export default function VehiculoResumenCard({ vehiculo }: Props) {
-  // Nos suscribimos al store de moneda para re-renderizar los precios
-  // cuando cambie COP↔USD o llegue una tasa nueva.
-  useMonedaStore();
   const c = useTemaColores();
   const { t } = useTranslation();
-  const [fotoActiva, setFotoActiva] = useState(0);
-  const imagenes = getSafeImages(vehiculo);
+  const monedaActual = useMonedaStore((s) => s.monedaActual);
+  const tasaUSD = useMonedaStore((s) => s.tasaUSD);
 
-  const trTransmision = (v?: string) => v ? t(`catalogo.transmisionValores.${v}`, { defaultValue: v }) : "—";
-  const trCombustible = (v?: string) => v ? t(`catalogo.combustibleValores.${v}`, { defaultValue: v }) : "—";
-
-  const specs: CaracteristicaItem[] = [
-    { icono: <Ionicons name="settings-outline" size={14} color={COLORES.accentText} />, label: trTransmision(vehiculo.transmision) },
-    { icono: <MaterialCommunityIcons name="gas-station-outline" size={14} color={COLORES.accentText} />, label: trCombustible(vehiculo.combustible) },
-    { icono: <Ionicons name="people-outline" size={14} color={COLORES.accentText} />, label: `${vehiculo.pasajeros ?? 5} ${t("catalogo.detalles.personas")}` },
-  ];
-
-  // Solo se agregan las características que el vehículo realmente tiene
-  // (chequeo condicional campo por campo).
-  const caracteristicas: CaracteristicaItem[] = [];
-
-  if (vehiculo.aireAcondicionado) {
-    caracteristicas.push({ icono: <Ionicons name="snow-outline" size={14} color={COLORES.accentText} />, label: t("catalogo.detalles.aireAcondicionado") });
-  }
-  if (vehiculo.vidriosElectricos) {
-    caracteristicas.push({ icono: <Ionicons name="flash-outline" size={14} color={COLORES.accentText} />, label: t("catalogo.detalles.vidriosElectricos") });
-  }
-  if (vehiculo.cierreCentralizado) {
-    caracteristicas.push({ icono: <Ionicons name="lock-closed-outline" size={14} color={COLORES.accentText} />, label: t("catalogo.detalles.cierreCentralizado") });
-  }
-  if (vehiculo.maletero) {
-    caracteristicas.push({ icono: <MaterialCommunityIcons name="bag-suitcase-outline" size={14} color={COLORES.accentText} />, label: `${vehiculo.maletero}L ${t("catalogo.detalles.maletero")}` });
-  }
-  if (vehiculo.transmision) {
-    caracteristicas.push({ icono: <Ionicons name="settings-outline" size={14} color={COLORES.accentText} />, label: trTransmision(vehiculo.transmision) });
-  }
-  if (vehiculo.combustible) {
-    caracteristicas.push({ icono: <MaterialCommunityIcons name="gas-station-outline" size={14} color={COLORES.accentText} />, label: trCombustible(vehiculo.combustible) });
-  }
-  if (vehiculo.pasajeros) {
-    caracteristicas.push({ icono: <Ionicons name="people-outline" size={14} color={COLORES.accentText} />, label: `${vehiculo.pasajeros} ${t("catalogo.detalles.personas")}` });
-  }
-
-  const filasCaracteristicas: CaracteristicaItem[][] = [];
-  for (let i = 0; i < caracteristicas.length; i += 2) {
-    filasCaracteristicas.push(caracteristicas.slice(i, i + 2));
-  }
+  const imagen = getSafeImage(vehiculo);
+  const nombreSucursal = vehiculo.sucursal || "Alquiler Neiva - Centro";
 
   return (
     <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-      <View style={[styles.imagenPrincipal, { backgroundColor: c.bgInput }]}>
-        {imagenes.length > 0 ? (
-          <>
-            <Image
-              source={{ uri: imagenes[fotoActiva] }}
-              style={styles.imagenPrincipalImg}
-              resizeMode="cover"
-            />
-            <View style={styles.badgeGaleria}>
-              <Ionicons name="images-outline" size={11} color="#0f6e56" />
-              <Text style={styles.badgeGaleriaText}>{t("reserva.resumenVehiculo.enGaleria")}</Text>
-            </View>
-          </>
+      {/* Cabecera con Imagen */}
+      <View style={[styles.imagenContenedor, { backgroundColor: c.bgInput }]}>
+        {imagen ? (
+          <Image source={{ uri: imagen }} style={styles.imagen} resizeMode="cover" />
         ) : (
           <View style={styles.imagenFallback}>
-            <Ionicons name="car-outline" size={48} color={COLORES.imageFallbackIcon} />
+            <Ionicons name="car-outline" size={40} color={COLORES.imageFallbackIcon} />
           </View>
         )}
-      </View>
 
-      {imagenes.length > 1 && (
-        <View style={styles.thumbsRow}>
-          {imagenes.map((uri, i) => (
-            <TouchableOpacity
-              key={i}
-              onPress={() => setFotoActiva(i)}
-              activeOpacity={0.8}
-              style={styles.thumbWrap}
-            >
-              <Image
-                source={{ uri }}
-                style={[styles.thumb, i === fotoActiva && styles.thumbActivo]}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      <View style={[styles.separador, { backgroundColor: c.border }]} />
-
-      <View style={styles.filaNombrePrecio}>
-        <Text style={[styles.nombre, { color: c.textPrimary }]} numberOfLines={1}>{vehiculo.nombre}</Text>
-        <Text style={[styles.precio, { color: c.textPrimary }]}>
-          {formatPrecio(vehiculo.precio)}
-          <Text style={[styles.precioDia, { color: c.textMuted }]}>/{t("catalogo.porDia")}</Text>
-        </Text>
-      </View>
-
-      <View style={styles.tagsRow}>
-        <View style={styles.tagCategoria}>
-          <Text style={styles.tagCategoriaText}>{t(`catalogo.categoriaValores.${vehiculo.categoria ?? "Economico"}`, { defaultValue: vehiculo.categoria ?? "Económico" })}</Text>
+        {/* Badge de Disponibilidad */}
+        <View style={styles.badgeDisponibilidad}>
+          <View style={styles.puntoVerde} />
+          <Text style={styles.badgeDisponibilidadText}>
+            {t("catalogo.tarjeta.disponible", { defaultValue: "Disponible" })}
+          </Text>
         </View>
 
-        {vehiculo.sucursal && (
-          <View style={styles.tagUbicacion}>
-            <Ionicons name="location-outline" size={12} color="#166534" />
-            <Text style={styles.tagUbicacionText} numberOfLines={1}>
-              {vehiculo.sucursal}
+        {/* Badge de Calificación */}
+        <View style={styles.badgeRating}>
+          <Ionicons name="star" size={12} color="#F59E0B" />
+          <Text style={styles.badgeRatingText}>
+            {(vehiculo.calificacion ?? 4.5).toFixed(1)}
+          </Text>
+        </View>
+      </View>
+
+      {/* Contenido / Información */}
+      <View style={styles.cuerpo}>
+        {/* Pills: Categoría y Sucursal */}
+        <View style={styles.pillsRow}>
+          <View style={[styles.pillCategoria, { backgroundColor: c.primaryBg }]}>
+            <Text style={[styles.pillCategoriaText, { color: c.primary }]}>
+              {t(`catalogo.categoriaValores.${vehiculo.categoria ?? "Economico"}`, {
+                defaultValue: vehiculo.categoria ?? "Económico",
+              })}
             </Text>
           </View>
-        )}
-      </View>
 
-      <View style={styles.specsRow}>
-        {specs.map((s, i) => (
-          <View key={i} style={styles.specItem}>
-            {s.icono}
-            <Text style={[styles.specText, { color: c.textSecondary }]}>{s.label}</Text>
+          <View style={[styles.pillSucursal, { backgroundColor: c.bgInput }]}>
+            <Ionicons name="location-outline" size={12} color={c.textMuted} />
+            <Text style={[styles.pillSucursalText, { color: c.textSecondary }]} numberOfLines={1}>
+              {nombreSucursal}
+            </Text>
           </View>
-        ))}
-      </View>
+        </View>
 
-      {filasCaracteristicas.length > 0 && (
-        <>
-          <Text style={[styles.seccionLabel, { color: c.textMuted }]}>{t("reserva.resumenVehiculo.caracteristicas")}</Text>
-          <View style={styles.caracteristicasGrid}>
-            {filasCaracteristicas.map((fila, fi) => (
-              <View key={fi} style={styles.caracteristicasFila}>
-                {fila.map((item, ci) => (
-                  <View key={ci} style={[styles.caracteristicaChip, { backgroundColor: c.bgInput, borderColor: c.border }]}>
-                    {item.icono}
-                    <Text style={[styles.caracteristicaChipText, { color: c.textSecondary }]} numberOfLines={1}>{item.label}</Text>
-                  </View>
-                ))}
-                {fila.length === 1 && <View style={styles.caracteristicaChipVacio} />}
-              </View>
-            ))}
+        {/* Nombre del vehículo */}
+        <Text style={[styles.nombre, { color: c.textPrimary }]} numberOfLines={1}>
+          {vehiculo.nombre}
+        </Text>
+
+        {/* Fila de características clave */}
+        <View style={styles.specsRow}>
+          {!!vehiculo.transmision && (
+            <View style={styles.specItem}>
+              <Ionicons name="settings-outline" size={13} color={c.textMuted} />
+              <Text style={[styles.specText, { color: c.textSecondary }]}>
+                {t(`catalogo.transmisionValores.${vehiculo.transmision}`, { defaultValue: vehiculo.transmision })}
+              </Text>
+            </View>
+          )}
+
+          {!!vehiculo.combustible && (
+            <View style={styles.specItem}>
+              <MaterialCommunityIcons name="gas-station-outline" size={13} color={c.textMuted} />
+              <Text style={[styles.specText, { color: c.textSecondary }]}>
+                {t(`catalogo.combustibleValores.${vehiculo.combustible}`, { defaultValue: vehiculo.combustible })}
+              </Text>
+            </View>
+          )}
+
+          {!!vehiculo.pasajeros && (
+            <View style={styles.specItem}>
+              <Ionicons name="people-outline" size={13} color={c.textMuted} />
+              <Text style={[styles.specText, { color: c.textSecondary }]}>
+                {vehiculo.pasajeros} {t("catalogo.detalles.personas", { defaultValue: "pasajeros" })}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Divisor */}
+        <View style={[styles.divisor, { backgroundColor: c.border }]} />
+
+        {/* Fila de Precio */}
+        <View style={styles.precioRow}>
+          <Text style={[styles.precioLabel, { color: c.textMuted }]}>
+            {t("catalogo.tarjeta.tarifaPorDia", { defaultValue: "Tarifa diaria" })}
+          </Text>
+          <View style={styles.precioValorWrap}>
+            <Text style={[styles.precioValor, { color: c.primary }]}>
+              {formatCurrency(vehiculo.precio, monedaActual, tasaUSD)}
+            </Text>
+            <Text style={[styles.precioDia, { color: c.textMuted }]}>
+              {" "}/ {t("vehiculo.porDia", { defaultValue: "día" })}
+            </Text>
           </View>
-        </>
-      )}
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORES.panelBg,
     borderRadius: 16,
-    padding: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: COLORES.panelBorderStrong,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  imagenPrincipal: {
-    width: "100%",
-    aspectRatio: 16 / 10,
-    borderRadius: 14,
     overflow: "hidden",
-    backgroundColor: COLORES.imageFallbackBg,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+    marginBottom: 4,
   },
-  imagenPrincipalImg: { width: "100%", height: "100%" },
-  imagenFallback: { flex: 1, alignItems: "center", justifyContent: "center" },
-  badgeGaleria: {
+  imagenContenedor: {
+    width: "100%",
+    height: 170,
+    position: "relative",
+    overflow: "hidden",
+  },
+  imagen: {
+    width: "100%",
+    height: "100%",
+  },
+  imagenFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeDisponibilidad: {
     position: "absolute",
     top: 10,
     left: 10,
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,255,255,0.92)",
-    paddingHorizontal: 10,
+    gap: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
   },
-  badgeGaleriaText: { fontSize: 10, fontWeight: "700", color: "#0f6e56" },
-  thumbsRow: { flexDirection: "row", gap: 8, marginTop: 8 },
-  thumbWrap: { flex: 1 },
-  thumb: { width: "100%", height: 52, borderRadius: 8, opacity: 0.6 },
-  thumbActivo: { opacity: 1, borderWidth: 2, borderColor: COLORES.accentText },
-  separador: { height: 1, backgroundColor: COLORES.panelBorder, marginTop: 14, marginBottom: 14 },
-  filaNombrePrecio: {
+  puntoVerde: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "#10B981",
+  },
+  badgeDisponibilidadText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#065F46",
+  },
+  badgeRating: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  badgeRatingText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  cuerpo: {
+    padding: 14,
+  },
+  pillsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+    flexWrap: "wrap",
+  },
+  pillCategoria: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  pillCategoriaText: {
+    fontSize: 11.5,
+    fontWeight: "700",
+  },
+  pillSucursal: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    maxWidth: "65%",
+  },
+  pillSucursalText: {
+    fontSize: 11.5,
+    fontWeight: "500",
+  },
+  nombre: {
+    fontSize: 16.5,
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+  specsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    flexWrap: "wrap",
+  },
+  specItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  specText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  divisor: {
+    height: 1,
+    width: "100%",
+    marginTop: 12,
+    marginBottom: 10,
+  },
+  precioRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-end",
-    gap: 10,
-    marginBottom: 12,
-  },
-  nombre: { fontSize: 17, fontWeight: "800", color: COLORES.textPrimary, flex: 1 },
-  precio: { fontSize: 17, fontWeight: "800", color: COLORES.textPrimary, textAlign: "right" },
-  precioDia: { fontSize: 11, fontWeight: "400", color: COLORES.textSoft },
-  tagsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
     alignItems: "center",
-    marginBottom: 14,
   },
-  tagCategoria: {
-    backgroundColor: "#eff6ff",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#bfdbfe",
+  precioLabel: {
+    fontSize: 12,
+    fontWeight: "600",
   },
-  tagCategoriaText: { fontSize: 11, fontWeight: "700", color: "#1e40af" },
-  tagUbicacion: {
+  precioValorWrap: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#f0fdf4",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#bbf7d0",
-    maxWidth: "70%",
+    alignItems: "baseline",
   },
-  tagUbicacionText: { fontSize: 11, fontWeight: "700", color: "#166534", flexShrink: 1 },
-  specsRow: { flexDirection: "row", gap: 18 },
-  specItem: { flexDirection: "row", alignItems: "center", gap: 5 },
-  specText: { fontSize: 12, fontWeight: "600", color: "#334155" },
-  seccionLabel: { fontSize: 10, fontWeight: "700", color: COLORES.textMuted, letterSpacing: 0.4, marginTop: 18, marginBottom: 8 },
-  caracteristicasGrid: { gap: 8 },
-  caracteristicasFila: { flexDirection: "row", gap: 8 },
-  caracteristicaChip: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#F8FAFC",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+  precioValor: {
+    fontSize: 18,
+    fontWeight: "900",
   },
-  caracteristicaChipVacio: { flex: 1 },
-  caracteristicaChipText: { fontSize: 12, fontWeight: "600", color: "#334155", flexShrink: 1 },
+  precioDia: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
 });
