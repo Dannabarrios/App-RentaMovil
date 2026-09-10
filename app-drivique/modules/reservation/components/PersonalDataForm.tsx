@@ -25,6 +25,7 @@ import { TipoDocumento } from "../types/reservation.types";
 import {
   aCentavos,
   construirUrlCheckout,
+  consultarTransaccionWompi,
   generarReferenciaUnica,
 } from "../services/wompiService";
 import {
@@ -37,6 +38,7 @@ import CampoSelectorLista from "./ListSelectorField";
 import FirmaContrato from "./ContractSignature";
 import ModalReservaRegistrada from "./BookingRegisteredModal";
 import { BranchCashPaymentModal } from "./BranchCashPaymentModal";
+import { WompiCheckoutModal } from "./WompiCheckoutModal";
 import { diasEntre } from "./BookingSummaryModal.pieces";
 import TarjetaTerminosCondiciones from "./TermsConditionsCard";
 import TarjetaVerificacionDocumental from "./DocumentVerificationCard";
@@ -118,6 +120,8 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
   const [referenciaActual, setReferenciaActual] = useState<string | null>(null);
   const [mostrarContrato, setMostrarContrato] = useState(false);
   const [modalInstruccionesEfectivoVisible, setModalInstruccionesEfectivoVisible] = useState(false);
+  const [wompiCheckoutUrl, setWompiCheckoutUrl] = useState<string | null>(null);
+  const [modalWompiVisible, setModalWompiVisible] = useState(false);
 
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
   const brandBg = c.oscuro ? "#3B82F6" : COLOR_MARCA;
@@ -145,93 +149,82 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     if (!datosPersonales.numeroDocumento && usuarioGlobal.numeroDocumento) {
       precarga.numeroDocumento = usuarioGlobal.numeroDocumento;
     }
-    if (!datosPersonales.celular && usuarioGlobal.telefono) {
-      precarga.celular = usuarioGlobal.telefono;
+    if (!datosPersonales.telefono && usuarioGlobal.telefono) {
+      precarga.telefono = usuarioGlobal.telefono;
+    }
+    if (!datosPersonales.direccion && usuarioGlobal.direccion) {
+      precarga.direccion = usuarioGlobal.direccion;
     }
     if (Object.keys(precarga).length > 0) {
       actualizarDatosPersonales(precarga);
     }
-  }, []);
+  }, [usuarioGlobal]);
 
-  const prefijoTelefono = getPrefijoPorNacionalidad(
-    datosPersonales.nacionalidad || null,
-  );
-  const hayPrefijo = prefijoTelefono !== "";
-
-  const datosCompletos =
-    !!datosPersonales.nombreCompleto.trim() &&
-    !!datosPersonales.nacionalidad &&
-    !!datosPersonales.correo.trim() &&
-    !!datosPersonales.celular.trim() &&
-    !!datosPersonales.tipoDocumento &&
-    !!datosPersonales.numeroDocumento.trim() &&
-    (docsVerificados || !!documentos.cedulaFrente) &&
-    (docsVerificados || !!documentos.licenciaConduccion) &&
-    !!datosPersonales.terminosAceptados;
-
-  const total = useMemo(() => {
-    const seguros = vehiculo.seguros ?? [];
-    const kmLimitado = vehiculo.tarifas?.kmLimitado;
-    const kmIlimitado = vehiculo.tarifas?.kmIlimitado;
-    const servicios = (vehiculo.servicios ?? []).filter(
-      (s) => !s.nombre.toLowerCase().includes("otra ciudad")
-    );
-
-    const seguroElegido =
-      seguros.find((s) => s.nombre === planes.proteccion) ?? null;
-    const kmElegido =
-      planes.tipoKilometraje === "limitado"
-        ? kmLimitado
-        : planes.tipoKilometraje === "ilimitado"
-          ? kmIlimitado
-          : null;
-
-    const dias = diasEntre(
-      fechasLugar.fechaRetiro,
-      fechasLugar.fechaDevolucion,
-    );
-    const diarias = vehiculo.precio * dias;
-    const proteccion = seguroElegido ? seguroElegido.precio * dias : 0;
-    const kilometraje = kmElegido ? kmElegido.precio * dias : 0;
-    const servAdic = servicios
-      .filter((s) => planes.serviciosSeleccionados.includes(s.nombre))
-      .reduce((a, s) => a + s.precio * dias, 0);
-    const subtotalBase = diarias + proteccion + kilometraje + servAdic;
-    const cargos = Math.round(subtotalBase * PORCENTAJE_CARGOS_ADMINISTRATIVOS);
-    const subtotalBruto = subtotalBase + cargos + RECARGO_LOGISTICO;
-      
-    let descuentoCupon = 0;
-    if (cuponAplicado) {
-      if (cuponAplicado.descuentoPorcentaje) {
-        descuentoCupon = Math.round(subtotalBruto * (cuponAplicado.descuentoPorcentaje / 100));
-      } else if (cuponAplicado.descuentoFijo) {
-        descuentoCupon = cuponAplicado.descuentoFijo;
-      }
+  const validarFormulario = (): boolean => {
+    if (
+      !datosPersonales.nombreCompleto ||
+      !datosPersonales.correo ||
+      !datosPersonales.nacionalidad ||
+      !datosPersonales.tipoDocumento ||
+      !datosPersonales.numeroDocumento ||
+      !datosPersonales.telefono ||
+      !datosPersonales.direccion ||
+      !datosPersonales.ciudad ||
+      !datosPersonales.paisResidencia ||
+      !datosPersonales.metodoPago
+    ) {
+      setAlertaFaltantesVisible(true);
+      return false;
     }
-    
-    const subtotal = Math.max(subtotalBruto - descuentoCupon, 0);
-    const iva = Math.round(subtotal * PORCENTAJE_IVA);
-    return subtotal + iva;
-  }, [vehiculo, fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion, planes, cuponAplicado]);
+    return true;
+  };
+
+  const { subtotal, totalDescuento, cargosAdmin, iva, total } =
+    useMemo(() => {
+      const dias = Math.max(
+        1,
+        diasEntre(fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion),
+      );
+      const precioPorDia = vehiculo.precio;
+      const costoVehiculo = precioPorDia * dias;
+      const costoProteccion = planes.proteccion ? planes.proteccion.precio * dias : 0;
+      const costoKm = planes.tipoKilometraje?.precio ? planes.tipoKilometraje.precio * dias : 0;
+      const sub =
+        costoVehiculo + costoProteccion + costoKm + RECARGO_LOGISTICO;
+
+      let desc = 0;
+      if (cuponAplicado) {
+        if (cuponAplicado.descuentoPorcentaje) {
+          desc = (sub * cuponAplicado.descuentoPorcentaje) / 100;
+        } else if (cuponAplicado.descuentoFijo) {
+          desc = cuponAplicado.descuentoFijo;
+        }
+      }
+
+      const baseImponible = Math.max(0, sub - desc);
+      const cargos = (baseImponible * PORCENTAJE_CARGOS_ADMINISTRATIVOS) / 100;
+      const imp = (baseImponible * PORCENTAJE_IVA) / 100;
+      const tot = baseImponible + cargos + imp;
+
+      return {
+        subtotal: sub,
+        totalDescuento: desc,
+        cargosAdmin: cargos,
+        iva: imp,
+        total: tot,
+      };
+    }, [vehiculo, fechasLugar, planes, cuponAplicado]);
 
   const handleConfirmarReserva = async () => {
-    if (!datosCompletos) {
+    if (!validarFormulario()) return;
+
+    if (!docsVerificados) {
       setAlertaFaltantesVisible(true);
       return;
     }
 
     const referencia = generarReferenciaUnica();
-    const metodoPago = fechasLugar.metodoPago;
-
-    // Si subió un documento nuevo (o todavía no tenía ninguno guardado),
-    // lo dejamos registrado para no volver a pedírselo en la próxima
-    // reserva — igual que en la web.
-    if (documentos.cedulaFrente || documentos.licenciaConduccion || !docsVerificados) {
-      await documentosService.guardarDocumentos(usuarioGlobal.id, {
-        identificacion: documentos.cedulaFrente,
-        licencia: documentos.licenciaConduccion,
-      });
-    }
+    const metodoPago = datosPersonales.metodoPago;
 
     await reservaPersistService.guardarReserva({
       referencia,
@@ -245,11 +238,8 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       fechaDevolucion: fechasLugar.fechaDevolucion,
       lugarRetiro: fechasLugar.lugarRetiro,
       lugarDevolucion: fechasLugar.lugarDevolucion,
-      proteccion: planes.proteccion,
-      tipoKilometraje: planes.tipoKilometraje,
-      // Snapshot completo para poder reconstruir el contrato en la pantalla
-      // de respuesta de pago, ya que ahí el store de la reserva en curso
-      // (useReservaStore) ya se limpió.
+      proteccion: planes.proteccion?.nombre,
+      tipoKilometraje: planes.tipoKilometraje?.nombre,
       vehiculoSnapshot: vehiculo,
       datosPersonalesSnapshot: datosPersonales,
       datosDocumentosSnapshot: {
@@ -266,106 +256,76 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     if (metodoPago === "efectivo") {
       setModalInstruccionesEfectivoVisible(true);
     } else {
-      setModalReservaVisible(true);
+      handlePagarWompi(referencia);
     }
   };
 
-  const handleIrAMisReservas = () => {
-    setModalInstruccionesEfectivoVisible(false);
-    limpiarReserva();
-    router.replace("/(tabs)/my-bookings");
-  };
-
-  const handleVolverAlInicio = () => {
-    setModalInstruccionesEfectivoVisible(false);
-    limpiarReserva();
-    router.replace("/(tabs)");
-  };
-
-  const handlePagarMasTarde = () => {
-    setModalReservaVisible(false);
-    limpiarReserva();
-    router.replace("/(tabs)/my-bookings");
-  };
-
-  const handleConfirmarCancelarProceso = () => {
-    setAlertaCancelarProcesoVisible(false);
-    limpiarReserva();
-    router.replace("/(tabs)");
-  };
-
-  const handleContratoFirmado = async () => {
-    if (referenciaActual) {
-      await reservaPersistService.actualizarEstado(referenciaActual, "CONFIRMADA");
-    }
-    setMostrarContrato(false);
-    setAlertaEfectivoVisible(true);
-  };
-
-  const handlePagarWompi = async () => {
-    if (!referenciaActual) return;
-    setModalReservaVisible(false);
+  const handlePagarWompi = async (referencia: string) => {
     setProcesandoPago(true);
-
     try {
       const redirectUrl = "https://localtest.me/respuesta";
       const amountInCents = aCentavos(total);
 
       const url = await construirUrlCheckout({
-        reference: referenciaActual,
+        reference: referencia,
         amountInCents,
         redirectUrl,
       });
 
-      const resultado = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
-
-      if (resultado.type === "success" && resultado.url) {
-        const { queryParams } = Linking.parse(resultado.url);
-        const transactionId =
-          typeof queryParams?.id === "string" ? queryParams.id : null;
-
-        let nuevoEstado: "PENDIENTE_VALIDACION" | "PENDIENTE_EFECTIVO" | "CONFIRMADA" = "PENDIENTE_VALIDACION";
-
-        if (transactionId) {
-          try {
-            const resp = await fetch(`https://sandbox.wompi.co/v1/transactions/${transactionId}`);
-            const json = await resp.json();
-            if (json?.data) {
-              const methodType = json.data.payment_method_type;
-              const status = json.data.status;
-
-              if (methodType === "BANCOLOMBIA_COLLECT") {
-                nuevoEstado = "PENDIENTE_EFECTIVO";
-              } else if (status === "APPROVED") {
-                nuevoEstado = "CONFIRMADA";
-              } else {
-                nuevoEstado = "PENDIENTE_VALIDACION";
-              }
-            }
-          } catch (error) {
-            console.error("[FormDatosPersonales] Error consultando transaccion de Wompi:", error);
-          }
-        }
-
-        await reservaPersistService.actualizarEstado(
-          referenciaActual,
-          nuevoEstado,
-          transactionId
-        );
-      }
-
-      limpiarReserva();
-      router.replace(
-        `/payment-response?ref=${encodeURIComponent(referenciaActual)}${transactionId ? `&id=${encodeURIComponent(transactionId)}` : ""}`
-      );
+      setWompiCheckoutUrl(url);
+      setModalWompiVisible(true);
     } catch (error) {
-      console.error("[FormDatosPersonales] Error en el pago con Wompi", error);
-      limpiarReserva();
-      if (referenciaActual) {
-        router.replace(`/payment-response?ref=${encodeURIComponent(referenciaActual)}`);
-      }
+      console.error("[FormDatosPersonales] Error iniciando checkout de Wompi", error);
+      Alert.alert(
+        t("comun.error", { defaultValue: "Error" }),
+        t("reserva.confirmacion.errorWompi", { defaultValue: "No se pudo abrir la pasarela de pago de Wompi." })
+      );
     } finally {
       setProcesandoPago(false);
+    }
+  };
+
+  const handleWompiComplete = async ({
+    transactionId,
+    reference,
+  }: {
+    transactionId?: string | null;
+    reference: string;
+  }) => {
+    setModalWompiVisible(false);
+    setWompiCheckoutUrl(null);
+
+    const refFinal = reference || referenciaActual;
+    if (refFinal) {
+      if (transactionId) {
+        try {
+          const txData = await consultarTransaccionWompi(transactionId);
+          if (txData) {
+            let nuevoEstado: "PENDIENTE_VALIDACION" | "PENDIENTE_EFECTIVO" | "CONFIRMADA" = "PENDIENTE_VALIDACION";
+            if (txData.payment_method_type === "BANCOLOMBIA_COLLECT") {
+              nuevoEstado = "PENDIENTE_EFECTIVO";
+            } else if (txData.status === "APPROVED") {
+              nuevoEstado = "CONFIRMADA";
+            }
+            await reservaPersistService.actualizarEstado(refFinal, nuevoEstado, transactionId);
+          }
+        } catch (e) {
+          console.error("[FormDatosPersonales] Error verificando transaccion Wompi:", e);
+        }
+      }
+      limpiarReserva();
+      router.replace(
+        `/payment-response?ref=${encodeURIComponent(refFinal)}${transactionId ? `&id=${encodeURIComponent(transactionId)}` : ""}`
+      );
+    }
+  };
+
+  const handleWompiClose = () => {
+    setModalWompiVisible(false);
+    setWompiCheckoutUrl(null);
+    if (referenciaActual) {
+      limpiarReserva();
+      router.replace(`/payment-response?ref=${encodeURIComponent(referenciaActual)}`);
     }
   };
 
@@ -711,6 +671,14 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         mensaje={t("reserva.confirmacion.errorPagoMensaje")}
         botones={[]}
         onCerrar={() => setAlertaErrorPagoVisible(false)}
+      />
+
+      <WompiCheckoutModal
+        visible={modalWompiVisible}
+        checkoutUrl={wompiCheckoutUrl}
+        referencia={referenciaActual || ""}
+        onComplete={handleWompiComplete}
+        onClose={handleWompiClose}
       />
     </View>
   );

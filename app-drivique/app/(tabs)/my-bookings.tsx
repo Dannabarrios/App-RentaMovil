@@ -34,7 +34,8 @@ import { fmt, fechaCorta } from "@/modules/reservation/components/BookingSummary
 import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { AlertModal } from "@/components/ui/AlertModal";
 import { useUsuarioStore } from "@/store/userStore";
-import { aCentavos, construirUrlCheckout } from "@/modules/reservation/services/wompiService";
+import { aCentavos, construirUrlCheckout, consultarTransaccionWompi } from "@/modules/reservation/services/wompiService";
+import { WompiCheckoutModal } from "@/modules/reservation/components/WompiCheckoutModal";
 
 const COLOR_GRUPO: Record<GrupoReserva, string> = {
   pendiente: "#f59e0b",
@@ -157,6 +158,10 @@ export default function MisReservasScreen() {
     });
   }, [reservas, filtroGrupo, filtroMes]);
 
+  const [wompiModalVisible, setWompiModalVisible] = useState(false);
+  const [wompiCheckoutUrl, setWompiCheckoutUrl] = useState<string | null>(null);
+  const [reservaWompiActual, setReservaWompiActual] = useState<ReservaGuardada | null>(null);
+
   const irADetalle = (referencia: string) =>
     router.push(`/payment-response?ref=${encodeURIComponent(referencia)}`);
 
@@ -170,19 +175,50 @@ export default function MisReservasScreen() {
         amountInCents,
         redirectUrl,
       });
-      const resultado = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
-      let txId: string | null = null;
-      if (resultado.type === "success" && resultado.url) {
-        const { queryParams } = Linking.parse(resultado.url);
-        txId = typeof queryParams?.id === "string" ? queryParams.id : null;
-      }
-      router.push(`/payment-response?ref=${encodeURIComponent(reserva.referencia)}${txId ? `&id=${encodeURIComponent(txId)}` : ""}`);
+      setReservaWompiActual(reserva);
+      setWompiCheckoutUrl(url);
+      setWompiModalVisible(true);
     } catch (err) {
       console.error("[my-bookings] Error abriendo Wompi", err);
       Alert.alert(
         t("comun.error", { defaultValue: "Error" }),
         t("reserva.confirmacion.errorWompi", { defaultValue: "No se pudo abrir la pasarela de pago de Wompi." })
       );
+    }
+  };
+
+  const handleWompiComplete = async ({
+    transactionId,
+    reference,
+  }: {
+    transactionId?: string | null;
+    reference: string;
+  }) => {
+    setWompiModalVisible(false);
+    setWompiCheckoutUrl(null);
+    const refBase = (reference || reservaWompiActual?.referencia || "").split("_")[0];
+    if (refBase) {
+      if (transactionId) {
+        try {
+          const txData = await consultarTransaccionWompi(transactionId);
+          if (txData?.status === "APPROVED") {
+            await reservaPersistService.actualizarEstado(refBase, "CONFIRMADA", transactionId);
+          } else if (txData?.payment_method_type === "BANCOLOMBIA_COLLECT") {
+            await reservaPersistService.actualizarEstado(refBase, "PENDIENTE_EFECTIVO", transactionId);
+          }
+        } catch (e) {
+          console.warn("[my-bookings] Error actualizando transaccion Wompi:", e);
+        }
+      }
+      router.push(`/payment-response?ref=${encodeURIComponent(refBase)}${transactionId ? `&id=${encodeURIComponent(transactionId)}` : ""}`);
+    }
+  };
+
+  const handleWompiClose = () => {
+    setWompiModalVisible(false);
+    setWompiCheckoutUrl(null);
+    if (reservaWompiActual?.referencia) {
+      router.push(`/payment-response?ref=${encodeURIComponent(reservaWompiActual.referencia)}`);
     }
   };
 
@@ -377,6 +413,14 @@ export default function MisReservasScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      <WompiCheckoutModal
+        visible={wompiModalVisible}
+        checkoutUrl={wompiCheckoutUrl}
+        referencia={reservaWompiActual?.referencia || ""}
+        onComplete={handleWompiComplete}
+        onClose={handleWompiClose}
+      />
     </View>
   );
 }

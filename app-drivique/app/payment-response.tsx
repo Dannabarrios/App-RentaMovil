@@ -55,6 +55,7 @@ import {
   consultarTransaccionWompi,
   WompiTransactionResponse,
 } from "@/modules/reservation/services/wompiService";
+import { WompiCheckoutModal } from "@/modules/reservation/components/WompiCheckoutModal";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 
@@ -75,6 +76,8 @@ export default function PagoRespuestaScreen() {
   const [errorClave, setErrorClave] = useState("");
   const [mostrarFirma, setMostrarFirma] = useState(false);
   const [mostrarLectorContrato, setMostrarLectorContrato] = useState(false);
+  const [wompiModalVisible, setWompiModalVisible] = useState(false);
+  const [wompiCheckoutUrl, setWompiCheckoutUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let activo = true;
@@ -157,34 +160,49 @@ export default function PagoRespuestaScreen() {
         amountInCents,
         redirectUrl,
       });
-
-      const resultado = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
-      if (resultado.type === "success" && resultado.url) {
-        const { queryParams } = Linking.parse(resultado.url);
-        const transactionId = typeof queryParams?.id === "string" ? queryParams.id : null;
-        if (transactionId) {
-          const txData = await consultarTransaccionWompi(transactionId);
-          if (txData?.status === "APPROVED") {
-            await reservaPersistService.actualizarEstado(reserva.referencia, "CONFIRMADA", transactionId);
-          } else if (txData?.status === "PENDING") {
-            await reservaPersistService.actualizarReserva(reserva.referencia, {
-              estado:
-                txData.payment_method_type === "BANCOLOMBIA_COLLECT"
-                  ? "PENDIENTE_EFECTIVO"
-                  : "PENDIENTE_VALIDACION",
-              paymentId: transactionId,
-            });
-          }
-        }
-      }
-      const actualizada = await reservaPersistService.obtenerPorReferencia(reserva.referencia);
-      if (actualizada) {
-        setReserva(actualizada);
-      }
+      setWompiCheckoutUrl(url);
+      setWompiModalVisible(true);
     } catch (err) {
       console.error("[payment-response] Error abriendo Wompi", err);
       Alert.alert(t("comun.error", { defaultValue: "Error" }), t("reserva.confirmacion.errorWompi", { defaultValue: "No se pudo abrir la pasarela de pago de Wompi." }));
     }
+  };
+
+  const handleWompiComplete = async ({
+    transactionId,
+  }: {
+    transactionId?: string | null;
+  }) => {
+    setWompiModalVisible(false);
+    setWompiCheckoutUrl(null);
+    if (!reserva) return;
+    if (transactionId) {
+      try {
+        const txData = await consultarTransaccionWompi(transactionId);
+        if (txData?.status === "APPROVED") {
+          await reservaPersistService.actualizarEstado(reserva.referencia, "CONFIRMADA", transactionId);
+        } else if (txData?.status === "PENDING") {
+          await reservaPersistService.actualizarReserva(reserva.referencia, {
+            estado:
+              txData.payment_method_type === "BANCOLOMBIA_COLLECT"
+                ? "PENDIENTE_EFECTIVO"
+                : "PENDIENTE_VALIDACION",
+            paymentId: transactionId,
+          });
+        }
+      } catch (e) {
+        console.warn("[payment-response] Error consultando transaccion Wompi:", e);
+      }
+    }
+    const actualizada = await reservaPersistService.obtenerPorReferencia(reserva.referencia);
+    if (actualizada) {
+      setReserva(actualizada);
+    }
+  };
+
+  const handleWompiClose = () => {
+    setWompiModalVisible(false);
+    setWompiCheckoutUrl(null);
   };
 
   const resolverMedioPagoTexto = (r: ReservaGuardada): string => {
@@ -973,6 +991,14 @@ export default function PagoRespuestaScreen() {
     </ScrollView>
       </KeyboardAvoidingView>
       )}
+
+      <WompiCheckoutModal
+        visible={wompiModalVisible}
+        checkoutUrl={wompiCheckoutUrl}
+        referencia={reserva?.referencia || ""}
+        onComplete={handleWompiComplete}
+        onClose={handleWompiClose}
+      />
     </View>
   );
 }
