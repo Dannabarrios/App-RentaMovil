@@ -1,4 +1,12 @@
-export type TipoDocumento = "CC" | "TI" | "Doc. Extranjero" | "Pasaporte";
+export type TipoDocumento =
+  | "CC"
+  | "CE"
+  | "Pasaporte"
+  | "DNI"
+  | "PPT"
+  | "PEP"
+  | "TI"
+  | "Doc. Extranjero";
 
 // Nacionalidad es de tipo abierto (string) porque la lista real vive en
 // datos, no en código: sale de mocks/nacionalidades.json y en producción

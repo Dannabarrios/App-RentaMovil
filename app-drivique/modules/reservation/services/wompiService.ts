@@ -1,9 +1,7 @@
-// modules/reserva/services/wompiService.ts
-//
-// Réplica de la integración de Wompi Web Checkout que ya existe en la web
-// (src/services/wompiService.js). Mismas llaves de Sandbox, mismo orden de
-// concatenación para la firma y misma URL de checkout (checkout.wompi.co/p/).
 import { sha256Hex, utf8ToBinaryString } from "./sha256";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import { Platform } from "react-native";
 
 /**
  * Llaves de Sandbox (pub_test_ / test_integrity_) — son las mismas que usa
@@ -77,7 +75,9 @@ interface ConstruirUrlCheckoutParams {
 
 /**
  * Construye la URL del Web Checkout de Wompi (redirección directa a /p/)
- * con todos los parámetros requeridos, incluida la firma de integridad.
+ * con todos los parámetros requeridos, incluida la firma de integridad
+ * y el manejo seguro de redirección (reemplazando localhost por localtest.me
+ * para evitar bloqueos del WAF/CloudFront de Wompi).
  */
 export async function construirUrlCheckout({
   reference,
@@ -85,19 +85,129 @@ export async function construirUrlCheckout({
   redirectUrl,
 }: ConstruirUrlCheckoutParams): Promise<string> {
   const currency = wompiConfig.currency;
-  const firma = await generarFirmaIntegridad(reference, amountInCents, currency);
+  const montoEntero = Math.round(Number(amountInCents));
+  
+  // Limpiar referencia base y garantizar que cada intento de pago tenga un identificador
+  // único para Wompi (_TX<timestamp>), evitando el error de Wompi "La referencia ya ha sido usada"
+  const cleanRef = reference.trim().replace(/\s+/g, "_");
+  const baseRef = cleanRef.includes("_TX") ? cleanRef.split("_TX")[0] : (cleanRef.includes("_") ? cleanRef.split("_")[0] : cleanRef);
+  const uniqueWompiRef = `${baseRef}_TX${Date.now()}`;
+  
+  const firma = await generarFirmaIntegridad(uniqueWompiRef, montoEntero, currency);
 
   const params = new URLSearchParams({
     "public-key": wompiConfig.publicKey,
     currency,
-    "amount-in-cents": String(amountInCents),
-    reference,
+    "amount-in-cents": String(montoEntero),
+    reference: uniqueWompiRef,
     "signature:integrity": firma,
   });
 
-  if (redirectUrl) {
-    params.set("redirect-url", redirectUrl);
+  // Validación estricta para evitar error "redirectUrl: URL inválida" en Wompi
+  let targetRedirect = "https://localtest.me/respuesta";
+
+  if (redirectUrl && typeof redirectUrl === "string" && redirectUrl.trim() !== "") {
+    let clean = redirectUrl.trim();
+    if (clean.startsWith("http://") || clean.startsWith("https://")) {
+      if (clean.includes("localhost")) {
+        clean = clean.replace(/localhost/g, "localtest.me");
+      }
+      if (clean.startsWith("http://")) {
+        clean = clean.replace(/^http:\/\//, "https://");
+      }
+      targetRedirect = clean;
+    } else {
+      // Esquemas móviles como exp:// o rutas personalizadas se homologan a la URL HTTPS válida
+      targetRedirect = "https://localtest.me/respuesta";
+    }
   }
 
+  params.set("redirect-url", targetRedirect);
+
   return `https://checkout.wompi.co/p/?${params.toString()}`;
+}
+
+export interface WompiTransactionResponse {
+  id: string;
+  status: "APPROVED" | "DECLINED" | "VOIDED" | "ERROR" | "PENDING";
+  reference: string;
+  amount_in_cents: number;
+  currency: string;
+  payment_method_type: string;
+  payment_method?: {
+    type?: string;
+    extra?: {
+      name?: string;
+      brand?: string;
+      last_four?: string;
+      async_payment_url?: string;
+      business_agreement_code?: string;
+      payment_reference?: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+/**
+ * Consulta el estado y los detalles de una transacción en Wompi API
+ */
+export async function consultarTransaccionWompi(transactionId: string): Promise<WompiTransactionResponse | null> {
+  try {
+    const res = await fetch(`https://sandbox.wompi.co/v1/transactions/${transactionId}`, {
+      headers: {
+        Authorization: `Bearer ${wompiConfig.publicKey}`,
+      },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data ?? null;
+  } catch (error) {
+    console.warn("[wompiService] Error consultando transaccion:", error);
+    return null;
+  }
+}
+
+/**
+ * Abre el flujo de Web Checkout de Wompi de forma robusta con WebBrowser (Chrome Custom Tabs / Safari).
+ * Evita bloqueos de Modal en React Native, soporta pasarelas bancarias PSE y retorna el resultado.
+ */
+export async function iniciarFlujoWompi({
+  reference,
+  amountInCents,
+  redirectUrl = "https://localtest.me/respuesta",
+}: {
+  reference: string;
+  amountInCents: number;
+  redirectUrl?: string;
+}): Promise<{ transactionId?: string | null; reference: string; cancelado?: boolean }> {
+  const url = await construirUrlCheckout({
+    reference,
+    amountInCents,
+    redirectUrl,
+  });
+
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.location.href = url;
+    return { reference, transactionId: null };
+  }
+
+  const res = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
+
+  let txId: string | null = null;
+  if (res.type === "success" && (res as any).url) {
+    try {
+      const parsed = Linking.parse((res as any).url);
+      txId = (parsed.queryParams?.id as string) || null;
+      if (!txId) {
+        const match = (res as any).url.match(/[?&]id=([^&#]+)/);
+        if (match && match[1]) txId = decodeURIComponent(match[1]);
+      }
+    } catch (e) {
+      console.warn("[wompiService] Error parseando retorno de WebBrowser:", e);
+    }
+  }
+
+  return { transactionId: txId, reference, cancelado: res.type === "cancel" || res.type === "dismiss" };
 }

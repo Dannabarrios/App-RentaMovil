@@ -6,7 +6,6 @@ import {
   FlatList,
   Modal,
   Platform,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { GRADIENTES } from "@/constants/gradients";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
@@ -179,7 +179,7 @@ export default function BuscadorCatalogo({
   const primaryAccent = c.oscuro ? "#60A5FA" : "#2f4ea2";
 
   return (
-    <View style={[styles.containerGeneral, { backgroundColor: c.bgHeader }]}>
+    <View style={[styles.containerGeneral, { backgroundColor: c.bgHeader, borderBottomColor: c.border }]}>
       <View style={styles.searchRow}>
         <View style={[styles.barraInput, { backgroundColor: c.bgInput, borderColor: c.border }]}>
           <Ionicons
@@ -441,6 +441,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
   searchRow: {
     flexDirection: "row",

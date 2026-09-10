@@ -35,7 +35,7 @@ import {
 import { fmt } from "./BookingSummaryModal.pieces";
 import { contratoService, ContratoGuardado } from "../services/contractService";
 import FirmaCanvas, { FirmaCanvasHandle } from "./SignatureCanvas";
-import { crearTextosContrato, generarContratoPdf, leerPdfOriginalBase64 } from "../services/pdfService";
+import { crearTextosContrato, generarContratoPdf } from "../services/pdfService";
 
 interface Punto {
   x: number;
@@ -131,8 +131,14 @@ export default function FirmaContrato({
   };
 
   const direccionCompleta = esDomicilioRetiro
-    ? `${fechasLugar.direccionRetiro || ""}, ${fechasLugar.barrioRetiro || ""}, ${ciudadSucursal} (Ref: ${fechasLugar.referenciasRetiro || ""})`
-    : t("reserva.contrato.notProvided");
+    ? [fechasLugar.direccionRetiro, fechasLugar.barrioRetiro, ciudadSucursal].filter(Boolean).join(", ") + (fechasLugar.referenciasRetiro ? ` (Ref: ${fechasLugar.referenciasRetiro})` : "")
+    : esDomicilioDevolucion
+    ? [fechasLugar.direccionDevolucion, fechasLugar.barrioDevolucion, ciudadSucursal].filter(Boolean).join(", ") + (fechasLugar.referenciasDevolucion ? ` (Ref: ${fechasLugar.referenciasDevolucion})` : "")
+    : "No aplica (Entrega en sucursal)";
+
+  const licenciaTexto =
+    datosDocumentos?.licenciaConduccion?.nombre ||
+    "Licencia verificada en perfil";
 
   const serviciosTexto = useMemo(() => {
     const nombres = (vehiculo?.servicios || [])
@@ -178,7 +184,7 @@ export default function FirmaContrato({
       });
       if (!contrato) throw new Error("No fue posible guardar el contrato firmado");
 
-      const uriContrato = await generarContratoPdf({
+      const pdfResultado = await generarContratoPdf({
         contrato,
         vehiculo,
         datosPersonales,
@@ -191,17 +197,25 @@ export default function FirmaContrato({
         formatearFecha,
         tipoDocumentoTexto,
         textos: crearTextosContrato((key) => t(key)),
+        conBase64: true,
       });
-      const contratoPdfBase64 = await leerPdfOriginalBase64(uriContrato);
-      const contratoCompleto = await contratoService.guardarPdfContrato(
-        referencia,
-        contratoPdfBase64,
-        `contrato-${referencia}.pdf`
-      );
+
+      let contratoCompleto = contrato;
+      if (pdfResultado?.base64) {
+        const guardado = await contratoService.guardarPdfContrato(
+          referencia,
+          pdfResultado.base64,
+          `contrato-${referencia}.pdf`
+        );
+        if (guardado) contratoCompleto = guardado;
+      }
       onFirmado?.(contratoCompleto);
     } catch (error) {
       console.error("[FirmaContrato] Error al guardar la firma", error);
-      Alert.alert(t("reserva.confirmacion.errorPagoTitulo"), t("reserva.confirmacion.errorPagoMensaje"));
+      Alert.alert(
+        t("reserva.contrato.errorFirmaTitulo", { defaultValue: "Error al firmar" }),
+        t("reserva.contrato.errorFirmaMensaje", { defaultValue: "No fue posible guardar el contrato firmado. Por favor inténtalo de nuevo." })
+      );
     } finally {
       setFirmando(false);
     }
@@ -280,7 +294,7 @@ export default function FirmaContrato({
               <Campo label={t("reserva.contrato.address")} valor={direccionCompleta} c={c} />
               <Campo
                 label={t("reserva.contrato.license")}
-                valor={datosDocumentos.licenciaConduccion?.nombre || t("reserva.contrato.notProvided")}
+                valor={licenciaTexto}
                 c={c}
               />
             </View>
@@ -511,32 +525,32 @@ export default function FirmaContrato({
             </View>
           </Seccion>
 
-          <View nativeID="contrato-acciones-descarga">
-            <TouchableOpacity
-              style={styles.firmarBtnWrap}
-              onPress={soloLectura ? onDescargar : handleFirmar}
-              disabled={soloLectura ? descargando : firmando}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={firmando ? ["#94a3b8", "#94a3b8"] : GRADIENTES.boton.colors}
-                start={GRADIENTES.boton.start}
-                end={GRADIENTES.boton.end}
-                style={styles.firmarBtn}
+          {!soloLectura && (
+            <View nativeID="contrato-acciones-descarga">
+              <TouchableOpacity
+                style={styles.firmarBtnWrap}
+                onPress={handleFirmar}
+                disabled={firmando}
+                activeOpacity={0.85}
               >
-                <Ionicons
-                  name={(soloLectura ? descargando : firmando) ? "hourglass-outline" : soloLectura ? "download-outline" : "create-outline"}
-                  size={18}
-                  color="#fff"
-                />
-                <Text style={styles.firmarBtnTexto}>
-                  {soloLectura
-                    ? descargando ? t("misReservas.generandoPdf") : t("misReservas.descargarContrato")
-                    : firmando ? t("reserva.contrato.signing") : t("reserva.contrato.signAndContinue")}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+                <LinearGradient
+                  colors={firmando ? ["#94a3b8", "#94a3b8"] : GRADIENTES.boton.colors}
+                  start={GRADIENTES.boton.start}
+                  end={GRADIENTES.boton.end}
+                  style={styles.firmarBtn}
+                >
+                  <Ionicons
+                    name={firmando ? "hourglass-outline" : "create-outline"}
+                    size={18}
+                    color="#fff"
+                  />
+                  <Text style={styles.firmarBtnTexto}>
+                    {firmando ? t("reserva.contrato.signing") : t("reserva.contrato.signAndContinue")}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={[styles.footer, { borderTopColor: c.border }]}>
             <Text style={[styles.footerTexto, { color: c.textMuted }]}>{t("reserva.contrato.footerNote1")}</Text>

@@ -51,7 +51,7 @@ export function SocialAuthButtons({
           <ActivityIndicator size="small" color="#4285F4" />
         ) : (
           <>
-            <View style={[s.iconCircle, s.iconCircleGoogle]}>
+            <View style={[s.iconCircle, s.iconCircleGoogle, c.oscuro && { backgroundColor: "#FFFFFF" }]}>
               <Image
                 source={{ uri: GOOGLE_LOGO_URI }}
                 style={s.googleLogo}
@@ -87,7 +87,7 @@ export function SocialAuthButtons({
                 contentFit="contain"
               />
             </View>
-            <Text style={s.btnTextoFb}>{t("auth.social.facebook")}</Text>
+            <Text style={[s.btnTextoFb, { color: c.oscuro ? c.textPrimary : "#1877F2" }]}>{t("auth.social.facebook")}</Text>
           </>
         )}
       </TouchableOpacity>

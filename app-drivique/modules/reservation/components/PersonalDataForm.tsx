@@ -3,16 +3,18 @@ import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { useReservaStore } from "@/store/reservationStore";
 import { useUsuarioStore } from "@/store/userStore";
 import React, { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Platform, StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
-import { router } from "expo-router";
 import { AlertModal } from "../../../components/ui/AlertModal";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { useTranslation } from "react-i18next";
 import {
   COLOR_MARCA,
   getPrefijoPorNacionalidad,
+  getSiglaDocumento,
   NACIONALIDADES,
   PORCENTAJE_CARGOS_ADMINISTRATIVOS,
   PORCENTAJE_IVA,
@@ -23,6 +25,7 @@ import { TipoDocumento } from "../types/reservation.types";
 import {
   aCentavos,
   construirUrlCheckout,
+  consultarTransaccionWompi,
   generarReferenciaUnica,
 } from "../services/wompiService";
 import {
@@ -72,6 +75,18 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
   const { t } = useTranslation();
   const OPCIONES_TIPO_DOCUMENTO = useMemo(() => getTiposDocumento(t), [t]);
   const datosPersonales = useReservaStore((s) => s.datosPersonales);
+
+  const opcionesTipoDocumentoFiltradas = useMemo(() => {
+    if (!datosPersonales.nacionalidad) return OPCIONES_TIPO_DOCUMENTO;
+    if (datosPersonales.nacionalidad === "Colombia") {
+      return OPCIONES_TIPO_DOCUMENTO.filter(
+        (o) => o.id === "CC" || o.id === "CE" || o.id === "Pasaporte" || o.id === "PPT" || o.id === "PEP"
+      );
+    }
+    return OPCIONES_TIPO_DOCUMENTO.filter(
+      (o) => o.id === "Pasaporte" || o.id === "DNI" || o.id === "CE" || o.id === "PPT" || o.id === "PEP"
+    );
+  }, [datosPersonales.nacionalidad, OPCIONES_TIPO_DOCUMENTO]);
   const actualizarDatosPersonales = useReservaStore(
     (s) => s.actualizarDatosPersonales,
   );
@@ -99,6 +114,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
   const [alertaFaltantesVisible, setAlertaFaltantesVisible] = useState(false);
   const [alertaEfectivoVisible, setAlertaEfectivoVisible] = useState(false);
   const [alertaErrorPagoVisible, setAlertaErrorPagoVisible] = useState(false);
+  const [alertaCancelarProcesoVisible, setAlertaCancelarProcesoVisible] = useState(false);
   const [procesandoPago, setProcesandoPago] = useState(false);
   const [referenciaActual, setReferenciaActual] = useState<string | null>(null);
   const [mostrarContrato, setMostrarContrato] = useState(false);
@@ -158,7 +174,9 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     const seguros = vehiculo.seguros ?? [];
     const kmLimitado = vehiculo.tarifas?.kmLimitado;
     const kmIlimitado = vehiculo.tarifas?.kmIlimitado;
-    const servicios = vehiculo.servicios ?? [];
+    const servicios = (vehiculo.servicios ?? []).filter(
+      (s) => !s.nombre.toLowerCase().includes("otra ciudad")
+    );
 
     const seguroElegido =
       seguros.find((s) => s.nombre === planes.proteccion) ?? null;
@@ -179,14 +197,9 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     const servAdic = servicios
       .filter((s) => planes.serviciosSeleccionados.includes(s.nombre))
       .reduce((a, s) => a + s.precio * dias, 0);
-    const cargos = Math.round(diarias * PORCENTAJE_CARGOS_ADMINISTRATIVOS);
-    const subtotalBruto =
-      diarias +
-      proteccion +
-      kilometraje +
-      servAdic +
-      cargos +
-      RECARGO_LOGISTICO;
+    const subtotalBase = diarias + proteccion + kilometraje + servAdic;
+    const cargos = Math.round(subtotalBase * PORCENTAJE_CARGOS_ADMINISTRATIVOS);
+    const subtotalBruto = subtotalBase + cargos + RECARGO_LOGISTICO;
       
     let descuentoCupon = 0;
     if (cuponAplicado) {
@@ -197,7 +210,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       }
     }
     
-    const subtotal = subtotalBruto - descuentoCupon;
+    const subtotal = Math.max(subtotalBruto - descuentoCupon, 0);
     const iva = Math.round(subtotal * PORCENTAJE_IVA);
     return subtotal + iva;
   }, [vehiculo, fechasLugar.fechaRetiro, fechasLugar.fechaDevolucion, planes, cuponAplicado]);
@@ -211,15 +224,22 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     const referencia = generarReferenciaUnica();
     const metodoPago = fechasLugar.metodoPago;
 
-    // Si subió un documento nuevo (o todavía no tenía ninguno guardado),
-    // lo dejamos registrado para no volver a pedírselo en la próxima
-    // reserva — igual que en la web.
     if (documentos.cedulaFrente || documentos.licenciaConduccion || !docsVerificados) {
       await documentosService.guardarDocumentos(usuarioGlobal.id, {
         identificacion: documentos.cedulaFrente,
         licencia: documentos.licenciaConduccion,
       });
     }
+
+    const docsGuardados = await documentosService.obtenerDocumentos(usuarioGlobal.id);
+    const nombreLicencia =
+      documentos.licenciaConduccion?.nombre ||
+      docsGuardados?.licencia?.nombre ||
+      "Licencia verificada en perfil";
+    const nombreCedula =
+      documentos.cedulaFrente?.nombre ||
+      docsGuardados?.identificacion?.nombre ||
+      null;
 
     await reservaPersistService.guardarReserva({
       referencia,
@@ -235,15 +255,11 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       lugarDevolucion: fechasLugar.lugarDevolucion,
       proteccion: planes.proteccion,
       tipoKilometraje: planes.tipoKilometraje,
-      // Snapshot completo para poder reconstruir el contrato en la pantalla
-      // de respuesta de pago, ya que ahí el store de la reserva en curso
-      // (useReservaStore) ya se limpió.
       vehiculoSnapshot: vehiculo,
       datosPersonalesSnapshot: datosPersonales,
       datosDocumentosSnapshot: {
-        licenciaConduccion: documentos.licenciaConduccion
-          ? { nombre: documentos.licenciaConduccion.nombre }
-          : null,
+        cedulaFrente: nombreCedula ? { nombre: nombreCedula } : null,
+        licenciaConduccion: nombreLicencia ? { nombre: nombreLicencia } : null,
       },
       fechasLugarSnapshot: fechasLugar,
       planesSnapshot: planes,
@@ -258,24 +274,28 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     }
   };
 
-  const handleCerrarInstruccionesEfectivo = () => {
+  const handleIrAMisReservas = () => {
     setModalInstruccionesEfectivoVisible(false);
     limpiarReserva();
     router.replace("/(tabs)/my-bookings");
   };
 
-  const handleCancelarInstruccionesEfectivo = async () => {
+  const handleVolverAlInicio = () => {
     setModalInstruccionesEfectivoVisible(false);
-    if (referenciaActual) {
-      await reservaPersistService.eliminarReserva(referenciaActual);
-    }
+    limpiarReserva();
+    router.replace("/(tabs)");
   };
 
-  const handleCancelarModalReserva = async () => {
+  const handlePagarMasTarde = () => {
     setModalReservaVisible(false);
-    if (referenciaActual) {
-      await reservaPersistService.eliminarReserva(referenciaActual);
-    }
+    limpiarReserva();
+    router.replace("/(tabs)/my-bookings");
+  };
+
+  const handleConfirmarCancelarProceso = () => {
+    setAlertaCancelarProcesoVisible(false);
+    limpiarReserva();
+    router.replace("/(tabs)");
   };
 
   const handleContratoFirmado = async () => {
@@ -292,7 +312,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
     setProcesandoPago(true);
 
     try {
-      const redirectUrl = Linking.createURL("pago-respuesta");
+      const redirectUrl = "https://localtest.me/respuesta";
       const amountInCents = aCentavos(total);
 
       const url = await construirUrlCheckout({
@@ -301,62 +321,26 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         redirectUrl,
       });
 
-      const resultado = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
+      limpiarReserva();
 
-      if (resultado.type === "success" && resultado.url) {
-        const { queryParams } = Linking.parse(resultado.url);
-        const transactionId =
-          typeof queryParams?.id === "string" ? queryParams.id : null;
-
-        let nuevoEstado: "PENDIENTE_VALIDACION" | "PENDIENTE_EFECTIVO" | "CONFIRMADA" = "PENDIENTE_VALIDACION";
-
-        if (transactionId) {
-          try {
-            const resp = await fetch(`https://sandbox.wompi.co/v1/transactions/${transactionId}`);
-            const json = await resp.json();
-            if (json?.data) {
-              const methodType = json.data.payment_method_type;
-              const status = json.data.status;
-
-              if (methodType === "BANCOLOMBIA_COLLECT") {
-                nuevoEstado = "PENDIENTE_EFECTIVO";
-              } else if (status === "APPROVED") {
-                nuevoEstado = "CONFIRMADA";
-              } else {
-                nuevoEstado = "PENDIENTE_VALIDACION";
-              }
-            }
-          } catch (error) {
-            console.error("[FormDatosPersonales] Error consultando transaccion de Wompi:", error);
-          }
-        }
-
-        await reservaPersistService.actualizarEstado(
-          referenciaActual,
-          nuevoEstado,
-          transactionId
-        );
-
-        limpiarReserva();
-
-        if (nuevoEstado === "PENDIENTE_EFECTIVO") {
-          router.replace("/(tabs)/my-bookings");
-        } else {
-          router.replace(`/payment-response?ref=${encodeURIComponent(referenciaActual)}`);
-        }
-      } else {
-        // El usuario canceló el checkout o Wompi no completó la redirección.
-        // Borramos la reserva de la base de datos para no dejar reservas fantasma.
-        // Los datos del formulario se mantienen en memoria para que pueda reintentar.
-        await reservaPersistService.eliminarReserva(referenciaActual);
-        setAlertaErrorPagoVisible(true);
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.location.href = url;
+        return;
       }
+
+      router.push({
+        pathname: "/wompi-checkout",
+        params: {
+          url: encodeURIComponent(url),
+          ref: encodeURIComponent(referenciaActual),
+        },
+      });
     } catch (error) {
-      console.error("[FormDatosPersonales] Error en el pago con Wompi", error);
-      if (referenciaActual) {
-        await reservaPersistService.eliminarReserva(referenciaActual);
-      }
-      setAlertaErrorPagoVisible(true);
+      console.error("[FormDatosPersonales] Error iniciando checkout de Wompi", error);
+      Alert.alert(
+        t("comun.error", { defaultValue: "Error" }),
+        t("reserva.confirmacion.errorWompi", { defaultValue: "No se pudo abrir la pasarela de pago de Wompi." })
+      );
     } finally {
       setProcesandoPago(false);
     }
@@ -367,7 +351,10 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       <FirmaContrato
         vehiculo={vehiculo}
         datosPersonales={datosPersonales}
-        datosDocumentos={documentos}
+        datosDocumentos={{
+          ...documentos,
+          licenciaConduccion: documentos.licenciaConduccion || { nombre: "Licencia verificada en perfil" },
+        }}
         fechasLugar={fechasLugar}
         planes={planes}
         total={total}
@@ -379,29 +366,41 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 
   return (
     <View>
-      <Text style={[styles.seccionLabel, { color: c.textMuted }]}>{t("reserva.datosPersonales.titulo")}</Text>
+      {/* Tarjeta Padre Contenedora */}
+      <View style={[styles.cardPadre, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+        {/* Tarjeta de Formulario de Datos Personales */}
+        <View style={[styles.cardForm, { backgroundColor: c.oscuro ? "#111827" : "#FFFFFF", borderColor: c.oscuro ? "#334155" : "#E2E8F0" }]}>
+          <View style={styles.cardHeaderFila}>
+            <Ionicons name="person" size={15} color={primaryAccent} />
+            <Text style={[styles.cardHeaderTitulo, { color: primaryAccent }]}>
+              {t("reserva.datosPersonales.titulo", { defaultValue: "Datos personales" })}
+            </Text>
+          </View>
 
-      <View style={[styles.card, { backgroundColor: c.bgCard }]}>
-        <View style={[styles.subcard, { backgroundColor: c.bgCard, borderColor: brandBg }]}>
-          <Text style={[styles.subtitulo, { color: c.textMuted }]}>
-            {t("reserva.datosPersonales.subtitulo")}
-          </Text>
-          <Text style={[styles.nota, { color: primaryAccent }]}>
-            {t("reserva.datosPersonales.camposObligatorios")}
+          <Text style={[styles.cardSubtitulo, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+            {t("reserva.datosPersonales.subtitulo", {
+              defaultValue: "Completa tus datos de contacto para la reserva y el contrato digital",
+            })}
           </Text>
 
-          <View style={[styles.separador, { backgroundColor: c.border }]} />
+          <View style={[styles.divider, { backgroundColor: c.oscuro ? c.border : "#E2E8F0" }]} />
 
           <View style={styles.campo}>
-            <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.datosPersonales.nombreCompleto")}</Text>
+            <Text style={[styles.inputLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+              {t("reserva.datosPersonales.nombreCompleto", { defaultValue: "Nombre completo *" })}
+            </Text>
             <TextInput
-              style={[styles.input, { backgroundColor: c.bgInput, borderColor: brandBg, color: c.textPrimary }]}
+              style={[
+                styles.input,
+                { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0", color: c.oscuro ? "#F8FAFC" : "#0F172A" },
+              ]}
               value={datosPersonales.nombreCompleto}
               onChangeText={(v) => {
                 actualizarDatosPersonales({ nombreCompleto: v });
                 const { nombres, apellidos } = separarNombreCompleto(v);
                 actualizarUsuarioGlobal({ nombres, apellidos });
               }}
+              placeholder="Ej. Juan Pérez"
               placeholderTextColor={c.textMuted}
               autoCapitalize="words"
             />
@@ -409,25 +408,49 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 
           <View style={styles.campo}>
             <CampoSelectorLista
-              etiqueta={t("reserva.datosPersonales.nacionalidad")}
+              etiqueta={t("reserva.datosPersonales.nacionalidad", { defaultValue: "Nacionalidad *" })}
               valorSeleccionado={datosPersonales.nacionalidad || null}
               opciones={OPCIONES_NACIONALIDAD}
+              placeholder={t("perfil.seleccionar", { defaultValue: "Seleccionar" })}
               onSeleccionar={(id) => {
                 actualizarDatosPersonales({ nacionalidad: id });
                 actualizarUsuarioGlobal({ nacionalidad: id });
+                if (id === "Colombia") {
+                  if (
+                    datosPersonales.tipoDocumento &&
+                    !["CC", "CE", "Pasaporte", "PPT", "PEP"].includes(datosPersonales.tipoDocumento)
+                  ) {
+                    actualizarDatosPersonales({ tipoDocumento: null });
+                    actualizarUsuarioGlobal({ tipoDocumento: "" });
+                  }
+                } else {
+                  if (
+                    datosPersonales.tipoDocumento &&
+                    !["Pasaporte", "DNI", "CE", "PPT", "PEP"].includes(datosPersonales.tipoDocumento)
+                  ) {
+                    actualizarDatosPersonales({ tipoDocumento: null });
+                    actualizarUsuarioGlobal({ tipoDocumento: "" });
+                  }
+                }
               }}
             />
           </View>
 
           <View style={styles.campo}>
-            <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.datosPersonales.correoElectronico")}</Text>
+            <Text style={[styles.inputLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+              {t("reserva.datosPersonales.correoElectronico", { defaultValue: "Correo electrónico *" })}
+            </Text>
             <TextInput
-              style={[styles.input, { backgroundColor: c.bgInput, borderColor: brandBg, color: c.textPrimary }]}
+              style={[
+                styles.input,
+                { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0", color: c.oscuro ? "#F8FAFC" : "#0F172A" },
+              ]}
               value={datosPersonales.correo}
               onChangeText={(v) => {
                 actualizarDatosPersonales({ correo: v });
                 actualizarUsuarioGlobal({ correo: v });
               }}
+              placeholder="cliente@drivique.com"
               placeholderTextColor={c.textMuted}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -435,51 +458,59 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
           </View>
 
           <View style={styles.campo}>
-            <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.datosPersonales.numeroCelular")}</Text>
-            <View style={styles.filaCelular}>
-              <View
-                style={[
-                  styles.prefijoBox,
-                  { backgroundColor: c.primaryBg, borderColor: brandBg },
-                  !hayPrefijo && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6" },
-                ]}
-              >
-                <Text
+            <Text style={[styles.inputLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+              {t("reserva.datosPersonales.numeroCelular", { defaultValue: "Teléfono celular *" })}
+            </Text>
+            {hayPrefijo ? (
+              <View style={styles.filaCelular}>
+                <View
                   style={[
-                    styles.prefijoText,
-                    { color: primaryAccent },
-                    !hayPrefijo && { color: c.textMuted },
+                    styles.prefijoBox,
+                    { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0" },
                   ]}
                 >
-                  {hayPrefijo ? prefijoTelefono : ""}
-                </Text>
+                  <Text style={[styles.prefijoText, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+                    {prefijoTelefono}
+                  </Text>
+                </View>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.inputCelular,
+                    { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0", color: c.oscuro ? "#F8FAFC" : "#0F172A" },
+                  ]}
+                  value={datosPersonales.celular}
+                  onChangeText={(v) => {
+                    const digits = v.replace(/\D/g, "");
+                    actualizarDatosPersonales({ celular: digits });
+                    actualizarUsuarioGlobal({ telefono: digits });
+                  }}
+                  keyboardType="phone-pad"
+                  placeholder="Ej. 3144214909"
+                  placeholderTextColor={c.textMuted}
+                />
               </View>
+            ) : (
               <TextInput
                 style={[
                   styles.input,
-                  styles.inputCelular,
-                  { backgroundColor: c.bgInput, borderColor: brandBg, color: c.textPrimary },
-                  !hayPrefijo && { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", color: c.textMuted },
+                  { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", borderColor: c.border, color: c.textMuted },
                 ]}
                 value={datosPersonales.celular}
-                onChangeText={(v) => {
-                  const digits = v.replace(/\D/g, "");
-                  actualizarDatosPersonales({ celular: digits });
-                  actualizarUsuarioGlobal({ telefono: digits });
-                }}
-                keyboardType="phone-pad"
-                placeholder={hayPrefijo ? undefined : ""}
+                placeholder="3144214909"
                 placeholderTextColor={c.textMuted}
-                editable={hayPrefijo}
+                editable={false}
               />
-            </View>
+            )}
           </View>
 
           <View style={styles.campo}>
             <CampoSelectorLista
-              etiqueta={t("reserva.datosPersonales.tipoDeDocumento")}
+              etiqueta={t("reserva.datosPersonales.tipoDeDocumento", { defaultValue: "Tipo de documento *" })}
               valorSeleccionado={datosPersonales.tipoDocumento}
-              opciones={OPCIONES_TIPO_DOCUMENTO}
+              opciones={opcionesTipoDocumentoFiltradas}
+              deshabilitado={!hayPrefijo}
+              placeholder={t("perfil.seleccionar", { defaultValue: "Seleccionar" })}
               onSeleccionar={(id) => {
                 actualizarDatosPersonales({
                   tipoDocumento: id as typeof datosPersonales.tipoDocumento,
@@ -492,36 +523,104 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
           </View>
 
           <View style={[styles.campo, { marginBottom: 0 }]}>
-            <Text style={[styles.inputLabel, { color: c.textSecondary }]}>{t("reserva.datosPersonales.numeroDeDocumento")}</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: c.bgInput, borderColor: brandBg, color: c.textPrimary }]}
-              value={datosPersonales.numeroDocumento}
-              onChangeText={(v) => {
-                actualizarDatosPersonales({ numeroDocumento: v });
-                actualizarUsuarioGlobal({ numeroDocumento: v });
-              }}
-              placeholderTextColor={c.textMuted}
-              keyboardType="numeric"
-            />
+            <Text style={[styles.inputLabel, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+              {t("reserva.datosPersonales.numeroDeDocumento", { defaultValue: "Número de documento *" })}
+            </Text>
+            {datosPersonales.tipoDocumento ? (
+              <View style={styles.filaCelular}>
+                <View
+                  style={[
+                    styles.prefijoBox,
+                    { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0" },
+                  ]}
+                >
+                  <Text style={[styles.prefijoText, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+                    {getSiglaDocumento(datosPersonales.tipoDocumento)}
+                  </Text>
+                </View>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.inputCelular,
+                    { backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC", borderColor: c.oscuro ? c.border : "#E2E8F0", color: c.oscuro ? "#F8FAFC" : "#0F172A" },
+                  ]}
+                  value={datosPersonales.numeroDocumento}
+                  onChangeText={(v) => {
+                    actualizarDatosPersonales({ numeroDocumento: v });
+                    actualizarUsuarioGlobal({ numeroDocumento: v });
+                  }}
+                  placeholder={
+                    datosPersonales.tipoDocumento === "Pasaporte"
+                      ? "Ej. P12345678"
+                      : "Ej. 1075228306"
+                  }
+                  placeholderTextColor={c.textMuted}
+                  keyboardType={
+                    datosPersonales.tipoDocumento === "CC" || datosPersonales.tipoDocumento === "TI"
+                      ? "numeric"
+                      : "default"
+                  }
+                />
+              </View>
+            ) : (
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: c.oscuro ? "#1F2937" : "#F3F4F6", borderColor: c.border, color: c.textMuted },
+                ]}
+                value={datosPersonales.numeroDocumento}
+                placeholder="1075228306"
+                placeholderTextColor={c.textMuted}
+                editable={false}
+              />
+            )}
           </View>
         </View>
       </View>
 
-      <TarjetaVerificacionDocumental
-        tipoDocumento={datosPersonales.tipoDocumento ?? undefined}
-        docsVerificados={docsVerificados}
-      />
-      
-      <CouponSection vehiculo={vehiculo} />
-      
-      <TarjetaTerminosCondiciones />
+      {/* 2. Tarjeta Padre de Verificación Documental */}
+      <View style={[styles.cardPadre, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+        <TarjetaVerificacionDocumental
+          tipoDocumento={datosPersonales.tipoDocumento ?? undefined}
+          docsVerificados={docsVerificados}
+        />
+      </View>
 
-      <BarraTotalConfirmar total={total} onConfirmar={handleConfirmarReserva} />
+      {/* 3. Tarjeta Padre de Cupón y Políticas */}
+      <View style={[styles.cardPadre, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+        <CouponSection vehiculo={vehiculo} />
+        <TarjetaTerminosCondiciones />
+      </View>
+
+      {/* Aviso informativo previo a la confirmación */}
+      <View
+        style={[
+          styles.bannerAviso,
+          {
+            backgroundColor: c.oscuro ? "#17255433" : "#EFF6FF",
+            borderColor: c.oscuro ? "#1D4ED8" : "#BFDBFE",
+          },
+        ]}
+      >
+        <Ionicons name="information-circle-outline" size={17} color={primaryAccent} style={{ marginTop: 1 }} />
+        <Text style={[styles.bannerAvisoTexto, { color: c.oscuro ? "#93C5FD" : "#1E40AF" }]}>
+          {t("reserva.confirmacion.avisoGuardadoAutomatico", {
+            defaultValue:
+              "Al confirmar la reserva, quedará guardada automáticamente en tu cuenta. Tendrás un plazo de 72 horas para completar el pago antes de su cancelación automática.",
+          })}
+        </Text>
+      </View>
+
+      <BarraTotalConfirmar
+        total={total}
+        onConfirmar={handleConfirmarReserva}
+        onCancelar={() => setAlertaCancelarProcesoVisible(true)}
+      />
 
       <ModalReservaRegistrada
         visible={modalReservaVisible}
         onPagarWompi={handlePagarWompi}
-        onCerrar={handleCancelarModalReserva}
+        onCerrar={handlePagarMasTarde}
       />
 
       <BranchCashPaymentModal
@@ -529,8 +628,30 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         referencia={referenciaActual || ""}
         nombreSucursal={vehiculo.sucursal || ""}
         total={total}
-        onCerrar={handleCerrarInstruccionesEfectivo}
-        onCancelar={handleCancelarInstruccionesEfectivo}
+        onIrAMisReservas={handleIrAMisReservas}
+        onVolverAlInicio={handleVolverAlInicio}
+      />
+
+      <AlertModal
+        visible={alertaCancelarProcesoVisible}
+        icono="alert-circle-outline"
+        titulo={t("reserva.confirmacion.cancelarProcesoTitulo", { defaultValue: "¿Cancelar proceso de reserva?" })}
+        mensaje={t("reserva.confirmacion.cancelarProcesoMensaje", {
+          defaultValue: "Se descartarán los datos ingresados en este proceso y regresarás al catálogo de vehículos.",
+        })}
+        botones={[
+          {
+            texto: t("comun.no", { defaultValue: "No, continuar" }),
+            variante: "secundario",
+            onPress: () => setAlertaCancelarProcesoVisible(false),
+          },
+          {
+            texto: t("reserva.confirmacion.siCancelar", { defaultValue: "Sí, cancelar reserva" }),
+            variante: "primario",
+            onPress: handleConfirmarCancelarProceso,
+          },
+        ]}
+        onCerrar={() => setAlertaCancelarProcesoVisible(false)}
       />
 
       <AlertModal
@@ -576,66 +697,94 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 }
 
 const styles = StyleSheet.create({
-  seccionLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  card: {
+  cardPadre: {
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
-  subcard: {
-    borderWidth: 1.3,
-    borderRadius: 12,
-    padding: 12,
+  cardForm: {
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
   },
-  subtitulo: { fontSize: 12, marginBottom: 8 },
-  nota: { fontSize: 10.5, fontStyle: "italic" },
-  separador: {
+  cardHeaderFila: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginBottom: 4,
+  },
+  cardHeaderTitulo: {
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 0,
+    includeFontPadding: false,
+    textAlignVertical: "center",
+  },
+  cardSubtitulo: {
+    fontSize: 12.5,
+    fontWeight: "400",
+    lineHeight: 17.5,
+    marginBottom: 12,
+  },
+  divider: {
     height: 1,
-    marginTop: 14,
+    marginBottom: 16,
+  },
+  campo: {
     marginBottom: 14,
   },
-
-  campo: { marginBottom: 14 },
-
   inputLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
   },
   input: {
-    borderWidth: 1.3,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
-    fontSize: 12,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 46,
+    fontSize: 14,
+    fontWeight: "400",
   },
-  inputDeshabilitado: {
-    color: "#9CA3AF",
+  filaCelular: {
+    flexDirection: "row",
+    gap: 8,
   },
-
-  filaCelular: { flexDirection: "row", gap: 10 },
   prefijoBox: {
-    borderWidth: 1.3,
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 46,
     justifyContent: "center",
-    minWidth: 46,
     alignItems: "center",
+    minWidth: 50,
   },
-  prefijoBoxVacio: {},
-  prefijoText: { fontSize: 12, fontWeight: "700" },
-  prefijoTextVacio: {},
-  inputCelular: { flex: 1 },
+  prefijoText: {
+    fontSize: 13.5,
+    fontWeight: "600",
+  },
+  inputCelular: {
+    flex: 1,
+  },
+  bannerAviso: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  bannerAvisoTexto: {
+    flex: 1,
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontWeight: "500",
+  },
 });

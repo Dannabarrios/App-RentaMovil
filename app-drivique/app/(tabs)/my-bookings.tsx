@@ -14,6 +14,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { GRADIENTES } from "@/constants/gradients";
@@ -28,11 +30,12 @@ import {
 } from "@/modules/reservation/services/reservationPersistService";
 import { ResenaGuardada, resenaService } from "@/modules/reservation/services/resenaService";
 import { ModalCalificar } from "@/modules/reservation/components/ModalCalificar";
-import { BranchCashPaymentModal } from "@/modules/reservation/components/BranchCashPaymentModal";
 import { fmt, fechaCorta } from "@/modules/reservation/components/BookingSummaryModal.pieces";
 import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { AlertModal } from "@/components/ui/AlertModal";
 import { useUsuarioStore } from "@/store/userStore";
+import { aCentavos, construirUrlCheckout, consultarTransaccionWompi } from "@/modules/reservation/services/wompiService";
+import { Platform } from "react-native";
 
 const COLOR_GRUPO: Record<GrupoReserva, string> = {
   pendiente: "#f59e0b",
@@ -69,11 +72,38 @@ function etiquetaMesCorto(claveYYYYMM: string, locale: string): string {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
+function formatHora12(horaStr?: string | null): string {
+  if (!horaStr) return "";
+  const partes = String(horaStr).trim().split(":");
+  if (partes.length < 2) return String(horaStr);
+  let h = parseInt(partes[0], 10);
+  const m = partes[1].slice(0, 2);
+  if (isNaN(h)) return String(horaStr);
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+function formatFechaCompleta(fechaStr?: string | null, locale: string = "es-CO"): string {
+  if (!fechaStr) return "";
+  const clean = String(fechaStr).split("T")[0];
+  const d = new Date(`${clean}T00:00:00`);
+  if (isNaN(d.getTime())) return String(fechaStr);
+  const texto = d.toLocaleDateString(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 export default function MisReservasScreen() {
   const insets = useSafeAreaInsets();
   const c = useTemaColores();
   const { t } = useTranslation();
-  const { idiomaActual } = useIdioma();
+  const { idiomaActual, temaActual, toggleTema } = useIdioma();
   const usuario = useUsuarioStore((state) => state.usuario);
   const usuarioId = usuario.id;
   const usuarioCorreo = usuario.correo;
@@ -100,11 +130,54 @@ export default function MisReservasScreen() {
           setReservas(
             [...data].sort((a, b) => {
               const fechaA = String(a.fechaRetiro || a.fechaReserva || "");
+              const horaA = String((a.fechasLugarSnapshot as any)?.horaRetiro || a.horaRetiro || "00:00");
               const fechaB = String(b.fechaRetiro || b.fechaReserva || "");
-              return fechaB.localeCompare(fechaA);
+              const horaB = String((b.fechasLugarSnapshot as any)?.horaRetiro || b.horaRetiro || "00:00");
+              const fullA = `${fechaA}T${horaA}`;
+              const fullB = `${fechaB}T${horaB}`;
+              return fullB.localeCompare(fullA);
             })
           );
           setCargando(false);
+
+          // Verificar en segundo plano si Wompi ya aprobó algún pago pendiente
+          const pendientesConPago = data.filter(
+            (r) => (r.estado === "PENDIENTE_EFECTIVO" || r.estado === "PENDIENTE_VALIDACION" || r.estado === "PENDIENTE") && r.paymentId
+          );
+          if (pendientesConPago.length > 0) {
+            let huboCambios = false;
+            for (const p of pendientesConPago) {
+              try {
+                const tx = await consultarTransaccionWompi(p.paymentId!);
+                if (tx && tx.status === "APPROVED") {
+                  await reservaPersistService.actualizarReserva(p.referencia, {
+                    estado: "CONFIRMADA",
+                  });
+                  huboCambios = true;
+                }
+              } catch (e) {
+                // Silencioso
+              }
+            }
+            if (huboCambios && activo) {
+              const dataActualizada = await reservaPersistService.getReservasUsuario({
+                id: usuarioId,
+                correo: usuarioCorreo,
+                numeroDocumento: usuarioDocumento,
+              });
+              setReservas(
+                [...dataActualizada].sort((a, b) => {
+                  const fechaA = String(a.fechaRetiro || a.fechaReserva || "");
+                  const horaA = String((a.fechasLugarSnapshot as any)?.horaRetiro || a.horaRetiro || "00:00");
+                  const fechaB = String(b.fechaRetiro || b.fechaReserva || "");
+                  const horaB = String((b.fechasLugarSnapshot as any)?.horaRetiro || b.horaRetiro || "00:00");
+                  const fullA = `${fechaA}T${horaA}`;
+                  const fullB = `${fechaB}T${horaB}`;
+                  return fullB.localeCompare(fullA);
+                })
+              );
+            }
+          }
         }
       })();
       return () => {
@@ -122,8 +195,6 @@ export default function MisReservasScreen() {
 
   const locale = LOCALE_POR_IDIOMA[idiomaActual] ?? "es-CO";
 
-  // Los 12 meses del año actual (siempre los 12, tenga o no reservas, para
-  // poder filtrar por cualquier mes).
   const anioActual = new Date().getFullYear();
   const mesesDelAnio = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
@@ -160,6 +231,38 @@ export default function MisReservasScreen() {
   const irADetalle = (referencia: string) =>
     router.push(`/payment-response?ref=${encodeURIComponent(referencia)}`);
 
+  const handlePagarWompi = async (reserva: ReservaGuardada) => {
+    try {
+      const redirectUrl = "https://localtest.me/respuesta";
+      const amountInCents = aCentavos(reserva.total);
+      const attemptRef = `${reserva.referencia}_${Date.now()}`;
+      const url = await construirUrlCheckout({
+        reference: attemptRef,
+        amountInCents,
+        redirectUrl,
+      });
+
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.location.href = url;
+        return;
+      }
+
+      router.push({
+        pathname: "/wompi-checkout",
+        params: {
+          url: encodeURIComponent(url),
+          ref: encodeURIComponent(reserva.referencia),
+        },
+      });
+    } catch (err) {
+      console.error("[my-bookings] Error abriendo Wompi", err);
+      Alert.alert(
+        t("comun.error", { defaultValue: "Error" }),
+        t("reserva.confirmacion.errorWompi", { defaultValue: "No se pudo abrir la pasarela de pago de Wompi." })
+      );
+    }
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: c.bg }]}>
       <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
@@ -169,10 +272,33 @@ export default function MisReservasScreen() {
         end={GRADIENTES.boton.end}
         style={styles.header}
       >
-        <Text style={[styles.headerTitulo, { color: "#ffffff" }]}>{t("misReservas.titulo")}</Text>
-        <Text style={[styles.headerSubtitulo, { color: "rgba(255,255,255,0.7)" }]}>
-          {t("misReservas.subtitulo")}
-        </Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text style={[styles.headerTitulo, { color: "#ffffff" }]}>{t("misReservas.titulo")}</Text>
+            <Text style={[styles.headerSubtitulo, { color: "rgba(255,255,255,0.7)" }]}>
+              {t("misReservas.subtitulo")}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "rgba(255, 255, 255, 0.18)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 2,
+            }}
+            onPress={toggleTema}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name={temaActual === "oscuro" ? "sunny-outline" : "moon-outline"}
+              size={18}
+              color="#ffffff"
+            />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {!cargando && reservas.length > 0 && (
@@ -279,7 +405,49 @@ export default function MisReservasScreen() {
           keyExtractor={(item) => item.referencia}
           contentContainerStyle={styles.lista}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => <TarjetaReserva reserva={item} usuarioId={usuarioKey} c={c} t={t} onPress={() => irADetalle(item.referencia)} />}
+          renderItem={({ item }) => {
+            const horaRetiro = (item.fechasLugarSnapshot as any)?.horaRetiro || item.horaRetiro;
+            const horaDevolucion = (item.fechasLugarSnapshot as any)?.horaDevolucion || item.horaDevolucion;
+            const horaRetiroFmt = formatHora12(horaRetiro);
+            const horaDevolucionFmt = formatHora12(horaDevolucion);
+
+            return (
+              <View style={styles.itemWrapper}>
+                {/* ── Encabezado exterior de Fecha y Hora (Arriba de la tarjeta) ── */}
+                <View style={[styles.fechaHoraBarra, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+                  <View style={[styles.fechaHoraIconoWrap, { backgroundColor: c.primaryBg }]}>
+                    <Ionicons name="calendar-outline" size={14} color={c.primary} />
+                  </View>
+                  <View style={styles.fechaHoraInfo}>
+                    <Text style={[styles.fechaHoraTexto, { color: c.textPrimary }]} numberOfLines={1}>
+                      {item.fechaRetiro ? formatFechaCompleta(String(item.fechaRetiro), locale) : "—"}
+                      {"  →  "}
+                      {item.fechaDevolucion ? formatFechaCompleta(String(item.fechaDevolucion), locale) : "—"}
+                    </Text>
+                    {(horaRetiroFmt || horaDevolucionFmt) ? (
+                      <View style={styles.horasFila}>
+                        <Ionicons name="time-outline" size={12} color={c.textMuted} />
+                        <Text style={[styles.horasTexto, { color: c.textSecondary }]} numberOfLines={1}>
+                          {horaRetiroFmt ? `${t("misReservas.card.recogida", { defaultValue: "Recogida" })}: ${horaRetiroFmt}` : ""}
+                          {horaRetiroFmt && horaDevolucionFmt ? "  ·  " : ""}
+                          {horaDevolucionFmt ? `${t("misReservas.card.devolucion", { defaultValue: "Devolución" })}: ${horaDevolucionFmt}` : ""}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+
+                {/* ── Tarjeta de la Reserva ── */}
+                <TarjetaReserva
+                  reserva={item}
+                  usuarioId={usuarioKey}
+                  c={c}
+                  t={t}
+                  onPress={() => irADetalle(item.referencia)}
+                />
+              </View>
+            );
+          }}
         />
       )}
 
@@ -406,7 +574,7 @@ function TarjetaReserva({
           <Image source={{ uri: foto }} style={styles.tarjetaFoto} />
         ) : (
           <View style={[styles.tarjetaFotoVacia, { backgroundColor: c.bgInput }]}>
-            <Ionicons name="car-sport-outline" size={20} color={c.textMuted} />
+            <Ionicons name="car-sport-outline" size={24} color={c.textMuted} />
           </View>
         )}
 
@@ -415,7 +583,15 @@ function TarjetaReserva({
             <Text style={[styles.tarjetaVehiculo, { color: c.textPrimary }]} numberOfLines={1}>
               {reserva.vehiculoNombre}
             </Text>
-            <View style={[styles.badge, { backgroundColor: `${COLOR_GRUPO[grupo]}22` }]}>
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: `${COLOR_GRUPO[grupo]}18`,
+                  borderColor: `${COLOR_GRUPO[grupo]}40`,
+                },
+              ]}
+            >
               <View style={[styles.badgeDot, { backgroundColor: COLOR_GRUPO[grupo] }]} />
               <Text style={[styles.badgeTexto, { color: COLOR_GRUPO[grupo] }]} numberOfLines={1}>
                 {t(`misReservas.grupos.${grupo}`)}
@@ -423,22 +599,28 @@ function TarjetaReserva({
             </View>
           </View>
 
-          <Text style={[styles.tarjetaFechas, { color: c.textSecondary }]} numberOfLines={1}>
-            {reserva.fechaRetiro ? fechaCorta(String(reserva.fechaRetiro)) : "—"}
-            {" → "}
-            {reserva.fechaDevolucion ? fechaCorta(String(reserva.fechaDevolucion)) : "—"}
-          </Text>
+          {/* Detalles técnicos / entrega del vehículo */}
+          <View style={styles.tarjetaDetallesFila}>
+            {vehiculoSnap?.transmision ? (
+              <Text style={[styles.tarjetaDetallesTexto, { color: c.textSecondary }]} numberOfLines={1}>
+                {vehiculoSnap.transmision}
+                {vehiculoSnap.combustible ? ` · ${vehiculoSnap.combustible}` : ""}
+                {vehiculoSnap.categoria ? ` · ${vehiculoSnap.categoria}` : ""}
+              </Text>
+            ) : (
+              <Text style={[styles.tarjetaDetallesTexto, { color: c.textSecondary }]} numberOfLines={1}>
+                {reserva.lugarRetiro ? (reserva.lugarRetiro === "sucursal" ? "📍 Sucursal Principal" : "📍 Entrega a Domicilio") : "📍 Drivique Rent a Car"}
+              </Text>
+            )}
+          </View>
 
           <View style={styles.tarjetaFooter}>
             <Text style={[styles.tarjetaReferencia, { color: c.textMuted }]} numberOfLines={1}>
-              {reserva.referencia}
+              #{reserva.referencia}
             </Text>
             <Text style={[styles.tarjetaTotal, { color: c.textPrimary }]}>{fmt(reserva.total)}</Text>
           </View>
 
-
-
-          {/* Botón para reportar incidencia en el vehículo */}
           {(grupo === "confirmada" || grupo === "en_curso") && (
             <TouchableOpacity
               style={[styles.reportarBtn, { backgroundColor: c.bgInput, borderColor: c.border }]}
@@ -471,30 +653,19 @@ function TarjetaReserva({
               }}
               activeOpacity={0.8}
             >
-              {resena ? (
-                <>
-                  <View style={{ flexDirection: "row", gap: 1 }}>
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <Ionicons
-                        key={i}
-                        name={i < resena.calificacion ? "star" : "star-outline"}
-                        size={13}
-                        color="#F59E0B"
-                      />
-                    ))}
-                  </View>
-                  <Text style={[styles.reportarBtnText, { color: c.primary }]} numberOfLines={1}>
-                    {t("misReservas.editarCalificacion")}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="star-outline" size={13} color={c.primary} />
-                  <Text style={[styles.reportarBtnText, { color: c.primary }]}>
-                    {t("misReservas.calificarViaje")}
-                  </Text>
-                </>
-              )}
+              <View style={{ flexDirection: "row", gap: 1 }}>
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Ionicons
+                    key={i}
+                    name={i < (resena?.calificacion || 0) ? "star" : "star-outline"}
+                    size={13}
+                    color="#F59E0B"
+                  />
+                ))}
+              </View>
+              <Text style={[styles.reportarBtnText, { color: c.primary }]} numberOfLines={1}>
+                {resena ? t("misReservas.editarCalificacion") : t("misReservas.calificarViaje")}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -602,11 +773,52 @@ const styles = StyleSheet.create({
   todosMesesTexto: { fontSize: 13.5 },
 
   lista: { padding: 16, paddingBottom: 40 },
+  itemWrapper: {
+    marginBottom: 16,
+  },
+  fechaHoraBarra: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    gap: 10,
+  },
+  fechaHoraIconoWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fechaHoraInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  fechaHoraTexto: {
+    fontSize: 12.5,
+    fontWeight: "800",
+  },
+  horasFila: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 1,
+  },
+  horasTexto: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
   tarjeta: {
-    borderRadius: 14,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     borderWidth: 1,
     padding: 12,
-    marginBottom: 12,
   },
   tarjetaFila: { flexDirection: "row", gap: 12 },
   tarjetaFoto: { width: 72, height: 72, borderRadius: 10, resizeMode: "cover" },
@@ -636,7 +848,8 @@ const styles = StyleSheet.create({
   },
   badgeDot: { width: 5, height: 5, borderRadius: 2.5 },
   badgeTexto: { fontSize: 9.5, fontWeight: "700" },
-  tarjetaFechas: { fontSize: 11.5, marginTop: 4 },
+  tarjetaDetallesFila: { marginTop: 3 },
+  tarjetaDetallesTexto: { fontSize: 11.5, fontWeight: "500" },
   tarjetaFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -661,18 +874,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
   },
-  instruccionesMiniCaja: {
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 8,
-    marginTop: 8,
-    gap: 4,
-  },
-  instruccionesMiniFila: {
-    fontSize: 10.5,
-    lineHeight: 14,
-  },
-
   vacioContainer: {
     flex: 1,
     alignItems: "center",
@@ -714,3 +915,4 @@ const styles = StyleSheet.create({
   },
   vacioBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
 });
+
