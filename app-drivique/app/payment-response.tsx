@@ -651,9 +651,13 @@ export default function PagoRespuestaScreen() {
           <InfoTile
             icono="checkmark-circle"
             label={t("reserva.confirmacion.respuesta.estado", { defaultValue: "Estado" })}
-            valor={estadoTexto}
+            valor={
+              esPendienteEfectivo || reserva.estado === "PENDIENTE_EFECTIVO" || reserva.estado === "PENDIENTE"
+                ? t("reserva.confirmacion.estados.PENDIENTE", { defaultValue: "Pendiente" })
+                : estadoTexto
+            }
             colorValor={
-              grupo === "pendiente"
+              esPendienteEfectivo || reserva.estado === "PENDIENTE_EFECTIVO" || grupo === "pendiente"
                 ? "#16A34A"
                 : grupo === "confirmada"
                 ? "#2563EB"
