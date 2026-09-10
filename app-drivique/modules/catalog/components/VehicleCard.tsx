@@ -282,7 +282,9 @@ function VehiculoCard({
           onPress={() => router.push({ pathname: "/vehicle/[id]", params: { id: String(vehiculo.id) } })}
           activeOpacity={0.7}
         >
-          <Text style={[styles.detallesBtnText, { color: c.primary }]}>{t("catalogo.verDetalles")}</Text>
+          <View style={[styles.detallesTextWrap, { borderBottomColor: c.primary }]}>
+            <Text style={[styles.detallesBtnText, { color: c.primary }]}>{t("catalogo.verDetalles")}</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -439,14 +441,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
     paddingVertical: 6,
     marginBottom: 4,
+  },
+  detallesTextWrap: {
+    borderBottomWidth: 1.5,
+    paddingBottom: 2,
   },
   detallesBtnText: {
     fontSize: 13,
     fontWeight: "700",
     color: "#2563eb",
-    textDecorationLine: "underline",
   },
 });
