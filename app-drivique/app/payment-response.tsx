@@ -776,8 +776,8 @@ export default function PagoRespuestaScreen() {
           style={[
             styles.card,
             {
-              backgroundColor: c.oscuro ? "rgba(37, 99, 235, 0.12)" : "#EFF6FF",
-              borderColor: c.oscuro ? "rgba(96, 165, 250, 0.35)" : "#BFDBFE",
+              backgroundColor: c.bgCard,
+              borderColor: c.border,
               alignItems: "center",
             },
           ]}
