@@ -524,32 +524,32 @@ export default function FirmaContrato({
             </View>
           </Seccion>
 
-          <View nativeID="contrato-acciones-descarga">
-            <TouchableOpacity
-              style={styles.firmarBtnWrap}
-              onPress={soloLectura ? onDescargar : handleFirmar}
-              disabled={soloLectura ? descargando : firmando}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={firmando ? ["#94a3b8", "#94a3b8"] : GRADIENTES.boton.colors}
-                start={GRADIENTES.boton.start}
-                end={GRADIENTES.boton.end}
-                style={styles.firmarBtn}
+          {!soloLectura && (
+            <View nativeID="contrato-acciones-descarga">
+              <TouchableOpacity
+                style={styles.firmarBtnWrap}
+                onPress={handleFirmar}
+                disabled={firmando}
+                activeOpacity={0.85}
               >
-                <Ionicons
-                  name={(soloLectura ? descargando : firmando) ? "hourglass-outline" : soloLectura ? "download-outline" : "create-outline"}
-                  size={18}
-                  color="#fff"
-                />
-                <Text style={styles.firmarBtnTexto}>
-                  {soloLectura
-                    ? descargando ? t("misReservas.generandoPdf") : t("misReservas.descargarContrato")
-                    : firmando ? t("reserva.contrato.signing") : t("reserva.contrato.signAndContinue")}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+                <LinearGradient
+                  colors={firmando ? ["#94a3b8", "#94a3b8"] : GRADIENTES.boton.colors}
+                  start={GRADIENTES.boton.start}
+                  end={GRADIENTES.boton.end}
+                  style={styles.firmarBtn}
+                >
+                  <Ionicons
+                    name={firmando ? "hourglass-outline" : "create-outline"}
+                    size={18}
+                    color="#fff"
+                  />
+                  <Text style={styles.firmarBtnTexto}>
+                    {firmando ? t("reserva.contrato.signing") : t("reserva.contrato.signAndContinue")}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={[styles.footer, { borderTopColor: c.border }]}>
             <Text style={[styles.footerTexto, { color: c.textMuted }]}>{t("reserva.contrato.footerNote1")}</Text>
