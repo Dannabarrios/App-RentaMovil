@@ -280,9 +280,9 @@ function VehiculoCard({
         <TouchableOpacity
           style={styles.detallesBtn}
           onPress={() => router.push({ pathname: "/vehicle/[id]", params: { id: String(vehiculo.id) } })}
+          activeOpacity={0.7}
         >
-          <Text style={styles.detallesBtnText}>{t("catalogo.verDetalles")}</Text>
-          <Ionicons name="chevron-forward" size={13} color="#2563eb" />
+          <Text style={[styles.detallesBtnText, { color: c.primary }]}>{t("catalogo.verDetalles")}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -447,5 +447,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: "#2563eb",
+    textDecorationLine: "underline",
   },
 });
