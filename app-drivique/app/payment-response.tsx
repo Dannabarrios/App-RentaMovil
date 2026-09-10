@@ -966,7 +966,7 @@ export default function PagoRespuestaScreen() {
             ]}
             onPress={() =>
               router.push(
-                `/contract-view?ref=${encodeURIComponent(reserva.referencia)}&unlocked=true`
+                `/contract-view?ref=${encodeURIComponent(reserva.referencia)}`
               )
             }
             activeOpacity={0.8}
