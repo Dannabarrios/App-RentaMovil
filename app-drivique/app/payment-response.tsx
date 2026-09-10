@@ -782,18 +782,29 @@ export default function PagoRespuestaScreen() {
             },
           ]}
         >
+          {/* Logo Drivique con fondo blanco */}
           <View
             style={{
-              width: 52,
-              height: 52,
-              borderRadius: 26,
-              backgroundColor: c.oscuro ? "rgba(96, 165, 250, 0.2)" : "rgba(37, 99, 235, 0.12)",
+              width: 60,
+              height: 60,
+              borderRadius: 30,
+              backgroundColor: c.oscuro ? "rgba(255, 255, 255, 0.08)" : "#FFFFFF",
+              borderWidth: 1,
+              borderColor: c.border,
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 12,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.05,
+              shadowRadius: 3,
+              elevation: 1,
             }}
           >
-            <Ionicons name="document-text-outline" size={26} color={primaryAccent} />
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={{ width: 38, height: 38, resizeMode: "contain" }}
+            />
           </View>
           <Text style={[styles.tituloCandado, { color: c.textPrimary, marginBottom: 6 }]}>
             {t("misReservas.firmaContratoTitulo", { defaultValue: "Firma tu Contrato" })}
