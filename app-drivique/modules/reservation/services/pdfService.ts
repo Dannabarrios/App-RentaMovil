@@ -70,6 +70,8 @@ interface GenerarPdfParams {
   tipoDocumentoTexto: string;
   /** Textos ya traducidos (t("reserva.contrato.xxx")) para no depender de i18next dentro del HTML. */
   textos: Record<string, string>;
+  /** Si es true genera base64 (más lento); por defecto false para descarga nativa ultrarrápida. */
+  conBase64?: boolean;
 }
 
 export interface ResultadoPdf {
@@ -91,6 +93,7 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<Resu
     formatearFecha = (iso: string | null) => (iso ? String(iso) : "—"),
     tipoDocumentoTexto = "",
     textos: tx = {},
+    conBase64 = false,
   } = params;
 
   const { marca, modelo } = separarMarcaModelo(vehiculo?.nombre || "");
@@ -243,19 +246,20 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<Resu
   let base64Generado = "";
 
   try {
-    const resultado = await Print.printToFileAsync({ html, base64: true });
+    const resultado = await Print.printToFileAsync(conBase64 ? { html, base64: true } : { html });
     if (resultado?.uri) {
       uriGenerado = resultado.uri;
       base64Generado = resultado.base64 || "";
     }
   } catch (printErr) {
-    console.warn("[pdfService] Reintentando printToFileAsync simple:", printErr);
-  }
-
-  if (!uriGenerado) {
-    const resultadoSimple = await Print.printToFileAsync({ html });
-    if (resultadoSimple?.uri) {
-      uriGenerado = resultadoSimple.uri;
+    console.warn("[pdfService] Fallback printToFileAsync:", printErr);
+    try {
+      const resultadoSimple = await Print.printToFileAsync({ html });
+      if (resultadoSimple?.uri) {
+        uriGenerado = resultadoSimple.uri;
+      }
+    } catch (e2) {
+      console.error("[pdfService] Error crítico printToFileAsync:", e2);
     }
   }
 
@@ -282,6 +286,7 @@ export async function compartirContratoPdf(uri: string, nombre = "contrato-firma
     await Sharing.shareAsync(uri, {
       mimeType: "application/pdf",
       dialogTitle: nombre,
+      UTI: "com.adobe.pdf",
     });
   }
   return uri;

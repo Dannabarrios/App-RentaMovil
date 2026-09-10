@@ -197,6 +197,7 @@ export default function FirmaContrato({
         formatearFecha,
         tipoDocumentoTexto,
         textos: crearTextosContrato((key) => t(key)),
+        conBase64: true,
       });
 
       let contratoCompleto = contrato;
