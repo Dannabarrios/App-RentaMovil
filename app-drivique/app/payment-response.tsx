@@ -770,40 +770,79 @@ export default function PagoRespuestaScreen() {
         </View>
       )}
 
-      {/* Tarjeta CTA: Firma tu Contrato (solo cuando el pago ya fue confirmado y no se ha firmado) */}
+      {/* Tarjeta CTA: Listo para firmar contrato */}
       {puedeFirmar && (
         <View
           style={[
             styles.card,
             {
-              backgroundColor: c.oscuro ? "rgba(37, 99, 235, 0.12)" : "#EFF6FF",
-              borderColor: c.oscuro ? "rgba(96, 165, 250, 0.35)" : "#BFDBFE",
+              backgroundColor: c.bgCard,
+              borderColor: c.border,
+              borderRadius: 20,
+              paddingVertical: 24,
+              paddingHorizontal: 20,
               alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: c.oscuro ? 0.25 : 0.05,
+              shadowRadius: 10,
+              elevation: 3,
             },
           ]}
         >
+          {/* Logo Drivique en Badge Circular */}
           <View
             style={{
-              width: 52,
-              height: 52,
-              borderRadius: 26,
-              backgroundColor: c.oscuro ? "rgba(96, 165, 250, 0.2)" : "rgba(37, 99, 235, 0.12)",
+              width: 72,
+              height: 72,
+              borderRadius: 36,
+              backgroundColor: c.oscuro ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
+              borderWidth: 1.2,
+              borderColor: c.oscuro ? "rgba(255, 255, 255, 0.12)" : "#E2E8F0",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 12,
+              marginBottom: 16,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.04,
+              shadowRadius: 4,
             }}
           >
-            <Ionicons name="document-text-outline" size={26} color={primaryAccent} />
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={{ width: 44, height: 44, resizeMode: "contain" }}
+            />
           </View>
-          <Text style={[styles.tituloCandado, { color: c.textPrimary, marginBottom: 6 }]}>
-            {t("misReservas.firmaContratoTitulo", { defaultValue: "Firma tu Contrato" })}
+
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "800",
+              color: c.textPrimary,
+              textAlign: "center",
+              marginBottom: 10,
+              letterSpacing: -0.2,
+            }}
+          >
+            {t("misReservas.firmaContratoTitulo", { defaultValue: "Listo para firmar contrato" })}
           </Text>
-          <Text style={[styles.textoCandado, { color: c.textSecondary, marginBottom: 16 }]}>
+
+          <Text
+            style={{
+              fontSize: 13,
+              lineHeight: 19,
+              color: c.textSecondary,
+              textAlign: "center",
+              paddingHorizontal: 10,
+              marginBottom: 20,
+            }}
+          >
             {t("misReservas.firmaContratoTexto", {
               defaultValue:
-                "Tu reserva ha sido confirmada. Lee y firma el contrato de alquiler para habilitar el acceso al documento.",
+                "Tu pago ha sido confirmado con éxito. Completa la firma digital de tu contrato para acceder al documento protegido.",
             })}
           </Text>
+
           <TouchableOpacity
             style={styles.btnWrap}
             onPress={() => setMostrarFirma(true)}
@@ -813,11 +852,21 @@ export default function PagoRespuestaScreen() {
               colors={GRADIENTES.boton.colors}
               start={GRADIENTES.boton.start}
               end={GRADIENTES.boton.end}
-              style={[styles.btn, { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 }]}
+              style={[
+                styles.btn,
+                {
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: 8,
+                  height: 48,
+                  borderRadius: 12,
+                },
+              ]}
             >
-              <Ionicons name="create-outline" size={18} color="#fff" />
-              <Text style={styles.btnTexto}>
-                {t("misReservas.firmaContratoBoton", { defaultValue: "Leer y Firmar Contrato" })}
+              <Ionicons name="create-outline" size={19} color="#fff" />
+              <Text style={[styles.btnTexto, { fontSize: 14.5, fontWeight: "700" }]}>
+                {t("misReservas.firmaContratoBoton", { defaultValue: "Firmar contrato" })}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
