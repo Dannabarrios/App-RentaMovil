@@ -321,11 +321,8 @@ export default function PagoRespuestaScreen() {
     pmTypeUpper.includes("COLLECT") ||
     detLower.includes("efectivo en bancolombia");
 
-  // La firma solo se habilita para reservas pagadas/confirmadas o pendientes de validacion digital, NUNCA cuando está pendiente pago en efectivo
-  const puedeFirmar = !contratoFirmado && !esPendienteEfectivo && (
-    reserva.estado === "CONFIRMADA" ||
-    (reserva.metodoPago === "wompi" && reserva.estado === "PENDIENTE_VALIDACION")
-  );
+  // La firma solo se habilita para reservas pagadas y confirmadas, NUNCA cuando el pago está pendiente
+  const puedeFirmar = !contratoFirmado && !esPendienteEfectivo && reserva.estado === "CONFIRMADA";
 
   // Pantalla completa de firma cuando el usuario la solicita
   if (mostrarFirma && puedeFirmar) {
