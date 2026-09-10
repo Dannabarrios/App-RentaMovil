@@ -7,6 +7,7 @@
 // FirmaCanvas.
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
 import { Platform } from "react-native";
 import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import {
@@ -281,15 +282,33 @@ export async function compartirContratoPdf(uri: string, nombre = "contrato-firma
     enlace.remove();
     return uri;
   }
+
+  let rutaFinal = uri;
+
+  try {
+    const cleanNombre = nombre.endsWith(".pdf") ? nombre : `${nombre}.pdf`;
+    const baseDir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
+    if (baseDir) {
+      const destino = `${baseDir}${cleanNombre}`;
+      await FileSystem.copyAsync({
+        from: uri,
+        to: destino,
+      });
+      rutaFinal = destino;
+    }
+  } catch (fsErr) {
+    console.warn("[pdfService] No se pudo copiar archivo para compartir, usando ruta original:", fsErr);
+  }
+
   const disponible = await Sharing.isAvailableAsync();
   if (disponible) {
-    await Sharing.shareAsync(uri, {
+    await Sharing.shareAsync(rutaFinal, {
       mimeType: "application/pdf",
       dialogTitle: nombre,
       UTI: "com.adobe.pdf",
     });
   }
-  return uri;
+  return rutaFinal;
 }
 
 const CLAVES_CONTRATO = [
