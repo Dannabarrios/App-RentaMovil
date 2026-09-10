@@ -310,20 +310,25 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 
   const handlePagarWompi = async () => {
     if (!referenciaActual) return;
-    setModalReservaVisible(false);
     setProcesandoPago(true);
 
     try {
+      const redirectUrl = "https://localtest.me/respuesta";
       const amountInCents = aCentavos(total);
-      const resultado = await iniciarFlujoWompi({
+
+      const url = await construirUrlCheckout({
         reference: referenciaActual,
         amountInCents,
+        redirectUrl,
       });
 
-      await handleWompiComplete({
-        transactionId: resultado.transactionId,
-        reference: resultado.reference,
-      });
+      setWompiCheckoutUrl(url);
+      setModalReservaVisible(false);
+
+      // Esperar que el modal de confirmacion cierre antes de abrir Wompi
+      setTimeout(() => {
+        setModalWompiVisible(true);
+      }, 200);
     } catch (error) {
       console.error("[FormDatosPersonales] Error iniciando checkout de Wompi", error);
       Alert.alert(

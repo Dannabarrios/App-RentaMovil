@@ -159,13 +159,13 @@ export default function PagoRespuestaScreen() {
     try {
       const amountInCents = aCentavos(reserva.total);
       const attemptRef = `${reserva.referencia}_${Date.now()}`;
-      const resWompi = await iniciarFlujoWompi({
+      const url = await construirUrlCheckout({
         reference: attemptRef,
         amountInCents,
+        redirectUrl: "https://localtest.me/respuesta",
       });
-      await handleWompiComplete({
-        transactionId: resWompi.transactionId,
-      });
+      setWompiCheckoutUrl(url);
+      setWompiModalVisible(true);
     } catch (err) {
       console.error("[payment-response] Error abriendo Wompi", err);
       Alert.alert(t("comun.error", { defaultValue: "Error" }), t("reserva.confirmacion.errorWompi", { defaultValue: "No se pudo abrir la pasarela de pago de Wompi." }));

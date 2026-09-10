@@ -63,7 +63,10 @@ export function WompiCheckoutModal({
       if (parsed.queryParams?.id && typeof parsed.queryParams.id === "string") {
         return parsed.queryParams.id;
       }
-      const match = url.match(/[?&]id=([^&#]+)/);
+      if (parsed.queryParams?.transaction_id && typeof parsed.queryParams.transaction_id === "string") {
+        return parsed.queryParams.transaction_id;
+      }
+      const match = url.match(/[?&](?:id|transaction_id)=([^&#]+)/);
       if (match && match[1]) {
         return decodeURIComponent(match[1]);
       }
@@ -92,8 +95,12 @@ export function WompiCheckoutModal({
     // Interceptar cuando la navegación sale de Wompi hacia la URL de retorno (localtest.me, respuesta, etc.)
     const esRetornoComercio =
       url.includes("localtest.me") ||
+      url.includes("localhost") ||
+      url.includes("127.0.0.1") ||
       url.includes("/respuesta") ||
-      url.includes("app-drivique://");
+      url.includes("payment-response") ||
+      url.includes("app-drivique://") ||
+      url.includes("drivique://");
 
     if (esRetornoComercio && !procesadoRef.current) {
       procesadoRef.current = true;
@@ -172,8 +179,20 @@ export function WompiCheckoutModal({
               }
             }}
             onLoadEnd={() => setCargando(false)}
-            onError={() => setCargando(false)}
-            onHttpError={() => setCargando(false)}
+            onError={(syntheticEvent) => {
+              setCargando(false);
+              const url = syntheticEvent.nativeEvent?.url;
+              if (url) {
+                handleInterceptUrl(url);
+              }
+            }}
+            onHttpError={(syntheticEvent) => {
+              setCargando(false);
+              const url = syntheticEvent.nativeEvent?.url;
+              if (url) {
+                handleInterceptUrl(url);
+              }
+            }}
             onShouldStartLoadWithRequest={(request) => {
               return handleInterceptUrl(request.url);
             }}

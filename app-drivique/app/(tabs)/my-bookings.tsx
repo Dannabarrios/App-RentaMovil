@@ -201,14 +201,13 @@ export default function MisReservasScreen() {
       const amountInCents = aCentavos(reserva.total);
       const attemptRef = `${reserva.referencia}_${Date.now()}`;
       setReservaWompiActual(reserva);
-      const resWompi = await iniciarFlujoWompi({
+      const url = await construirUrlCheckout({
         reference: attemptRef,
         amountInCents,
+        redirectUrl: "https://localtest.me/respuesta",
       });
-      await handleWompiComplete({
-        transactionId: resWompi.transactionId,
-        reference: attemptRef,
-      });
+      setWompiCheckoutUrl(url);
+      setWompiModalVisible(true);
     } catch (err) {
       console.error("[my-bookings] Error abriendo Wompi", err);
       Alert.alert(
