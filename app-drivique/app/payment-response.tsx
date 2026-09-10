@@ -46,7 +46,6 @@ import {
   crearTextosContrato,
   descargarContratoVisible,
   generarContratoPdf,
-  leerPdfOriginalBase64,
 } from "@/modules/reservation/services/pdfService";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import {
@@ -449,12 +448,13 @@ export default function PagoRespuestaScreen() {
       }
       let pdfBase64 = contratoActual.contratoPdfBase64;
       let pdfNombre = contratoActual.contratoPdfNombre || `contrato-${reserva.referencia}.pdf`;
+      let pdfUri: string | undefined = undefined;
 
       if (!pdfBase64) {
         const tipoDocumentoTexto = datosPersonalesSnap.tipoDocumento
           ? t(`reserva.datosPersonales.tiposDocumento.${datosPersonalesSnap.tipoDocumento === "Doc. Extranjero" ? "DocExtranjero" : datosPersonalesSnap.tipoDocumento}`, { defaultValue: datosPersonalesSnap.tipoDocumento })
           : "";
-        const uriContrato = await generarContratoPdf({
+        const resPdf = await generarContratoPdf({
           contrato: contratoActual,
           vehiculo: vehiculoSnap,
           datosPersonales: datosPersonalesSnap,
@@ -468,16 +468,18 @@ export default function PagoRespuestaScreen() {
           tipoDocumentoTexto,
           textos: crearTextosContrato((key: string) => t(key)),
         });
-        pdfBase64 = await leerPdfOriginalBase64(uriContrato);
+        pdfBase64 = resPdf.base64;
+        pdfUri = resPdf.uri;
         if (pdfBase64) {
           const actualizado = await contratoService.guardarPdfContrato(reserva.referencia, pdfBase64, pdfNombre);
           if (actualizado) setContratoActual(actualizado);
         }
       }
-      if (pdfBase64) {
+      if (pdfBase64 || pdfUri) {
         await compartirPdfOriginal(
-          pdfBase64,
-          pdfNombre
+          pdfBase64 || "",
+          pdfNombre,
+          pdfUri
         );
       }
     } catch (error) {

@@ -7,7 +7,6 @@
 // FirmaCanvas.
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system/legacy";
 import { Platform } from "react-native";
 import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import {
@@ -73,7 +72,12 @@ interface GenerarPdfParams {
   textos: Record<string, string>;
 }
 
-export async function generarContratoPdf(params: GenerarPdfParams): Promise<string> {
+export interface ResultadoPdf {
+  uri: string;
+  base64: string;
+}
+
+export async function generarContratoPdf(params: GenerarPdfParams): Promise<ResultadoPdf> {
   const {
     contrato,
     vehiculo,
@@ -216,7 +220,7 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<stri
 
   if (Platform.OS === "web") {
     const modulo = await import("html2pdf.js");
-    return (modulo.default() as any)
+    const dataUri: string = await (modulo.default() as any)
       .set({
         margin: 8,
         filename: `contrato-${referencia}.pdf`,
@@ -227,10 +231,12 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<stri
       })
       .from(html)
       .outputPdf("datauristring");
+    const base64 = typeof dataUri === "string" && dataUri.includes(",") ? dataUri.split(",", 2)[1] : String(dataUri);
+    return { uri: dataUri, base64 };
   }
-  const resultado = await Print.printToFileAsync({ html, base64: false });
+  const resultado = await Print.printToFileAsync({ html, base64: true });
   if (!resultado?.uri) throw new Error("No fue posible generar el contrato en PDF");
-  return resultado.uri;
+  return { uri: resultado.uri, base64: resultado.base64 || "" };
 }
 
 export async function compartirContratoPdf(uri: string, nombre = "contrato-firmado.pdf") {
@@ -285,14 +291,13 @@ export async function leerPdfOriginalBase64(uri: string): Promise<string> {
       lector.readAsDataURL(blob);
     });
   }
-  return FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+  return "";
 }
 
-export async function compartirPdfOriginal(base64: string, nombre = "contrato-firmado.pdf") {
+export async function compartirPdfOriginal(base64: string, nombre = "contrato-firmado.pdf", uriDirecto?: string) {
   if (Platform.OS === "web") return compartirContratoPdf(`data:application/pdf;base64,${base64}`, nombre);
-  const uri = `${FileSystem.cacheDirectory}${nombre.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-  await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
-  return compartirContratoPdf(uri, nombre);
+  if (uriDirecto) return compartirContratoPdf(uriDirecto, nombre);
+  return compartirContratoPdf(`data:application/pdf;base64,${base64}`, nombre);
 }
 
 /** Exporta el contrato completo que se visualiza; nunca usa la plantilla resumen. */

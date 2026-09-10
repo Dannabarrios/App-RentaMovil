@@ -35,7 +35,7 @@ import {
 import { fmt } from "./BookingSummaryModal.pieces";
 import { contratoService, ContratoGuardado } from "../services/contractService";
 import FirmaCanvas, { FirmaCanvasHandle } from "./SignatureCanvas";
-import { crearTextosContrato, generarContratoPdf, leerPdfOriginalBase64 } from "../services/pdfService";
+import { crearTextosContrato, generarContratoPdf } from "../services/pdfService";
 
 interface Punto {
   x: number;
@@ -184,7 +184,7 @@ export default function FirmaContrato({
       });
       if (!contrato) throw new Error("No fue posible guardar el contrato firmado");
 
-      const uriContrato = await generarContratoPdf({
+      const pdfResultado = await generarContratoPdf({
         contrato,
         vehiculo,
         datosPersonales,
@@ -198,16 +198,23 @@ export default function FirmaContrato({
         tipoDocumentoTexto,
         textos: crearTextosContrato((key) => t(key)),
       });
-      const contratoPdfBase64 = await leerPdfOriginalBase64(uriContrato);
-      const contratoCompleto = await contratoService.guardarPdfContrato(
-        referencia,
-        contratoPdfBase64,
-        `contrato-${referencia}.pdf`
-      );
+
+      let contratoCompleto = contrato;
+      if (pdfResultado?.base64) {
+        const guardado = await contratoService.guardarPdfContrato(
+          referencia,
+          pdfResultado.base64,
+          `contrato-${referencia}.pdf`
+        );
+        if (guardado) contratoCompleto = guardado;
+      }
       onFirmado?.(contratoCompleto);
     } catch (error) {
       console.error("[FirmaContrato] Error al guardar la firma", error);
-      Alert.alert(t("reserva.confirmacion.errorPagoTitulo"), t("reserva.confirmacion.errorPagoMensaje"));
+      Alert.alert(
+        t("reserva.contrato.errorFirmaTitulo", { defaultValue: "Error al firmar" }),
+        t("reserva.contrato.errorFirmaMensaje", { defaultValue: "No fue posible guardar el contrato firmado. Por favor inténtalo de nuevo." })
+      );
     } finally {
       setFirmando(false);
     }
