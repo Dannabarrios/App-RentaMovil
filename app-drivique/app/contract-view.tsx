@@ -192,7 +192,7 @@ export default function ContratoScreen() {
       }
 
       if (resPdf?.uri) {
-        await compartirContratoPdf(resPdf.uri, pdfNombre);
+        await compartirContratoPdf(resPdf.uri, pdfNombre, resPdf.html);
       }
     } catch (error) {
       console.error("[contract-view] Error generando el PDF", error);

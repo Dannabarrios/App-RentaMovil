@@ -78,6 +78,7 @@ interface GenerarPdfParams {
 export interface ResultadoPdf {
   uri: string;
   base64: string;
+  html: string;
 }
 
 export async function generarContratoPdf(params: GenerarPdfParams): Promise<ResultadoPdf> {
@@ -94,7 +95,6 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<Resu
     formatearFecha = (iso: string | null) => (iso ? String(iso) : "—"),
     tipoDocumentoTexto = "",
     textos: tx = {},
-    conBase64 = false,
   } = params;
 
   const { marca, modelo } = separarMarcaModelo(vehiculo?.nombre || "");
@@ -237,7 +237,7 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<Resu
         .from(html)
         .outputPdf("datauristring");
       const base64 = typeof dataUri === "string" && dataUri.includes(",") ? dataUri.split(",", 2)[1] : String(dataUri);
-      return { uri: dataUri, base64 };
+      return { uri: dataUri, base64, html };
     } catch (e) {
       console.warn("[pdfService] Error generando PDF en web:", e);
     }
@@ -247,13 +247,13 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<Resu
   let base64Generado = "";
 
   try {
-    const resultado = await Print.printToFileAsync(conBase64 ? { html, base64: true } : { html });
+    const resultado = await Print.printToFileAsync({ html, base64: true });
     if (resultado?.uri) {
       uriGenerado = resultado.uri;
       base64Generado = resultado.base64 || "";
     }
   } catch (printErr) {
-    console.warn("[pdfService] Fallback printToFileAsync:", printErr);
+    console.warn("[pdfService] Fallback printToFileAsync simple:", printErr);
     try {
       const resultadoSimple = await Print.printToFileAsync({ html });
       if (resultadoSimple?.uri) {
@@ -268,47 +268,88 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<Resu
     throw new Error("No fue posible generar el archivo PDF.");
   }
 
-  return { uri: uriGenerado, base64: base64Generado };
+  return { uri: uriGenerado, base64: base64Generado, html };
 }
 
-export async function compartirContratoPdf(uri: string, nombre = "contrato-firmado.pdf") {
-  if (!uri) return uri;
+export async function compartirContratoPdf(
+  uri: string,
+  nombre = "contrato-firmado.pdf",
+  html?: string
+) {
+  if (!uri && !html) return uri;
+
   if (Platform.OS === "web" && typeof document !== "undefined") {
-    const enlace = document.createElement("a");
-    enlace.href = uri;
-    enlace.download = nombre;
-    document.body.appendChild(enlace);
-    enlace.click();
-    enlace.remove();
-    return uri;
+    if (uri) {
+      const enlace = document.createElement("a");
+      enlace.href = uri;
+      enlace.download = nombre;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      return uri;
+    }
   }
 
-  let rutaFinal = uri;
+  let rutaParaCompartir = uri;
 
   try {
     const cleanNombre = nombre.endsWith(".pdf") ? nombre : `${nombre}.pdf`;
-    const baseDir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
-    if (baseDir) {
+    const baseDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+    if (baseDir && uri) {
       const destino = `${baseDir}${cleanNombre}`;
-      await FileSystem.copyAsync({
-        from: uri,
-        to: destino,
-      });
-      rutaFinal = destino;
+      try {
+        await FileSystem.copyAsync({
+          from: uri,
+          to: destino,
+        });
+        rutaParaCompartir = destino;
+      } catch (copyErr) {
+        console.warn("[pdfService] CopyAsync aviso:", copyErr);
+      }
+    }
+
+    if (Platform.OS === "android" && rutaParaCompartir) {
+      try {
+        const contentUri = await FileSystem.getContentUriAsync(rutaParaCompartir);
+        if (contentUri) {
+          rutaParaCompartir = contentUri;
+        }
+      } catch (cErr) {
+        console.warn("[pdfService] getContentUriAsync aviso:", cErr);
+      }
     }
   } catch (fsErr) {
-    console.warn("[pdfService] No se pudo copiar archivo para compartir, usando ruta original:", fsErr);
+    console.warn("[pdfService] Error preparando archivo para compartir:", fsErr);
   }
 
-  const disponible = await Sharing.isAvailableAsync();
-  if (disponible) {
-    await Sharing.shareAsync(rutaFinal, {
-      mimeType: "application/pdf",
-      dialogTitle: nombre,
-      UTI: "com.adobe.pdf",
-    });
+  // Intento 1: Expo Sharing
+  try {
+    const disponible = await Sharing.isAvailableAsync();
+    if (disponible && rutaParaCompartir) {
+      await Sharing.shareAsync(rutaParaCompartir, {
+        mimeType: "application/pdf",
+        dialogTitle: nombre,
+        UTI: "com.adobe.pdf",
+      });
+      return rutaParaCompartir;
+    }
+  } catch (shareErr) {
+    console.warn("[pdfService] Sharing.shareAsync no disponible, ejecutando fallback de impresion nativa:", shareErr);
   }
-  return rutaFinal;
+
+  // Fallback infalible nativo: abre la ventana nativa de impresión / 'Guardar como PDF'
+  try {
+    if (html) {
+      await Print.printAsync({ html });
+    } else if (uri) {
+      await Print.printAsync({ uri });
+    }
+  } catch (printErr) {
+    console.error("[pdfService] Error en fallback de impresion nativa:", printErr);
+    throw new Error("No fue posible abrir el visor o guardar el PDF.");
+  }
+
+  return rutaParaCompartir;
 }
 
 const CLAVES_CONTRATO = [
