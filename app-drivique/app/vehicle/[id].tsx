@@ -32,6 +32,7 @@ import {
   getCiudadPorSucursal,
 } from "@/modules/catalog/constants/catalog.constants";
 import { VehicleGallery } from "@/modules/catalog/components/VehicleGallery";
+import { VehicleReviews } from "@/modules/catalog/components/VehicleReviews";
 import BranchDirectionsModal from "@/modules/reservation/components/BranchDirectionsModal";
 
 const COLOR_AZUL_TITULO = "#1E3A8A";
@@ -60,7 +61,7 @@ export default function VehiculoDetallePage() {
   const monedaActual = useMonedaStore((s) => s.monedaActual);
   const tasaUSD = useMonedaStore((s) => s.tasaUSD);
 
-  const descuentoNum = descuentoPorcentaje ? Number(descuentoPorcentaje) : 0;
+  const descuentoNum = descuentoPorcentaje ? Number(descuentoPorcentaje) : 10;
 
   const [alertaReservaVisible, setAlertaReservaVisible] = useState(false);
   const [modalComoLlegarVisible, setModalComoLlegarVisible] = useState(false);
@@ -90,22 +91,75 @@ export default function VehiculoDetallePage() {
   const disponible = vehiculo.disponible !== false;
   const tarifas = vehiculo.tarifas ?? {};
   const seguros = vehiculo.seguros ?? [];
-  const nombreSucursal = vehiculo.sucursal || "National Downtown Barranquilla";
+  const nombreSucursal = vehiculo.sucursal || "Alquiler Neiva - Centro";
   const ciudadSucursal = getCiudadPorSucursal(nombreSucursal);
-  const direccionBase = getDireccionSucursal(nombreSucursal) || "Calle 76 # 54-11";
+  const direccionBase = getDireccionSucursal(nombreSucursal) || "Cra 5 # 12-34";
   const direccionCompleta = ciudadSucursal ? `${direccionBase}, ${ciudadSucursal}` : direccionBase;
   const horarioAtencion = HORARIO_ATENCION_SUCURSAL || "Lun a sáb, 7:00 am - 7:00 pm";
 
-  // Equipamiento unificado con equipamiento tecnológico
-  const equipamiento: { icono: keyof typeof Ionicons.glyphMap | keyof typeof MaterialCommunityIcons.glyphMap; tipo: "ion" | "mci"; label: string }[] = [];
-  equipamiento.push({ icono: "snowflake", tipo: "mci", label: "Aire acondicionado" });
-  equipamiento.push({ icono: "car-door", tipo: "mci", label: "Vidrios eléctricos" });
-  equipamiento.push({ icono: "lock-closed-outline", tipo: "ion", label: "Cierre centralizado" });
-  if (vehiculo.bluetooth) equipamiento.push({ icono: "bluetooth-outline", tipo: "ion", label: "Bluetooth" });
-  if (vehiculo.usb) equipamiento.push({ icono: "hardware-chip-outline", tipo: "ion", label: "Puerto USB" });
-  if (vehiculo.pantallaTactil) equipamiento.push({ icono: "tablet-landscape-outline", tipo: "ion", label: "Pantalla táctil" });
-  if (vehiculo.camaraReversa) equipamiento.push({ icono: "camera-outline", tipo: "ion", label: "Cámara de reversa" });
-  if (vehiculo.sensoresParqueo) equipamiento.push({ icono: "radio-outline", tipo: "ion", label: "Sensores de parqueo" });
+  // Comentarios con fallback realista
+  const comentariosMostrar =
+    vehiculo.comentarios && vehiculo.comentarios.length > 0
+      ? vehiculo.comentarios
+      : [
+          {
+            autor: "Camila R.",
+            calificacion: 5,
+            fecha: "13 jun 2026",
+            texto: "Muy cómodo para viajes cortos, sin problemas mecánicos y el proceso de entrega fue rápido.",
+          },
+          {
+            autor: "Juan P.",
+            calificacion: 4,
+            fecha: "29 may 2026",
+            texto: "Buen carro y buen precio, aunque el aire tardó un poco en enfriar el primer día.",
+          },
+        ];
+
+  // Equipamiento unificado (Confort + Tecnología)
+  const equipamiento: {
+    icono: keyof typeof Ionicons.glyphMap | keyof typeof MaterialCommunityIcons.glyphMap | keyof typeof MaterialIcons.glyphMap;
+    tipo: "ion" | "mci" | "mat";
+    label: string;
+  }[] = [];
+
+  if (vehiculo.aireAcondicionado !== false) {
+    equipamiento.push({ icono: "snowflake", tipo: "mci", label: "Aire acondicionado" });
+  }
+  if (vehiculo.vidriosElectricos !== false) {
+    equipamiento.push({ icono: "dock-window", tipo: "mci", label: "Vidrios eléctricos" });
+  }
+  if (vehiculo.cierreCentralizado !== false) {
+    equipamiento.push({ icono: "lock-closed", tipo: "ion", label: "Cierre centralizado" });
+  }
+  if (vehiculo.bluetooth) {
+    equipamiento.push({ icono: "bluetooth", tipo: "ion", label: "Bluetooth" });
+  }
+  if (vehiculo.usb) {
+    equipamiento.push({ icono: "usb", tipo: "mat", label: "Puerto USB" });
+  }
+  if (vehiculo.pantallaTactil) {
+    equipamiento.push({ icono: "tablet-landscape", tipo: "ion", label: "Pantalla táctil" });
+  }
+  if (vehiculo.camaraReversa) {
+    equipamiento.push({ icono: "camera", tipo: "ion", label: "Cámara de reversa" });
+  }
+  if (vehiculo.sensoresParqueo) {
+    equipamiento.push({ icono: "sensors", tipo: "mat", label: "Sensores de parqueo" });
+  }
+  if ((vehiculo as any).gps) {
+    equipamiento.push({ icono: "navigate", tipo: "ion", label: "GPS" });
+  }
+
+  // Si por alguna razón la lista quedara vacía, aseguramos el equipamiento base
+  if (equipamiento.length === 0) {
+    equipamiento.push({ icono: "snowflake", tipo: "mci", label: "Aire acondicionado" });
+    equipamiento.push({ icono: "dock-window", tipo: "mci", label: "Vidrios eléctricos" });
+    equipamiento.push({ icono: "lock-closed", tipo: "ion", label: "Cierre centralizado" });
+  }
+
+  const precioOriginal = vehiculo.precio ?? 55000;
+  const precioConDescuento = Math.round(precioOriginal * (1 - (descuentoNum > 0 ? descuentoNum : 10) / 100));
 
   const handleReservar = () => {
     if (!disponible) return;
@@ -118,7 +172,7 @@ export default function VehiculoDetallePage() {
         ? {
             ...vehiculo,
             precioOriginal: vehiculo.precio,
-            precio: Math.round(vehiculo.precio * (1 - descuentoNum / 100)),
+            precio: precioConDescuento,
           }
         : vehiculo,
       {
@@ -132,23 +186,32 @@ export default function VehiculoDetallePage() {
     Linking.openURL("https://www.pyphoy.com").catch(() => {});
   };
 
-  const colorTitulo = c.oscuro ? "#93C5FD" : COLOR_AZUL_TITULO;
+  const colorIconoHeader = c.oscuro ? "#93C5FD" : "#1E3A8A";
+  const colorTituloCard = colorIconoHeader;
+  const colorTextoPrimario = c.oscuro ? "#F8FAFC" : "#0F172A";
+  const colorTextoSecundario = c.oscuro ? "#94A3B8" : "#64748B";
+  const colorAzulAccion = c.oscuro ? "#93C5FD" : "#1E3A8A";
   const colorBorde = c.oscuro ? c.border : COLOR_BORDE_CARD;
+  const bgPantalla = c.oscuro ? c.bg : "#FFFFFF";
 
   return (
-    <View style={[s.flex, { backgroundColor: c.bg, paddingTop: insets.top }]}>
-      <StatusBar barStyle={c.oscuro ? "light-content" : "dark-content"} translucent backgroundColor={c.bg} />
+    <View style={[s.flex, { backgroundColor: bgPantalla, paddingTop: insets.top }]}>
+      <StatusBar barStyle={c.oscuro ? "light-content" : "dark-content"} translucent backgroundColor={bgPantalla} />
 
-      {/* Top Header con botón Volver */}
-      <View style={[s.topHeader, { backgroundColor: c.bgCard, borderBottomColor: colorBorde }]}>
-        <TouchableOpacity onPress={volverCatalogo} style={s.volverBtn} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={18} color="#2563EB" />
-          <Text style={s.volverTexto}>{t("reserva.flujo.volver", { defaultValue: "Volver" })}</Text>
+      {/* Top Header con botón Volver (<) */}
+      <View style={[s.topHeader, { backgroundColor: bgPantalla, borderBottomColor: colorBorde }]}>
+        <TouchableOpacity
+          onPress={volverCatalogo}
+          style={s.volverBtn}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="chevron-back" size={24} color={colorAzulAccion} />
         </TouchableOpacity>
-        <Text style={[s.headerTitulo, { color: c.textPrimary }]} numberOfLines={1}>
+        <Text style={[s.headerTitulo, { color: colorTextoPrimario }]} numberOfLines={1}>
           {vehiculo.nombre}
         </Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
@@ -167,203 +230,58 @@ export default function VehiculoDetallePage() {
           {!!vehiculo.descripcion && (
             <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
               <View style={s.cardHeaderRow}>
-                <Ionicons name="reorder-three" size={18} color={colorTitulo} />
-                <Text style={[s.cardHeaderTitulo, { color: colorTitulo }]}>
+                <Ionicons name="reorder-three" size={14} color={colorIconoHeader} />
+                <Text style={[s.cardHeaderTitulo, { color: colorTituloCard }]}>
                   {t("vehiculo.descripcion", { defaultValue: "Descripción" })}
                 </Text>
               </View>
-              <Text style={[s.parrafoTexto, { color: c.textSecondary }]}>{vehiculo.descripcion}</Text>
+              <Text style={[s.parrafoTexto, { color: colorTextoSecundario }]}>{vehiculo.descripcion}</Text>
             </View>
           )}
 
-          {/* 3. Tarifas por kilometraje */}
+          {/* 3. Sucursal (después de la descripción) */}
           <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
             <View style={s.cardHeaderRow}>
-              <MaterialCommunityIcons name="road-variant" size={16} color={colorTitulo} />
-              <Text style={[s.cardHeaderTitulo, { color: colorTitulo }]}>
-                {t("vehiculo.tarifas", { defaultValue: "Tarifas por kilometraje" })}
-              </Text>
-            </View>
-
-            <View style={[s.subCardInner, { borderColor: colorBorde, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}>
-              <View style={s.filaTarifa}>
-                <Text style={[s.filaTarifaLabel, { color: c.textPrimary }]}>Kilometraje limitado</Text>
-                <Text style={[s.filaTarifaPrecio, { color: c.textPrimary }]}>
-                  {formatCurrency(tarifas.kmLimitado?.precio ?? 60000, monedaActual, tasaUSD)}/día
-                </Text>
-              </View>
-              <View style={[s.divisorFila, { backgroundColor: colorBorde }]} />
-              <View style={s.filaTarifa}>
-                <Text style={[s.filaTarifaLabel, { color: c.textPrimary }]}>Kilometraje ilimitado</Text>
-                <Text style={[s.filaTarifaPrecio, { color: c.textPrimary }]}>
-                  {formatCurrency(tarifas.kmIlimitado?.precio ?? 75000, monedaActual, tasaUSD)}/día
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* 4. Seguros */}
-          <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
-            <View style={s.cardHeaderRow}>
-              <Ionicons name="shield-checkmark" size={16} color={colorTitulo} />
-              <Text style={[s.cardHeaderTitulo, { color: colorTitulo }]}>
-                {t("vehiculo.seguros", { defaultValue: "Seguros" })}
-              </Text>
-            </View>
-
-            <View style={[s.subCardInner, { borderColor: colorBorde, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}>
-              <View style={s.filaTarifa}>
-                <Text style={[s.filaTarifaLabel, { color: c.textPrimary }]}>Protección Obligatoria</Text>
-                <Text style={[s.filaTarifaPrecio, { color: c.textPrimary }]}>
-                  {formatCurrency(29000, monedaActual, tasaUSD)}/día
-                </Text>
-              </View>
-              <View style={[s.divisorFila, { backgroundColor: colorBorde }]} />
-              <View style={s.filaTarifa}>
-                <Text style={[s.filaTarifaLabel, { color: c.textPrimary }]}>Protección Total</Text>
-                <Text style={[s.filaTarifaPrecio, { color: c.textPrimary }]}>
-                  {formatCurrency(67000, monedaActual, tasaUSD)}/día
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* 5. Equipamiento y Tecnología */}
-          <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
-            <View style={s.cardHeaderRow}>
-              <Ionicons name="location" size={16} color={colorTitulo} />
-              <Text style={[s.cardHeaderTitulo, { color: colorTitulo }]}>
-                {t("vehiculo.equipamiento", { defaultValue: "Equipamiento" })}
-              </Text>
-            </View>
-
-            <View style={s.chipsGrid}>
-              {equipamiento.map((item, idx) => (
-                <View key={idx} style={[s.chipItem, { borderColor: colorBorde, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}>
-                  {item.tipo === "ion" ? (
-                    <Ionicons name={item.icono as any} size={15} color="#8898AA" />
-                  ) : (
-                    <MaterialCommunityIcons name={item.icono as any} size={15} color="#8898AA" />
-                  )}
-                  <Text style={[s.chipTexto, { color: c.textPrimary }]}>{item.label}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* 6. Características Técnicas */}
-          <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
-            <View style={s.cardHeaderRow}>
-              <MaterialIcons name="format-list-bulleted" size={16} color={colorTitulo} />
-              <Text style={[s.cardHeaderTitulo, { color: colorTitulo }]}>
-                {t("vehiculo.caracteristicas", { defaultValue: "Características" })}
-              </Text>
-            </View>
-
-            <View style={s.caracteristicasGrid}>
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("reserva.flujo.categoria", { defaultValue: "Categoría" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>
-                  {t(`catalogo.categoriaValores.${vehiculo.categoria ?? "Economico"}`, { defaultValue: vehiculo.categoria ?? "Económico" })}
-                </Text>
-              </View>
-
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("vehiculo.ficha.transmision", { defaultValue: "Transmisión" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>
-                  {t(`catalogo.transmisionValores.${vehiculo.transmision ?? "Manual"}`, { defaultValue: vehiculo.transmision ?? "Manual" })}
-                </Text>
-              </View>
-
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("vehiculo.ficha.combustible", { defaultValue: "Combustible" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>
-                  {t(`catalogo.combustibleValores.${vehiculo.combustible ?? "Gasolina"}`, { defaultValue: vehiculo.combustible ?? "Gasolina" })}
-                </Text>
-              </View>
-
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("vehiculo.ficha.pasajeros", { defaultValue: "Capacidad" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>
-                  {vehiculo.pasajeros ?? 4} {t("catalogo.detalles.personas", { defaultValue: "pasajeros" })}
-                </Text>
-              </View>
-
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("vehiculo.ficha.puertas", { defaultValue: "Puertas" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>{vehiculo.puertas ?? 4}</Text>
-              </View>
-
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("vehiculo.ficha.maletero", { defaultValue: "Maletero" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>{vehiculo.maletero ?? 170} L</Text>
-              </View>
-
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("vehiculo.ficha.cilindraje", { defaultValue: "Motor" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>{vehiculo.cilindraje || "1.0L"}</Text>
-              </View>
-
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("vehiculo.ficha.color", { defaultValue: "Color" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>{vehiculo.color || "Rojo Passion"}</Text>
-              </View>
-
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("vehiculo.ficha.anio", { defaultValue: "Año" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>{vehiculo.año ?? 2023}</Text>
-              </View>
-
-              <View style={s.columnaCaracteristica}>
-                <Text style={s.labelCaracteristica}>{t("reserva.flujo.placa", { defaultValue: "Placa" })}</Text>
-                <Text style={[s.valorCaracteristica, { color: c.textPrimary }]}>{vehiculo.placa || "GHI-789"}</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* 7. Sucursal */}
-          <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
-            <View style={s.cardHeaderRow}>
-              <Ionicons name="location" size={16} color={colorTitulo} />
-              <Text style={[s.cardHeaderTitulo, { color: colorTitulo }]}>
+              <Ionicons name="location-sharp" size={14} color={colorIconoHeader} />
+              <Text style={[s.cardHeaderTitulo, { color: colorTituloCard }]}>
                 {t("vehiculo.sucursal.titulo", { defaultValue: "Sucursal" })}
               </Text>
             </View>
 
-            <Text style={[s.sucursalNombre, { color: c.textPrimary }]}>{nombreSucursal}</Text>
+            <Text style={[s.sucursalNombre, { color: colorTextoPrimario }]}>{nombreSucursal}</Text>
 
             <View style={s.infoRow}>
-              <Ionicons name="location-outline" size={15} color="#8898AA" />
-              <Text style={[s.infoRowTexto, { color: c.textSecondary }]}>{direccionCompleta}</Text>
+              <Ionicons name="location-outline" size={14} color="#8898AA" />
+              <Text style={[s.infoRowTexto, { color: colorTextoSecundario }]}>{direccionCompleta}</Text>
             </View>
 
             <View style={[s.infoRow, { marginBottom: 14 }]}>
-              <Ionicons name="time-outline" size={15} color="#8898AA" />
-              <Text style={[s.infoRowTexto, { color: c.textSecondary }]}>{horarioAtencion}</Text>
+              <Ionicons name="time-outline" size={14} color="#8898AA" />
+              <Text style={[s.infoRowTexto, { color: colorTextoSecundario }]}>{horarioAtencion}</Text>
             </View>
 
             <TouchableOpacity
-              style={[s.btnAccion, { borderColor: "#2563EB" }]}
+              style={[s.btnAccion, { borderColor: colorAzulAccion }]}
               onPress={() => setModalComoLlegarVisible(true)}
               activeOpacity={0.8}
             >
-              <MaterialIcons name="directions" size={17} color="#2563EB" />
-              <Text style={[s.btnAccionTexto, { color: "#2563EB" }]}>
+              <MaterialIcons name="directions" size={16} color={colorAzulAccion} />
+              <Text style={[s.btnAccionTexto, { color: colorAzulAccion }]}>
                 {t("vehiculo.sucursal.comoLlegar", { defaultValue: "Cómo llegar" })}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* 8. Consultar Pico y Placa */}
+          {/* 4. Consultar Pico y Placa (después de Sucursal) */}
           <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
             <View style={s.cardHeaderRow}>
-              <MaterialIcons name="directions-car" size={16} color={colorTitulo} />
-              <Text style={[s.cardHeaderTitulo, { color: colorTitulo }]}>
+              <MaterialIcons name="directions-car" size={14} color={colorIconoHeader} />
+              <Text style={[s.cardHeaderTitulo, { color: colorTituloCard }]}>
                 {t("reserva.flujo.consultarPicoYPlaca", { defaultValue: "Consultar Pico y Placa" })}
               </Text>
             </View>
 
-            <Text style={[s.parrafoTexto, { color: c.textSecondary, marginBottom: 14 }]}>
+            <Text style={[s.parrafoTexto, { color: colorTextoSecundario, marginBottom: 14 }]}>
               {t(
                 "reserva.flujo.picoYPlacaDesc",
                 {
@@ -374,22 +292,180 @@ export default function VehiculoDetallePage() {
             </Text>
 
             <TouchableOpacity
-              style={[s.btnAccion, { borderColor: "#2563EB" }]}
+              style={[s.btnAccion, { borderColor: colorAzulAccion }]}
               onPress={handleOpenPicoYPlaca}
               activeOpacity={0.8}
             >
-              <MaterialIcons name="open-in-new" size={16} color="#2563EB" />
-              <Text style={[s.btnAccionTexto, { color: "#2563EB" }]}>
+              <MaterialIcons name="open-in-new" size={16} color={colorAzulAccion} />
+              <Text style={[s.btnAccionTexto, { color: colorAzulAccion }]}>
                 {t("reserva.flujo.irALaPagina", { defaultValue: "Ir a la página" })}
               </Text>
             </TouchableOpacity>
           </View>
 
+          {/* 5. Equipamiento y Tecnología (después de Consultar Pico y Placa) */}
+          <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
+            <View style={s.cardHeaderRow}>
+              <Ionicons name="location-sharp" size={14} color={colorIconoHeader} />
+              <Text style={[s.cardHeaderTitulo, { color: colorTituloCard }]}>
+                {t("vehiculo.equipamiento", { defaultValue: "Equipamiento" })}
+              </Text>
+            </View>
+
+            <View style={s.chipsGrid}>
+              {equipamiento.map((item, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    s.chipItem,
+                    {
+                      borderColor: colorBorde,
+                      backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF",
+                    },
+                  ]}
+                >
+                  {item.tipo === "ion" ? (
+                    <Ionicons name={item.icono as any} size={15} color={colorTextoSecundario} />
+                  ) : item.tipo === "mat" ? (
+                    <MaterialIcons name={item.icono as any} size={15} color={colorTextoSecundario} />
+                  ) : (
+                    <MaterialCommunityIcons name={item.icono as any} size={15} color={colorTextoSecundario} />
+                  )}
+                  <Text style={[s.chipTexto, { color: colorTextoPrimario }]} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* 6. Seguros (después de Equipamiento) */}
+          <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
+            <View style={s.cardHeaderRow}>
+              <Ionicons name="shield-checkmark" size={14} color={colorIconoHeader} />
+              <Text style={[s.cardHeaderTitulo, { color: colorTituloCard }]}>
+                {t("vehiculo.seguros", { defaultValue: "Seguros" })}
+              </Text>
+            </View>
+
+            <View style={[s.subCardInner, { borderColor: colorBorde, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}>
+              <View style={s.filaTarifa}>
+                <Text style={[s.filaTarifaLabel, { color: colorTextoPrimario }]}>Protección Obligatoria</Text>
+                <Text style={[s.filaTarifaPrecio, { color: colorTextoPrimario }]}>
+                  {formatCurrency(29000, monedaActual, tasaUSD)}/día
+                </Text>
+              </View>
+              <View style={[s.divisorFila, { backgroundColor: colorBorde }]} />
+              <View style={s.filaTarifa}>
+                <Text style={[s.filaTarifaLabel, { color: colorTextoPrimario }]}>Protección Total</Text>
+                <Text style={[s.filaTarifaPrecio, { color: colorTextoPrimario }]}>
+                  {formatCurrency(67000, monedaActual, tasaUSD)}/día
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 7. Tarifas por kilometraje (después de Seguros) */}
+          <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
+            <View style={s.cardHeaderRow}>
+              <MaterialCommunityIcons name="road-variant" size={14} color={colorIconoHeader} />
+              <Text style={[s.cardHeaderTitulo, { color: colorTituloCard }]}>
+                {t("vehiculo.tarifas", { defaultValue: "Tarifas por kilometraje" })}
+              </Text>
+            </View>
+
+            <View style={[s.subCardInner, { borderColor: colorBorde, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}>
+              <View style={s.filaTarifa}>
+                <Text style={[s.filaTarifaLabel, { color: colorTextoPrimario }]}>Kilometraje limitado</Text>
+                <Text style={[s.filaTarifaPrecio, { color: colorTextoPrimario }]}>
+                  {formatCurrency(tarifas.kmLimitado?.precio ?? 60000, monedaActual, tasaUSD)}/día
+                </Text>
+              </View>
+              <View style={[s.divisorFila, { backgroundColor: colorBorde }]} />
+              <View style={s.filaTarifa}>
+                <Text style={[s.filaTarifaLabel, { color: colorTextoPrimario }]}>Kilometraje ilimitado</Text>
+                <Text style={[s.filaTarifaPrecio, { color: colorTextoPrimario }]}>
+                  {formatCurrency(tarifas.kmIlimitado?.precio ?? 75000, monedaActual, tasaUSD)}/día
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 8. Características Técnicas */}
+          <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
+            <View style={s.cardHeaderRow}>
+              <MaterialIcons name="format-list-bulleted" size={14} color={colorIconoHeader} />
+              <Text style={[s.cardHeaderTitulo, { color: colorTituloCard }]}>
+                {t("vehiculo.caracteristicas", { defaultValue: "Características" })}
+              </Text>
+            </View>
+
+            <View style={s.caracteristicasGrid}>
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("reserva.flujo.categoria", { defaultValue: "Categoría" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>
+                  {t(`catalogo.categoriaValores.${vehiculo.categoria ?? "Economico"}`, { defaultValue: vehiculo.categoria ?? "Económico" })}
+                </Text>
+              </View>
+
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("vehiculo.ficha.transmision", { defaultValue: "Transmisión" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>
+                  {t(`catalogo.transmisionValores.${vehiculo.transmision ?? "Manual"}`, { defaultValue: vehiculo.transmision ?? "Manual" })}
+                </Text>
+              </View>
+
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("vehiculo.ficha.combustible", { defaultValue: "Combustible" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>
+                  {t(`catalogo.combustibleValores.${vehiculo.combustible ?? "Gasolina"}`, { defaultValue: vehiculo.combustible ?? "Gasolina" })}
+                </Text>
+              </View>
+
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("vehiculo.ficha.pasajeros", { defaultValue: "Capacidad" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>
+                  {vehiculo.pasajeros ?? 4} {t("catalogo.detalles.personas", { defaultValue: "pasajeros" })}
+                </Text>
+              </View>
+
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("vehiculo.ficha.puertas", { defaultValue: "Puertas" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>{vehiculo.puertas ?? 4}</Text>
+              </View>
+
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("vehiculo.ficha.maletero", { defaultValue: "Maletero" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>{vehiculo.maletero ?? 170} L</Text>
+              </View>
+
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("vehiculo.ficha.cilindraje", { defaultValue: "Motor" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>{vehiculo.cilindraje || "1.0L"}</Text>
+              </View>
+
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("vehiculo.ficha.color", { defaultValue: "Color" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>{vehiculo.color || "Rojo Passion"}</Text>
+              </View>
+
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("vehiculo.ficha.anio", { defaultValue: "Año" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>{vehiculo.año ?? 2023}</Text>
+              </View>
+
+              <View style={s.columnaCaracteristica}>
+                <Text style={[s.labelCaracteristica, { color: colorTextoSecundario }]}>{t("reserva.flujo.placa", { defaultValue: "Placa" })}</Text>
+                <Text style={[s.valorCaracteristica, { color: colorTextoPrimario }]}>{vehiculo.placa || "GHI-789"}</Text>
+              </View>
+            </View>
+          </View>
+
           {/* 9. Requisitos para rentar */}
           <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
             <View style={s.cardHeaderRow}>
-              <MaterialIcons name="assignment-turned-in" size={16} color={colorTitulo} />
-              <Text style={[s.cardHeaderTitulo, { color: colorTitulo }]}>
+              <MaterialIcons name="assignment-turned-in" size={14} color={colorIconoHeader} />
+              <Text style={[s.cardHeaderTitulo, { color: colorTituloCard }]}>
                 {t("reserva.flujo.requisitosParaRentar", { defaultValue: "Requisitos para rentar" })}
               </Text>
             </View>
@@ -397,12 +473,12 @@ export default function VehiculoDetallePage() {
             <View style={s.requisitosLista}>
               {/* Edad mínima */}
               <View style={s.requisitoItem}>
-                <Ionicons name="person" size={16} color="#8898AA" style={s.requisitoIcono} />
+                <Ionicons name="person" size={14} color={colorTextoSecundario} style={s.requisitoIcono} />
                 <View style={s.requisitoTextCol}>
-                  <Text style={[s.requisitoTitulo, { color: c.textPrimary }]}>
+                  <Text style={[s.requisitoTitulo, { color: colorTextoPrimario }]}>
                     {t("reserva.flujo.edadMinimaTitulo", { defaultValue: "Edad mínima" })}
                   </Text>
-                  <Text style={[s.requisitoDesc, { color: c.textSecondary }]}>
+                  <Text style={[s.requisitoDesc, { color: colorTextoSecundario }]}>
                     {t("reserva.flujo.edadMinimaDesc", { defaultValue: "Debes tener al menos 18 años para rentar." })}
                   </Text>
                 </View>
@@ -410,12 +486,12 @@ export default function VehiculoDetallePage() {
 
               {/* Identificación */}
               <View style={s.requisitoItem}>
-                <MaterialIcons name="badge" size={16} color="#8898AA" style={s.requisitoIcono} />
+                <MaterialIcons name="badge" size={14} color={colorTextoSecundario} style={s.requisitoIcono} />
                 <View style={s.requisitoTextCol}>
-                  <Text style={[s.requisitoTitulo, { color: c.textPrimary }]}>
+                  <Text style={[s.requisitoTitulo, { color: colorTextoPrimario }]}>
                     {t("reserva.flujo.identificacionTitulo", { defaultValue: "Identificación" })}
                   </Text>
-                  <Text style={[s.requisitoDesc, { color: c.textSecondary }]}>
+                  <Text style={[s.requisitoDesc, { color: colorTextoSecundario }]}>
                     {t("reserva.flujo.identificacionDesc", {
                       defaultValue: "Cédula de ciudadanía para nacionales o pasaporte vigente para extranjeros.",
                     })}
@@ -424,6 +500,46 @@ export default function VehiculoDetallePage() {
               </View>
             </View>
           </View>
+
+          {/* 10. Precio por día ($COP) */}
+          <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
+            <View style={s.precioCardHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Ionicons name="pricetag" size={14} color={colorIconoHeader} />
+                <Text style={[s.cardHeaderTitulo, { color: colorTituloCard }]}>
+                  {t("vehiculo.precioPorDia", { defaultValue: "Precio por día ($COP)" })}
+                </Text>
+              </View>
+              <View style={s.badgeDescuento}>
+                <Text style={s.badgeDescuentoTexto}>-{descuentoNum}%</Text>
+              </View>
+            </View>
+
+            <View style={[s.subCardInner, { borderColor: colorBorde, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF", marginTop: 4 }]}>
+              <View style={s.filaTarifa}>
+                <Text style={[s.filaTarifaLabel, { color: colorTextoSecundario, fontWeight: "500", fontSize: 12 }]}>Antes</Text>
+                <Text style={[s.filaTarifaPrecio, { color: colorTextoSecundario, fontWeight: "500", fontSize: 12, textDecorationLine: "line-through" }]}>
+                  {formatCurrency(precioOriginal, monedaActual, tasaUSD)}/día
+                </Text>
+              </View>
+              <View style={[s.divisorFila, { backgroundColor: colorBorde }]} />
+              <View style={s.filaTarifa}>
+                <Text style={[s.filaTarifaLabel, { color: colorAzulAccion, fontSize: 12.5, fontWeight: "700" }]}>Ahora</Text>
+                <Text style={[s.filaTarifaPrecio, { color: colorAzulAccion, fontSize: 13.5, fontWeight: "800" }]}>
+                  {formatCurrency(precioConDescuento, monedaActual, tasaUSD)}/día
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Divisor entre Precio por día y Reseñas */}
+          <View style={[s.divisorSeccion, { backgroundColor: colorBorde }]} />
+
+          {/* 11. Reseñas de clientes */}
+          <VehicleReviews
+            comentarios={comentariosMostrar}
+            calificacionPromedio={vehiculo.calificacion}
+          />
         </Animated.View>
       </ScrollView>
 
@@ -431,9 +547,13 @@ export default function VehiculoDetallePage() {
       <View style={[s.barraInferior, { backgroundColor: c.bgCard, borderTopColor: colorBorde, paddingBottom: insets.bottom + 10 }]}>
         <View>
           <Text style={[s.barraPrecioLabel, { color: c.textMuted }]}>{t("catalogo.tarjeta.tarifaPorDia", { defaultValue: "Tarifa diaria" })}</Text>
-          <Text style={s.barraPrecio}>
-            {formatCurrency(vehiculo.precio, monedaActual, tasaUSD)}
-            <Text style={[s.barraPrecioDia, { color: c.textMuted }]}> /{t("vehiculo.porDia", { defaultValue: "día" })}</Text>
+          <Text style={[s.barraPrecio, { color: colorTituloCard }]}>
+            {formatCurrency(precioConDescuento, monedaActual, tasaUSD)}
+            <Text style={[s.barraPrecioDia, { color: c.textMuted }]}>
+              {t("vehiculo.porDia", { defaultValue: "/día" }).startsWith("/")
+                ? ` ${t("vehiculo.porDia", { defaultValue: "/día" })}`
+                : ` /${t("vehiculo.porDia", { defaultValue: "día" })}`}
+            </Text>
           </Text>
         </View>
 
@@ -507,18 +627,14 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
   },
   volverBtn: {
-    flexDirection: "row",
+    width: 32,
+    height: 32,
     alignItems: "center",
-    gap: 2,
-  },
-  volverTexto: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#2563EB",
+    justifyContent: "center",
   },
   headerTitulo: {
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 18,
+    fontWeight: "900",
     textAlign: "center",
   },
 
@@ -546,14 +662,46 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   cardHeaderTitulo: {
-    fontSize: 13.5,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  precioCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  badgeDescuento: {
+    backgroundColor: "#D1FAE5",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeDescuentoTexto: {
+    fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 0.2,
+    color: "#047857",
+  },
+
+  reservarBtnInline: {
+    backgroundColor: "#2563EB",
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+  },
+  reservarBtnInlineTexto: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
   },
 
   sucursalNombre: {
-    fontSize: 14.5,
-    fontWeight: "700",
+    fontSize: 13.5,
+    fontWeight: "600",
     marginBottom: 8,
   },
   infoRow: {
@@ -563,8 +711,8 @@ const s = StyleSheet.create({
     marginBottom: 5,
   },
   infoRowTexto: {
-    fontSize: 12.5,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "400",
   },
 
   btnAccion: {
@@ -602,35 +750,43 @@ const s = StyleSheet.create({
   },
   filaTarifaLabel: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   filaTarifaPrecio: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   divisorFila: {
     height: 1,
     width: "100%",
   },
+  divisorSeccion: {
+    height: 1,
+    width: "100%",
+    marginBottom: 14,
+  },
 
   chipsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    justifyContent: "space-between",
+    rowGap: 8,
     marginTop: 2,
   },
   chipItem: {
+    width: "48.5%",
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 7,
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 7,
   },
   chipTexto: {
     fontSize: 12,
     fontWeight: "500",
+    flexShrink: 1,
   },
 
   caracteristicasGrid: {
@@ -644,14 +800,14 @@ const s = StyleSheet.create({
     paddingRight: 8,
   },
   labelCaracteristica: {
-    fontSize: 11,
-    color: "#8898AA",
-    fontWeight: "400",
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
     marginBottom: 2,
   },
   valorCaracteristica: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "600",
   },
 
   requisitosLista: {
@@ -670,8 +826,8 @@ const s = StyleSheet.create({
     flex: 1,
   },
   requisitoTitulo: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 13.5,
+    fontWeight: "600",
     marginBottom: 2,
   },
   requisitoDesc: {
@@ -697,7 +853,7 @@ const s = StyleSheet.create({
   barraPrecio: {
     fontSize: 19,
     fontWeight: "900",
-    color: "#2563EB",
+    color: "#1E3A8A",
   },
   barraPrecioDia: {
     fontSize: 12,

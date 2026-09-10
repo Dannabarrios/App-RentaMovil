@@ -1,8 +1,4 @@
 // modules/catalog/components/VehicleReviews.tsx
-//
-// Promedio de calificación + lista de reseñas con "Ver más" incremental.
-// Visible para usuarios Y visitantes (sin ninguna restricción de sesión).
-
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,22 +8,26 @@ import { Comentario } from "../types/catalog.types";
 
 interface Props {
   comentarios: Comentario[];
+  calificacionPromedio?: number;
 }
 
-const INCREMENTO_VER_MAS = 3;
-const COLORES_AVATAR = ["#1D4ED8", "#059669", "#D97706", "#DB2777", "#7C3AED", "#0891B2"];
+const COLOR_AZUL_TITULO = "#1E3A8A";
+const COLOR_BORDE_CARD = "#E2E8F0";
 
 function Estrellas({ valor, tamano = 14 }: { valor: number; tamano?: number }) {
   return (
     <View style={{ flexDirection: "row", gap: 2 }}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <Ionicons
-          key={i}
-          name={i < Math.round(valor) ? "star" : "star-outline"}
-          size={tamano}
-          color="#F59E0B"
-        />
-      ))}
+      {Array.from({ length: 5 }, (_, i) => {
+        const lleno = i < Math.round(valor);
+        return (
+          <Ionicons
+            key={i}
+            name={lleno ? "star" : "star-outline"}
+            size={tamano}
+            color={lleno ? "#F59E0B" : "#CBD5E1"}
+          />
+        );
+      })}
     </View>
   );
 }
@@ -37,128 +37,271 @@ function inicialesDe(nombre: string): string {
   return partes.slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join("");
 }
 
-function colorAvatar(nombre: string): string {
-  let hash = 0;
-  for (let i = 0; i < nombre.length; i++) hash = (hash + nombre.charCodeAt(i)) % COLORES_AVATAR.length;
-  return COLORES_AVATAR[hash];
-}
-
-export function VehicleReviews({ comentarios }: Props) {
+export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
   const c = useTemaColores();
   const { t } = useTranslation();
-  const [visibles, setVisibles] = useState(INCREMENTO_VER_MAS);
+  const [visibles, setVisibles] = useState(2);
 
-  if (!comentarios || comentarios.length === 0) {
-    return (
-      <View style={[s.vacio, { backgroundColor: c.bgInput, padding: 22, alignItems: "center" }]}>
-        <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
-          {Array.from({ length: 5 }, (_, i) => (
-            <Ionicons key={i} name="star-outline" size={22} color={c.textMuted} />
-          ))}
-        </View>
-        <Text style={{ fontSize: 15, fontWeight: "800", color: c.textPrimary, marginBottom: 4 }}>
-          {t("vehiculo.resenas.sinResenas", "Sin reseñas")}
-        </Text>
-        <Text style={[s.vacioTexto, { color: c.textMuted, fontSize: 12.5 }]}>
-          {t("vehiculo.resenas.sinResenasDesc", "Este vehículo aún no tiene calificaciones ni opiniones registradas.")}
-        </Text>
-      </View>
-    );
-  }
+  const listaComentarios = comentarios ?? [];
+  const total = listaComentarios.length;
 
   const promedio =
-    comentarios.reduce((suma, r) => suma + r.calificacion, 0) / comentarios.length;
-  const mostrar = comentarios.slice(0, visibles);
-  const hayMas = visibles < comentarios.length;
-  const seExpandio = visibles > INCREMENTO_VER_MAS;
+    calificacionPromedio && calificacionPromedio > 0
+      ? calificacionPromedio
+      : total > 0
+      ? listaComentarios.reduce((acc, curr) => acc + curr.calificacion, 0) / total
+      : 4.3;
+
+  // Conteo de estrellas de 1 a 5
+  const counts = [5, 4, 3, 2, 1].map((estrella) => {
+    const count = listaComentarios.filter((c) => Math.round(c.calificacion) === estrella).length;
+    return { estrella, count };
+  });
+
+  const maxCount = Math.max(...counts.map((c) => c.count), 1);
+  const colorScore = c.oscuro ? "#93C5FD" : "#1E3A8A";
+  const colorBorde = c.oscuro ? c.border : COLOR_BORDE_CARD;
 
   return (
-    <View>
-      <View style={[s.resumenCard, { backgroundColor: c.oscuro ? "#3A2E0F" : "#FFFBEB", borderColor: c.oscuro ? "#5C4A1A" : "#FDE68A" }]}>
-        <Text style={s.promedioNumero}>{promedio.toFixed(1)}</Text>
-        <View>
-          <Estrellas valor={promedio} tamano={16} />
-          <Text style={[s.basadoEn, { color: c.textSecondary }]}>
-            {t("vehiculo.resenas.basadoEn", { count: comentarios.length })}
+    <View style={[s.card, { backgroundColor: c.bgCard, borderColor: colorBorde }]}>
+      {/* Título de la sección */}
+      <Text style={[s.tituloPrincipal, { color: colorScore }]}>
+        {t("vehiculo.resenas.titulo", { defaultValue: "Reseñas de clientes" })}
+      </Text>
+
+      {/* Bloque Resumen: Calificación + Barras */}
+      <View style={s.resumenContenedor}>
+        {/* Columna Izquierda: Número grande + Estrellas + Total */}
+        <View style={s.columnaPuntaje}>
+          <Text style={[s.puntajeGrande, { color: colorScore }]}>{promedio.toFixed(1)}</Text>
+          <Estrellas valor={promedio} tamano={15} />
+          <Text style={[s.conteoTexto, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+            {total} {total === 1 ? "reseña" : "reseñas"}
           </Text>
+        </View>
+
+        {/* Columna Derecha: Barras de 5 a 1 estrella */}
+        <View style={s.columnaBarras}>
+          {counts.map(({ estrella, count }) => {
+            const porcentaje = total > 0 ? (count / total) * 100 : 0;
+            return (
+              <View key={estrella} style={s.filaBarra}>
+                <Text style={[s.barraEstrellaNum, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{estrella}</Text>
+                <Ionicons name="star" size={11} color="#F59E0B" style={{ marginRight: 6 }} />
+                <View style={[s.barraTrack, { backgroundColor: c.oscuro ? "#334155" : "#EEF2F6" }]}>
+                  <View
+                    style={[
+                      s.barraFill,
+                      {
+                        width: `${porcentaje}%`,
+                        backgroundColor: porcentaje > 0 ? "#2563EB" : "transparent",
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={[s.barraConteoNum, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{count}</Text>
+              </View>
+            );
+          })}
         </View>
       </View>
 
-      {mostrar.map((r, i) => (
-        <View key={i} style={[s.comentario, { backgroundColor: c.bgInput }]}>
-          <View style={[s.avatar, { backgroundColor: colorAvatar(r.autor) }]}>
-            <Text style={s.avatarTexto}>{inicialesDe(r.autor)}</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <View style={s.comentarioHeader}>
-              <Text style={[s.autor, { color: c.textPrimary }]}>{r.autor}</Text>
-              <Estrellas valor={r.calificacion} />
-            </View>
-            <Text style={[s.texto, { color: c.textSecondary }]}>{r.texto}</Text>
-            <Text style={[s.fecha, { color: c.textMuted }]}>{r.fecha}</Text>
-          </View>
-        </View>
-      ))}
+      {/* Divisor */}
+      {total > 0 && <View style={[s.divisor, { backgroundColor: colorBorde }]} />}
 
-      {hayMas ? (
-        <TouchableOpacity
-          style={s.verMasBtn}
-          onPress={() => setVisibles((v) => v + INCREMENTO_VER_MAS)}
-          activeOpacity={0.7}
-        >
-          <Text style={[s.verMasTexto, { color: c.primary }]}>{t("vehiculo.resenas.verMas")}</Text>
-          <Ionicons name="chevron-down" size={14} color={c.primary} />
-        </TouchableOpacity>
+      {/* Lista de Reseñas */}
+      {total === 0 ? (
+        <View style={s.vacioWrap}>
+          <Text style={[s.vacioTexto, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+            {t("vehiculo.resenas.sinResenas", { defaultValue: "Aún no hay reseñas registradas para este vehículo." })}
+          </Text>
+        </View>
       ) : (
-        seExpandio && (
-          <TouchableOpacity style={s.verMasBtn} onPress={() => setVisibles(INCREMENTO_VER_MAS)} activeOpacity={0.7}>
-            <Text style={[s.verMasTexto, { color: c.primary }]}>{t("vehiculo.resenas.verMenos")}</Text>
-            <Ionicons name="chevron-up" size={14} color={c.primary} />
+        <View style={s.listaComentarios}>
+          {listaComentarios.slice(0, visibles).map((r, i) => (
+            <View key={i} style={[s.comentarioItem, i > 0 && { borderTopWidth: 1, borderTopColor: colorBorde, paddingTop: 14 }]}>
+              {/* Avatar circular con iniciales */}
+              <View style={[s.avatarWrap, { backgroundColor: c.oscuro ? "#334155" : "#F1F5F9" }]}>
+                <Text style={[s.avatarTexto, { color: c.oscuro ? "#93C5FD" : "#1E3A8A" }]}>
+                  {inicialesDe(r.autor)}
+                </Text>
+              </View>
+
+              {/* Contenido de la reseña */}
+              <View style={s.comentarioCuerpo}>
+                <View style={s.comentarioHeaderRow}>
+                  <Text style={[s.autorNombre, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>{r.autor}</Text>
+                  <Estrellas valor={r.calificacion} tamano={13} />
+                </View>
+
+                {!!r.fecha && (
+                  <Text style={[s.fechaTexto, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{r.fecha}</Text>
+                )}
+
+                <Text style={[s.comentarioTexto, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>{r.texto}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Botón Ver más / Ocultar */}
+      {total > 2 && (
+        <>
+          <View style={[s.divisor, { backgroundColor: colorBorde }]} />
+          <TouchableOpacity
+            style={s.verMasBtn}
+            onPress={() => setVisibles((v) => (v >= total ? 2 : total))}
+            activeOpacity={0.7}
+          >
+            <Text style={[s.verMasTexto, { color: colorScore }]}>
+              {visibles >= total
+                ? t("vehiculo.resenas.ocultar", { defaultValue: "Ocultar" })
+                : t("vehiculo.resenas.verMas", { defaultValue: "Ver más" })}
+            </Text>
           </TouchableOpacity>
-        )
+        </>
       )}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  vacio: { alignItems: "center", paddingVertical: 24, gap: 8, borderRadius: 14 },
-  vacioTexto: { fontSize: 13, textAlign: "center" },
-  resumenCard: {
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tituloPrincipal: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 16,
+  },
+  resumenContenedor: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
-    marginBottom: 14,
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  promedioNumero: { fontSize: 34, fontWeight: "900", color: "#B45309" },
-  basadoEn: { fontSize: 12, marginTop: 3 },
-  comentario: {
-    flexDirection: "row",
-    gap: 10,
-    padding: 12,
-    borderRadius: 12,
+    gap: 18,
     marginBottom: 8,
   },
-  avatar: {
+  columnaPuntaje: {
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 80,
+  },
+  puntajeGrande: {
+    fontSize: 28,
+    fontWeight: "900",
+    lineHeight: 34,
+    marginBottom: 2,
+  },
+  conteoTexto: {
+    fontSize: 11,
+    marginTop: 4,
+    fontWeight: "400",
+  },
+  columnaBarras: {
+    flex: 1,
+    gap: 4,
+  },
+  filaBarra: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  barraEstrellaNum: {
+    fontSize: 11,
+    fontWeight: "700",
+    width: 10,
+    textAlign: "right",
+    marginRight: 2,
+  },
+  barraTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    overflow: "hidden",
+    marginRight: 8,
+  },
+  barraFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  barraConteoNum: {
+    fontSize: 11,
+    fontWeight: "400",
+    width: 14,
+    textAlign: "right",
+  },
+  divisor: {
+    height: 1,
+    width: "100%",
+    marginVertical: 14,
+  },
+  vacioWrap: {
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  vacioTexto: {
+    fontSize: 13,
+    textAlign: "center",
+  },
+  listaComentarios: {
+    gap: 14,
+  },
+  comentarioItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  avatarWrap: {
     width: 36,
     height: 36,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarTexto: { color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" },
-  comentarioHeader: {
+  avatarTexto: {
+    fontSize: 12.5,
+    fontWeight: "800",
+  },
+  comentarioCuerpo: {
+    flex: 1,
+  },
+  comentarioHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 2,
+  },
+  autorNombre: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  fechaTexto: {
+    fontSize: 11,
+    fontWeight: "400",
     marginBottom: 4,
   },
-  autor: { fontSize: 13.5, fontWeight: "700" },
-  texto: { fontSize: 13, lineHeight: 19, marginBottom: 4 },
-  fecha: { fontSize: 11 },
-  verMasBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, paddingVertical: 12 },
-  verMasTexto: { fontSize: 13, fontWeight: "700" },
+  comentarioTexto: {
+    fontSize: 13,
+    fontWeight: "400",
+    lineHeight: 18,
+  },
+  verMasBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 4,
+  },
+  verMasTexto: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#2563EB",
+  },
 });

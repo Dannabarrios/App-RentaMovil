@@ -3,7 +3,7 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { memo, useState } from "react";
+import React, { memo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useReservaStore } from "@/store/reservationStore";
 import { GRADIENTES } from "@/constants/gradients";
@@ -71,6 +71,7 @@ function VehiculoCard({
   const { t } = useTranslation();
   const [fotoActiva, setFotoActiva] = useState(0);
   const [cardWidth, setCardWidth] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
 
   const imagenes = getSafeImages(vehiculo);
   const estadoDisponible = vehiculo.disponible !== false;
@@ -85,6 +86,22 @@ function VehiculoCard({
     const x = e.nativeEvent.contentOffset.x;
     const width = e.nativeEvent.layoutMeasurement.width;
     if (width > 0) setFotoActiva(Math.round(x / width));
+  };
+
+  const handlePrevFoto = () => {
+    if (scrollRef.current && cardWidth > 0 && imagenes.length > 1) {
+      const nextIndex = fotoActiva <= 0 ? imagenes.length - 1 : fotoActiva - 1;
+      scrollRef.current.scrollTo({ x: nextIndex * cardWidth, animated: true });
+      setFotoActiva(nextIndex);
+    }
+  };
+
+  const handleNextFoto = () => {
+    if (scrollRef.current && cardWidth > 0 && imagenes.length > 1) {
+      const nextIndex = fotoActiva >= imagenes.length - 1 ? 0 : fotoActiva + 1;
+      scrollRef.current.scrollTo({ x: nextIndex * cardWidth, animated: true });
+      setFotoActiva(nextIndex);
+    }
   };
 
   const handleReservar = () => {
@@ -113,6 +130,7 @@ function VehiculoCard({
       >
         {cardWidth > 0 && imagenes.length > 0 ? (
           <ScrollView
+            ref={scrollRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -171,14 +189,25 @@ function VehiculoCard({
         </TouchableOpacity>
 
         {imagenes.length > 1 && (
-          <View style={styles.dotsRow}>
-            {imagenes.map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, i === fotoActiva && styles.dotActivo]}
-              />
-            ))}
-          </View>
+          <>
+            <TouchableOpacity
+              style={[styles.navBtn, styles.navBtnLeft]}
+              onPress={handlePrevFoto}
+              activeOpacity={0.75}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.navBtn, styles.navBtnRight]}
+              onPress={handleNextFoto}
+              activeOpacity={0.75}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </>
         )}
       </View>
 
@@ -282,8 +311,10 @@ function VehiculoCard({
           onPress={() => router.push({ pathname: "/vehicle/[id]", params: { id: String(vehiculo.id) } })}
           activeOpacity={0.7}
         >
-          <View style={[styles.detallesTextWrap, { borderBottomColor: c.primary }]}>
-            <Text style={[styles.detallesBtnText, { color: c.primary }]}>{t("catalogo.verDetalles")}</Text>
+          <View style={[styles.detallesTextWrap, { borderBottomColor: c.oscuro ? "#93C5FD" : "#1E3A8A" }]}>
+            <Text style={[styles.detallesBtnText, { color: c.oscuro ? "#93C5FD" : "#1E3A8A" }]}>
+              {t("catalogo.verDetalles", { defaultValue: "Ver detalles" })}
+            </Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -342,19 +373,29 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  dotsRow: {
+  navBtn: {
     position: "absolute",
-    bottom: 10,
-    alignSelf: "center",
-    flexDirection: "row",
-    gap: 6,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
+    top: "50%",
+    marginTop: -16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(15, 23, 42, 0.65)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#e5e7eb" },
-  dotActivo: { width: 16, backgroundColor: "#3b82f6" },
+  navBtnLeft: {
+    left: 10,
+  },
+  navBtnRight: {
+    right: 10,
+  },
   contenido: { padding: 16 },
   tagsRow: {
     flexDirection: "row",
@@ -446,12 +487,12 @@ const styles = StyleSheet.create({
   },
   detallesTextWrap: {
     borderBottomWidth: 1.5,
-    borderBottomColor: "#2563eb",
+    borderBottomColor: "#1E3A8A",
     paddingBottom: 2,
   },
   detallesBtnText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#2563eb",
+    color: "#1E3A8A",
   },
 });
