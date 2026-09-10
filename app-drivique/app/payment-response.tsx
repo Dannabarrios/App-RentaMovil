@@ -313,8 +313,8 @@ export default function PagoRespuestaScreen() {
   const esPendienteEfectivo =
     reserva.estado === "PENDIENTE_EFECTIVO" ||
     (reserva.estado === "PENDIENTE" && reserva.metodoPago === "efectivo") ||
-    String(reserva.paymentMethodType || "").toUpperCase() === "BANCOLOMBIA_COLLECT" ||
-    String(reserva.metodoPagoDetalle || "").toLowerCase().includes("bancolombia") ||
+    String(reserva.paymentMethodType || "").toUpperCase().includes("COLLECT") ||
+    String(reserva.metodoPagoDetalle || "").toLowerCase().includes("efectivo") ||
     !!reserva.convenioWompi;
 
   // La firma solo se habilita para reservas pagadas/confirmadas o pendientes de validacion digital, NUNCA cuando está pendiente pago en efectivo
@@ -680,14 +680,14 @@ export default function PagoRespuestaScreen() {
 
           {/* Título */}
           <Text style={[styles.tituloEfectivo, { color: c.textPrimary }]}>
-            {!!(reserva as any).convenioWompi || String((reserva as any).paymentMethodType || "").toUpperCase() === "BANCOLOMBIA_COLLECT" || String((reserva as any).metodoPagoDetalle || "").toLowerCase().includes("bancolombia")
+            {!!(reserva as any).convenioWompi || String((reserva as any).paymentMethodType || "").toUpperCase().includes("COLLECT") || String((reserva as any).metodoPagoDetalle || "").toLowerCase().includes("efectivo en bancolombia")
               ? "Pago en Efectivo - Bancolombia"
               : t("reserva.confirmacion.efectivoConfirmadaTitulo", { defaultValue: "Reserva Registrada" })}
           </Text>
 
           {/* Mensaje descriptivo */}
           <Text style={[styles.descripcionEfectivo, { color: c.textSecondary }]}>
-            {!!(reserva as any).convenioWompi || String((reserva as any).paymentMethodType || "").toUpperCase() === "BANCOLOMBIA_COLLECT" || String((reserva as any).metodoPagoDetalle || "").toLowerCase().includes("bancolombia")
+            {!!(reserva as any).convenioWompi || String((reserva as any).paymentMethodType || "").toUpperCase().includes("COLLECT") || String((reserva as any).metodoPagoDetalle || "").toLowerCase().includes("efectivo en bancolombia")
               ? "Acércate a un Corresponsal Bancario Bancolombia con los datos mostrados a continuación y efectúa el pago antes del plazo límite para confirmar tu reserva:"
               : sucursalNombre
               ? `Tu reserva quedó registrada. Para confirmarla, realiza el pago en efectivo en el punto autorizado ${sucursalNombre}.`

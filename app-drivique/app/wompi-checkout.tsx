@@ -35,6 +35,7 @@ export default function WompiCheckoutScreen() {
 
   const [cargando, setCargando] = useState(true);
   const procesadoRef = useRef(false);
+  const ultimoTransactionIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let activo = true;
@@ -68,7 +69,10 @@ export default function WompiCheckoutScreen() {
       if (parsed.queryParams?.transaction_id && typeof parsed.queryParams.transaction_id === "string") {
         return parsed.queryParams.transaction_id;
       }
-      const match = url.match(/[?&](?:id|transaction_id)=([^&#]+)/);
+      if (parsed.queryParams?.transactionId && typeof parsed.queryParams.transactionId === "string") {
+        return parsed.queryParams.transactionId;
+      }
+      const match = url.match(/[?&](?:id|transaction_id|transactionId)=([^&#]+)/);
       if (match && match[1]) {
         return decodeURIComponent(match[1]);
       }
@@ -138,15 +142,9 @@ export default function WompiCheckoutScreen() {
   const handleInterceptUrl = (url: string): boolean => {
     if (!url) return true;
 
-    // Si la URL está dentro de la pasarela de Wompi, dejar que navegue normalmente
-    const esDominioWompi =
-      url.startsWith("https://checkout.wompi.co") ||
-      url.startsWith("http://checkout.wompi.co") ||
-      url.includes("wompi.co") ||
-      url.includes("wompi.com");
-
-    if (esDominioWompi) {
-      return true;
+    const txId = extraerTransactionId(url);
+    if (txId) {
+      ultimoTransactionIdRef.current = txId;
     }
 
     // Solo cuando sale de Wompi hacia la URL de retorno (localtest.me, respuesta, etc.)
@@ -160,16 +158,66 @@ export default function WompiCheckoutScreen() {
       url.includes("drivique://");
 
     if (esRetornoComercio) {
-      const txId = extraerTransactionId(url);
-      handleFinalizarPago(txId);
+      const finalTxId = txId || ultimoTransactionIdRef.current;
+      handleFinalizarPago(finalTxId);
       return false; // Detiene la navegación antes de intentar cargar 127.0.0.1
     }
 
     return true;
   };
 
+  const handleMessage = (event: any) => {
+    try {
+      const rawData = event.nativeEvent?.data;
+      if (!rawData) return;
+      let data: any = null;
+      try {
+        data = JSON.parse(rawData);
+      } catch {
+        data = rawData;
+      }
+
+      if (typeof data === "object" && data !== null) {
+        const txId =
+          data.transaction?.id ||
+          data.data?.transaction?.id ||
+          data.data?.id ||
+          data.id ||
+          data.transactionId ||
+          (data.url ? extraerTransactionId(data.url) : null);
+
+        if (txId && typeof txId === "string") {
+          ultimoTransactionIdRef.current = txId;
+        }
+
+        if (
+          data.event === "wompi:transaction_updated" ||
+          data.event === "transaction.updated" ||
+          data.event === "wompi:checkout_closed" ||
+          data.status === "APPROVED" ||
+          data.status === "PENDING" ||
+          data.status === "DECLINED"
+        ) {
+          const idFinal = txId || ultimoTransactionIdRef.current;
+          if (idFinal) {
+            handleFinalizarPago(idFinal);
+          }
+        }
+      } else if (typeof data === "string") {
+        const txId = extraerTransactionId(data);
+        if (txId) {
+          ultimoTransactionIdRef.current = txId;
+        }
+      }
+    } catch (e) {
+      console.warn("[WompiCheckout] Error procesando mensaje de WebView:", e);
+    }
+  };
+
   const handleVolver = () => {
-    if (referencia) {
+    if (ultimoTransactionIdRef.current) {
+      handleFinalizarPago(ultimoTransactionIdRef.current);
+    } else if (referencia) {
       router.replace(`/payment-response?ref=${encodeURIComponent(referencia)}`);
     } else {
       router.back();
@@ -278,6 +326,37 @@ export default function WompiCheckoutScreen() {
           onNavigationStateChange={(navState) => {
             handleInterceptUrl(navState.url);
           }}
+          injectedJavaScript={`
+            (function() {
+              function notify(data) {
+                try {
+                  if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+                    window.ReactNativeWebView.postMessage(typeof data === 'string' ? data : JSON.stringify(data));
+                  }
+                } catch (e) {}
+              }
+              window.addEventListener('message', function(event) {
+                if (event && event.data) {
+                  notify(event.data);
+                }
+              });
+              var originalPush = history.pushState;
+              history.pushState = function() {
+                originalPush.apply(this, arguments);
+                notify({ type: 'URL_CHANGE', url: location.href });
+              };
+              var originalReplace = history.replaceState;
+              history.replaceState = function() {
+                originalReplace.apply(this, arguments);
+                notify({ type: 'URL_CHANGE', url: location.href });
+              };
+              window.addEventListener('popstate', function() {
+                notify({ type: 'URL_CHANGE', url: location.href });
+              });
+            })();
+            true;
+          `}
+          onMessage={handleMessage}
           javaScriptEnabled={true}
           domStorageEnabled={true}
           setSupportMultipleWindows={false}
