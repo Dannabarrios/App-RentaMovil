@@ -162,15 +162,28 @@ export default function WompiCheckoutScreen() {
       ultimoTransactionIdRef.current = txId;
     }
 
-    // Solo cuando sale de Wompi hacia la URL de retorno (localtest.me, respuesta, etc.)
+    // Si la URL es del dominio de Wompi, SIEMPRE permitir la navegación
+    const esDominioWompi =
+      url.startsWith("https://checkout.wompi.co") ||
+      url.startsWith("http://checkout.wompi.co") ||
+      url.includes("checkout.wompi.co") ||
+      url.includes(".wompi.co") ||
+      url.includes(".wompi.com");
+
+    if (esDominioWompi) {
+      return true;
+    }
+
+    // Solo cuando NAVEGA FUERA de Wompi hacia la URL de retorno del comercio
     const esRetornoComercio =
-      url.includes("localtest.me") ||
-      url.includes("localhost") ||
-      url.includes("127.0.0.1") ||
-      url.includes("/respuesta") ||
-      url.includes("payment-response") ||
-      url.includes("app-drivique://") ||
-      url.includes("drivique://");
+      url.startsWith("https://localtest.me") ||
+      url.startsWith("http://localtest.me") ||
+      url.startsWith("http://localhost") ||
+      url.startsWith("https://localhost") ||
+      url.startsWith("http://127.0.0.1") ||
+      url.startsWith("app-drivique://") ||
+      url.startsWith("drivique://") ||
+      url.includes("/payment-response");
 
     if (esRetornoComercio) {
       const finalTxId = txId || ultimoTransactionIdRef.current;
