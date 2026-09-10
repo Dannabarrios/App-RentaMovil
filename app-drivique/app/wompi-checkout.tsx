@@ -28,11 +28,34 @@ export default function WompiCheckoutScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ url?: string; ref?: string }>();
   
-  const checkoutUrl = params.url ? decodeURIComponent(params.url) : null;
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const referencia = params.ref ? decodeURIComponent(params.ref) : "";
 
   const [cargando, setCargando] = useState(true);
   const procesadoRef = useRef(false);
+
+  useEffect(() => {
+    let activo = true;
+    (async () => {
+      if (params.url) {
+        if (activo) setCheckoutUrl(decodeURIComponent(params.url));
+      } else if (params.ref) {
+        const refLimpia = decodeURIComponent(params.ref);
+        const reserva = await reservaPersistService.obtenerPorReferencia(refLimpia);
+        if (reserva) {
+          const urlGen = await construirUrlCheckout({
+            reference: reserva.referencia,
+            amountInCents: aCentavos(reserva.total),
+            redirectUrl: "https://localtest.me/respuesta",
+          });
+          if (activo) setCheckoutUrl(urlGen);
+        }
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, [params.url, params.ref]);
 
   const extraerTransactionId = (url: string): string | null => {
     try {
@@ -86,6 +109,18 @@ export default function WompiCheckoutScreen() {
   const handleInterceptUrl = (url: string): boolean => {
     if (!url) return true;
 
+    // Si la URL está dentro de la pasarela de Wompi, dejar que navegue normalmente
+    const esDominioWompi =
+      url.startsWith("https://checkout.wompi.co") ||
+      url.startsWith("http://checkout.wompi.co") ||
+      url.includes("wompi.co") ||
+      url.includes("wompi.com");
+
+    if (esDominioWompi) {
+      return true;
+    }
+
+    // Solo cuando sale de Wompi hacia la URL de retorno (localtest.me, respuesta, etc.)
     const esRetornoComercio =
       url.includes("localtest.me") ||
       url.includes("localhost") ||
@@ -98,7 +133,7 @@ export default function WompiCheckoutScreen() {
     if (esRetornoComercio) {
       const txId = extraerTransactionId(url);
       handleFinalizarPago(txId);
-      return false; // Evita la carga del 127.0.0.1 para que nunca salga ERR_CONNECTION_REFUSED
+      return false; // Detiene la navegación antes de intentar cargar 127.0.0.1
     }
 
     return true;
