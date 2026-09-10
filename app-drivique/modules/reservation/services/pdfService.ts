@@ -251,9 +251,22 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<Resu
     if (resultado?.uri) {
       uriGenerado = resultado.uri;
       base64Generado = resultado.base64 || "";
+
+      if (base64Generado && FileSystem.cacheDirectory) {
+        const cleanNombre = `contrato-${(referencia || "firmado").replace(/[^a-zA-Z0-9._-]/g, "-")}.pdf`;
+        const rutaCache = `${FileSystem.cacheDirectory}${cleanNombre}`;
+        try {
+          await FileSystem.writeAsStringAsync(rutaCache, base64Generado, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          uriGenerado = rutaCache;
+        } catch (fsWriteErr) {
+          console.warn("[pdfService] Error escribiendo en cacheDirectory:", fsWriteErr);
+        }
+      }
     }
   } catch (printErr) {
-    console.warn("[pdfService] Fallback printToFileAsync simple:", printErr);
+    console.warn("[pdfService] Error en printToFileAsync:", printErr);
     try {
       const resultadoSimple = await Print.printToFileAsync({ html });
       if (resultadoSimple?.uri) {
@@ -274,82 +287,30 @@ export async function generarContratoPdf(params: GenerarPdfParams): Promise<Resu
 export async function compartirContratoPdf(
   uri: string,
   nombre = "contrato-firmado.pdf",
-  html?: string
+  _html?: string
 ) {
-  if (!uri && !html) return uri;
+  if (!uri) return uri;
 
   if (Platform.OS === "web" && typeof document !== "undefined") {
-    if (uri) {
-      const enlace = document.createElement("a");
-      enlace.href = uri;
-      enlace.download = nombre;
-      document.body.appendChild(enlace);
-      enlace.click();
-      enlace.remove();
-      return uri;
-    }
+    const enlace = document.createElement("a");
+    enlace.href = uri;
+    enlace.download = nombre;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    return uri;
   }
 
-  let rutaParaCompartir = uri;
-
-  try {
-    const cleanNombre = nombre.endsWith(".pdf") ? nombre : `${nombre}.pdf`;
-    const baseDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
-    if (baseDir && uri) {
-      const destino = `${baseDir}${cleanNombre}`;
-      try {
-        await FileSystem.copyAsync({
-          from: uri,
-          to: destino,
-        });
-        rutaParaCompartir = destino;
-      } catch (copyErr) {
-        console.warn("[pdfService] CopyAsync aviso:", copyErr);
-      }
-    }
-
-    if (Platform.OS === "android" && rutaParaCompartir) {
-      try {
-        const contentUri = await FileSystem.getContentUriAsync(rutaParaCompartir);
-        if (contentUri) {
-          rutaParaCompartir = contentUri;
-        }
-      } catch (cErr) {
-        console.warn("[pdfService] getContentUriAsync aviso:", cErr);
-      }
-    }
-  } catch (fsErr) {
-    console.warn("[pdfService] Error preparando archivo para compartir:", fsErr);
+  const disponible = await Sharing.isAvailableAsync();
+  if (disponible) {
+    await Sharing.shareAsync(uri, {
+      mimeType: "application/pdf",
+      dialogTitle: nombre,
+      UTI: "com.adobe.pdf",
+    });
   }
 
-  // Intento 1: Expo Sharing
-  try {
-    const disponible = await Sharing.isAvailableAsync();
-    if (disponible && rutaParaCompartir) {
-      await Sharing.shareAsync(rutaParaCompartir, {
-        mimeType: "application/pdf",
-        dialogTitle: nombre,
-        UTI: "com.adobe.pdf",
-      });
-      return rutaParaCompartir;
-    }
-  } catch (shareErr) {
-    console.warn("[pdfService] Sharing.shareAsync no disponible, ejecutando fallback de impresion nativa:", shareErr);
-  }
-
-  // Fallback infalible nativo: abre la ventana nativa de impresión / 'Guardar como PDF'
-  try {
-    if (html) {
-      await Print.printAsync({ html });
-    } else if (uri) {
-      await Print.printAsync({ uri });
-    }
-  } catch (printErr) {
-    console.error("[pdfService] Error en fallback de impresion nativa:", printErr);
-    throw new Error("No fue posible abrir el visor o guardar el PDF.");
-  }
-
-  return rutaParaCompartir;
+  return uri;
 }
 
 const CLAVES_CONTRATO = [
