@@ -139,6 +139,45 @@ export default function MisReservasScreen() {
             })
           );
           setCargando(false);
+
+          // Verificar en segundo plano si Wompi ya aprobó algún pago pendiente
+          const pendientesConPago = data.filter(
+            (r) => (r.estado === "PENDIENTE_EFECTIVO" || r.estado === "PENDIENTE_VALIDACION" || r.estado === "PENDIENTE") && r.paymentId
+          );
+          if (pendientesConPago.length > 0) {
+            let huboCambios = false;
+            for (const p of pendientesConPago) {
+              try {
+                const tx = await consultarTransaccionWompi(p.paymentId!);
+                if (tx && tx.status === "APPROVED") {
+                  await reservaPersistService.actualizarReserva(p.referencia, {
+                    estado: "CONFIRMADA",
+                  });
+                  huboCambios = true;
+                }
+              } catch (e) {
+                // Silencioso
+              }
+            }
+            if (huboCambios && activo) {
+              const dataActualizada = await reservaPersistService.getReservasUsuario({
+                id: usuarioId,
+                correo: usuarioCorreo,
+                numeroDocumento: usuarioDocumento,
+              });
+              setReservas(
+                [...dataActualizada].sort((a, b) => {
+                  const fechaA = String(a.fechaRetiro || a.fechaReserva || "");
+                  const horaA = String((a.fechasLugarSnapshot as any)?.horaRetiro || a.horaRetiro || "00:00");
+                  const fechaB = String(b.fechaRetiro || b.fechaReserva || "");
+                  const horaB = String((b.fechasLugarSnapshot as any)?.horaRetiro || b.horaRetiro || "00:00");
+                  const fullA = `${fechaA}T${horaA}`;
+                  const fullB = `${fechaB}T${horaB}`;
+                  return fullB.localeCompare(fullA);
+                })
+              );
+            }
+          }
         }
       })();
       return () => {

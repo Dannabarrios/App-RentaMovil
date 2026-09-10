@@ -101,6 +101,10 @@ export default function PagoRespuestaScreen() {
         encontrada = await reservaPersistService.obtenerPorReferencia(rawRef);
       }
 
+      if (!txData && encontrada?.paymentId) {
+        txData = await consultarTransaccionWompi(encontrada.paymentId);
+      }
+
       if (encontrada && txData) {
         const pmType = (txData.payment_method_type || "").toUpperCase();
         let detalleMetodo = "Wompi";
