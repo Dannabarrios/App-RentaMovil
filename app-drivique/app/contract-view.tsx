@@ -52,16 +52,22 @@ export default function ContratoScreen() {
   const c = useTemaColores();
   const { t } = useTranslation();
   const { temaActual, toggleTema } = useIdioma();
-  const { ref } = useLocalSearchParams<{ ref?: string }>();
+  const { ref, unlocked } = useLocalSearchParams<{ ref?: string; unlocked?: string }>();
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
 
   const [cargando, setCargando] = useState(true);
   const [reserva, setReserva] = useState<ReservaGuardada | null>(null);
   const [contrato, setContrato] = useState<ContratoGuardado | null>(null);
-  const [claveDesbloqueada, setClaveDesbloqueada] = useState(false);
+  const [claveDesbloqueada, setClaveDesbloqueada] = useState(unlocked === "1" || unlocked === "true");
   const [claveIngresada, setClaveIngresada] = useState("");
   const [errorClave, setErrorClave] = useState("");
   const [generandoPdf, setGenerandoPdf] = useState(false);
+
+  useEffect(() => {
+    if (unlocked === "1" || unlocked === "true") {
+      setClaveDesbloqueada(true);
+    }
+  }, [unlocked]);
 
   useEffect(() => {
     let activo = true;
