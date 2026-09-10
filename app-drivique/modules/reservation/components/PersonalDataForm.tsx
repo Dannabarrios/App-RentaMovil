@@ -3,9 +3,11 @@ import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { useReservaStore } from "@/store/reservationStore";
 import { useUsuarioStore } from "@/store/userStore";
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
+import { Alert, Platform, StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
 import { AlertModal } from "../../../components/ui/AlertModal";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { useTranslation } from "react-i18next";
@@ -25,7 +27,6 @@ import {
   construirUrlCheckout,
   consultarTransaccionWompi,
   generarReferenciaUnica,
-  iniciarFlujoWompi,
 } from "../services/wompiService";
 import {
   HORAS_LIMITE_PAGO_EFECTIVO,
@@ -37,7 +38,6 @@ import CampoSelectorLista from "./ListSelectorField";
 import FirmaContrato from "./ContractSignature";
 import ModalReservaRegistrada from "./BookingRegisteredModal";
 import { BranchCashPaymentModal } from "./BranchCashPaymentModal";
-import { WompiCheckoutModal } from "./WompiCheckoutModal";
 import { diasEntre } from "./BookingSummaryModal.pieces";
 import TarjetaTerminosCondiciones from "./TermsConditionsCard";
 import TarjetaVerificacionDocumental from "./DocumentVerificationCard";
@@ -119,8 +119,6 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
   const [referenciaActual, setReferenciaActual] = useState<string | null>(null);
   const [mostrarContrato, setMostrarContrato] = useState(false);
   const [modalInstruccionesEfectivoVisible, setModalInstruccionesEfectivoVisible] = useState(false);
-  const [wompiCheckoutUrl, setWompiCheckoutUrl] = useState<string | null>(null);
-  const [modalWompiVisible, setModalWompiVisible] = useState(false);
 
   const primaryAccent = c.oscuro ? "#60A5FA" : COLOR_MARCA;
   const brandBg = c.oscuro ? "#3B82F6" : COLOR_MARCA;
@@ -310,6 +308,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 
   const handlePagarWompi = async () => {
     if (!referenciaActual) return;
+    setModalReservaVisible(false);
     setProcesandoPago(true);
 
     try {
@@ -322,13 +321,47 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         redirectUrl,
       });
 
-      setWompiCheckoutUrl(url);
-      setModalReservaVisible(false);
+      let transactionId: string | null = null;
 
-      // Esperar que el modal de confirmacion cierre antes de abrir Wompi
-      setTimeout(() => {
-        setModalWompiVisible(true);
-      }, 200);
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.location.href = url;
+        return;
+      }
+
+      const resultado = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
+
+      if (resultado.type === "success" && (resultado as any).url) {
+        const parsed = Linking.parse((resultado as any).url);
+        transactionId = typeof parsed.queryParams?.id === "string" ? parsed.queryParams.id : null;
+        if (!transactionId) {
+          const match = (resultado as any).url.match(/[?&]id=([^&#]+)/);
+          if (match && match[1]) transactionId = decodeURIComponent(match[1]);
+        }
+
+        if (transactionId) {
+          try {
+            const txData = await consultarTransaccionWompi(transactionId);
+            let nuevoEstado: "PENDIENTE_VALIDACION" | "PENDIENTE_EFECTIVO" | "CONFIRMADA" = "PENDIENTE_VALIDACION";
+            if (txData?.payment_method_type === "BANCOLOMBIA_COLLECT") {
+              nuevoEstado = "PENDIENTE_EFECTIVO";
+            } else if (txData?.status === "APPROVED") {
+              nuevoEstado = "CONFIRMADA";
+            }
+            await reservaPersistService.actualizarEstado(
+              referenciaActual,
+              nuevoEstado,
+              transactionId
+            );
+          } catch (error) {
+            console.error("[FormDatosPersonales] Error consultando transaccion de Wompi:", error);
+          }
+        }
+      }
+
+      limpiarReserva();
+      router.replace(
+        `/payment-response?ref=${encodeURIComponent(referenciaActual)}${transactionId ? `&id=${encodeURIComponent(transactionId)}` : ""}`
+      );
     } catch (error) {
       console.error("[FormDatosPersonales] Error iniciando checkout de Wompi", error);
       Alert.alert(
@@ -337,50 +370,6 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       );
     } finally {
       setProcesandoPago(false);
-    }
-  };
-
-  const handleWompiComplete = async ({
-    transactionId,
-    reference,
-  }: {
-    transactionId?: string | null;
-    reference: string;
-  }) => {
-    setModalWompiVisible(false);
-    setWompiCheckoutUrl(null);
-
-    const refFinal = reference || referenciaActual;
-    if (refFinal) {
-      if (transactionId) {
-        try {
-          const txData = await consultarTransaccionWompi(transactionId);
-          if (txData) {
-            let nuevoEstado: "PENDIENTE_VALIDACION" | "PENDIENTE_EFECTIVO" | "CONFIRMADA" = "PENDIENTE_VALIDACION";
-            if (txData.payment_method_type === "BANCOLOMBIA_COLLECT") {
-              nuevoEstado = "PENDIENTE_EFECTIVO";
-            } else if (txData.status === "APPROVED") {
-              nuevoEstado = "CONFIRMADA";
-            }
-            await reservaPersistService.actualizarEstado(refFinal, nuevoEstado, transactionId);
-          }
-        } catch (e) {
-          console.error("[FormDatosPersonales] Error verificando transaccion Wompi:", e);
-        }
-      }
-      limpiarReserva();
-      router.replace(
-        `/payment-response?ref=${encodeURIComponent(refFinal)}${transactionId ? `&id=${encodeURIComponent(transactionId)}` : ""}`
-      );
-    }
-  };
-
-  const handleWompiClose = () => {
-    setModalWompiVisible(false);
-    setWompiCheckoutUrl(null);
-    if (referenciaActual) {
-      limpiarReserva();
-      router.replace(`/payment-response?ref=${encodeURIComponent(referenciaActual)}`);
     }
   };
 
@@ -729,14 +718,6 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         mensaje={t("reserva.confirmacion.errorPagoMensaje")}
         botones={[]}
         onCerrar={() => setAlertaErrorPagoVisible(false)}
-      />
-
-      <WompiCheckoutModal
-        visible={modalWompiVisible}
-        checkoutUrl={wompiCheckoutUrl}
-        referencia={referenciaActual || ""}
-        onComplete={handleWompiComplete}
-        onClose={handleWompiClose}
       />
     </View>
   );
