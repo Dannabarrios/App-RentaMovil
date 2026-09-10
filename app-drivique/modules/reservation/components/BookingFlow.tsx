@@ -9,7 +9,6 @@ import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { useReservaStore } from "@/store/reservationStore";
 import { GRADIENTES } from "@/constants/gradients";
 import { COLOR_MARCA, COLORES } from "../constants/reservation.constants";
-import VehiculoResumenCard from "./VehicleSummaryCard";
 import FormFechasLugar from "./DatesLocationForm";
 import ResumenReservaModal from "./BookingSummaryModal";
 import TabsSeccion, { SeccionReserva } from "./SectionTabs";
@@ -133,10 +132,6 @@ export default function FlujoReserva({ vehiculo }: Props) {
         >
           {seccionActiva === "fechas" && (
             <>
-              <VehiculoResumenCard vehiculo={vehiculo} />
-
-              <View style={[styles.separadorTarjetas, { backgroundColor: c.border }]} />
-
               <FormFechasLugar vehiculo={vehiculo} />
 
               <TouchableOpacity style={styles.continuarBtnWrap} onPress={handleVerPlanes} activeOpacity={0.85}>
