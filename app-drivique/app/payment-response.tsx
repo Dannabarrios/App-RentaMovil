@@ -413,91 +413,103 @@ export default function PagoRespuestaScreen() {
           keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets={true}
         >
-      {foto ? (
-        <Image source={{ uri: foto }} style={styles.foto} />
-      ) : (
-        <View style={[styles.iconoWrap, { backgroundColor: c.primaryBg }]}>
-          <Ionicons name={encabezado.icono} size={40} color={encabezado.color} />
-        </View>
-      )}
-
+      {/* Título y Subtítulo afuera de la tarjeta */}
       <Text style={[styles.titulo, { color: c.textPrimary }]}>{encabezado.titulo}</Text>
-      <Text style={[styles.subtitulo, { color: c.textSecondary }]}>
-        {reserva.vehiculoNombre}
-      </Text>
+      <Text style={[styles.subtitulo, { color: c.textSecondary }]}>{reserva.vehiculoNombre}</Text>
 
-      <View style={[styles.card, styles.detalleCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-        <LinearGradient
-          colors={[c.primary, "#60A5FA"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.detalleFranja}
-        />
-        <FilaDetalle
-          icono="car-sport-outline"
-          label={t("reserva.confirmacion.respuesta.vehiculo")}
-          valor={reserva.vehiculoNombre}
-          c={c}
-        />
-        <FilaDetalle
-          icono="calendar-outline"
-          label={t("misReservas.detalle.fechaInicio")}
-          valor={reserva.fechaRetiro ? fechaCorta(String(reserva.fechaRetiro)) : "—"}
-          c={c}
-        />
-        <FilaDetalle
-          icono="calendar-number-outline"
-          label={t("misReservas.detalle.fechaFin")}
-          valor={reserva.fechaDevolucion ? fechaCorta(String(reserva.fechaDevolucion)) : "—"}
-          c={c}
-        />
-        <FilaDetalle
-          icono="location-outline"
-          label={t("misReservas.detalle.lugarRetiro", { defaultValue: "Lugar de retiro" })}
-          valor={formatLugar(reserva.lugarRetiro ?? (reserva.fechasLugarSnapshot as any)?.lugarRetiro, "entrega")}
-          c={c}
-        />
-        <FilaDetalle
-          icono="location-outline"
-          label={t("misReservas.detalle.lugarDevolucion", { defaultValue: "Lugar de devolución" })}
-          valor={formatLugar(reserva.lugarDevolucion ?? (reserva.fechasLugarSnapshot as any)?.lugarDevolucion ?? reserva.lugarRetiro, "devolucion")}
-          c={c}
-        />
-        {reserva.proteccion ? (
-          <FilaDetalle
-            icono="shield-checkmark-outline"
-            label={t("misReservas.detalle.proteccion")}
-            valor={t(`reserva.planes.nombreSeguro.${reserva.proteccion}`, { defaultValue: String(reserva.proteccion) })}
+      {/* Tarjeta 1: Ficha y Resumen del Alquiler */}
+      <View style={[styles.card, styles.resumenCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+        {/* Foto del vehículo */}
+        {foto ? (
+          <Image source={{ uri: foto }} style={styles.fotoVehiculo} resizeMode="cover" />
+        ) : (
+          <View style={[styles.fotoVehiculoFallback, { backgroundColor: c.primaryBg }]}>
+            <Ionicons name="car-sport-outline" size={48} color={c.primary} />
+          </View>
+        )}
+
+        {/* Grid de 10 Tiles */}
+        <View style={styles.gridTiles}>
+          <InfoTile
+            icono="car-sport"
+            label={t("reserva.confirmacion.respuesta.vehiculo", { defaultValue: "Vehículo" })}
+            valor={reserva.vehiculoNombre}
             c={c}
           />
-        ) : null}
-        <FilaDetalle
-          icono="receipt-outline"
-          label={t("reserva.confirmacion.respuesta.referencia")}
-          valor={reserva.referencia}
-          c={c}
-        />
-        {reserva.paymentId ? (
-          <FilaDetalle
-            icono="card-outline"
-            label={t("reserva.confirmacion.respuesta.idTransaccion")}
-            valor={String(reserva.paymentId)}
+          <InfoTile
+            icono="calendar"
+            label={t("misReservas.detalle.fechaInicio", { defaultValue: "Fecha de retiro" })}
+            valor={reserva.fechaRetiro ? fechaCorta(String(reserva.fechaRetiro)) : "—"}
             c={c}
           />
-        ) : null}
-        <FilaDetalle
-          icono="cash-outline"
-          label={t("reserva.confirmacion.respuesta.total")}
-          valor={fmt(reserva.total)}
-          c={c}
-        />
-        <FilaDetalle
-          icono="checkmark-circle-outline"
-          label={t("reserva.confirmacion.respuesta.estado")}
-          valor={estadoTexto}
-          c={c}
-          ultima
-        />
+          <InfoTile
+            icono="calendar-outline"
+            label={t("misReservas.detalle.fechaFin", { defaultValue: "Fecha de devolución" })}
+            valor={reserva.fechaDevolucion ? fechaCorta(String(reserva.fechaDevolucion)) : "—"}
+            c={c}
+          />
+          <InfoTile
+            icono="location"
+            label={t("misReservas.detalle.lugarRetiro", { defaultValue: "Lugar de retiro" })}
+            valor={formatLugar(reserva.lugarRetiro ?? (reserva.fechasLugarSnapshot as any)?.lugarRetiro, "entrega")}
+            c={c}
+          />
+          <InfoTile
+            icono="location"
+            label={t("misReservas.detalle.lugarDevolucion", { defaultValue: "Lugar de devolución" })}
+            valor={formatLugar(reserva.lugarDevolucion ?? (reserva.fechasLugarSnapshot as any)?.lugarDevolucion ?? reserva.lugarRetiro, "devolucion")}
+            c={c}
+          />
+          <InfoTile
+            icono="card"
+            label={t("reserva.confirmacion.respuesta.medioPago", { defaultValue: "Medio de pago" })}
+            valor={
+              esPendienteEfectivo || reserva.metodoPago === "efectivo"
+                ? "Efectivo en sucursal"
+                : (reserva as any).metodoPagoDetalle || (reserva.metodoPago === "wompi" ? "Wompi (En línea)" : reserva.metodoPago || "Tarjeta")
+            }
+            c={c}
+          />
+          <InfoTile
+            icono="shield-checkmark"
+            label={t("misReservas.detalle.proteccion", { defaultValue: "Protección" })}
+            valor={
+              reserva.proteccion
+                ? t(`reserva.planes.nombreSeguro.${reserva.proteccion}`, { defaultValue: String(reserva.proteccion) })
+                : "Protección Obligatoria"
+            }
+            c={c}
+          />
+          <InfoTile
+            icono="receipt"
+            label={t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia" })}
+            valor={reserva.referencia}
+            c={c}
+          />
+          <InfoTile
+            icono="cash"
+            label={t("reserva.confirmacion.respuesta.total", { defaultValue: "Total" })}
+            valor={fmt(reserva.total)}
+            c={c}
+          />
+          <InfoTile
+            icono="checkmark-circle"
+            label={t("reserva.confirmacion.respuesta.estado", { defaultValue: "Estado" })}
+            valor={estadoTexto}
+            colorValor={
+              grupo === "pendiente"
+                ? "#16A34A"
+                : grupo === "confirmada"
+                ? "#2563EB"
+                : grupo === "en_curso"
+                ? "#16A34A"
+                : grupo === "cancelada"
+                ? "#DC2626"
+                : c.textPrimary
+            }
+            c={c}
+          />
+        </View>
       </View>
 
       {esPendienteEfectivo && (
@@ -741,7 +753,7 @@ export default function PagoRespuestaScreen() {
                 "Para desbloquear el contrato con tu clave, primero se debe confirmar el pago y completar la firma digital del contrato.",
             })}
           </Text>
-          <View style={{ width: "100%", marginTop: 12, opacity: 0.55 }}>
+          <View style={{ width: "100%", marginTop: 12, opacity: c.oscuro ? 0.75 : 0.6 }}>
             <PasswordInput
               placeholder={t("misReservas.claveContratoPlaceholder")}
               value=""
@@ -749,12 +761,12 @@ export default function PagoRespuestaScreen() {
               keyboardType="number-pad"
             />
           </View>
-          <View style={[styles.btnWrap, { marginTop: 4, opacity: 0.5 }]}>
+          <View style={[styles.btnWrap, { marginTop: 4, opacity: c.oscuro ? 0.75 : 0.6 }]}>
             <View
               style={[
                 styles.btn,
                 {
-                  backgroundColor: c.oscuro ? "rgba(148, 163, 184, 0.2)" : "#E2E8F0",
+                  backgroundColor: c.oscuro ? "rgba(148, 163, 184, 0.22)" : "#E2E8F0",
                   flexDirection: "row",
                   justifyContent: "center",
                   alignItems: "center",
@@ -762,8 +774,8 @@ export default function PagoRespuestaScreen() {
                 },
               ]}
             >
-              <Ionicons name="lock-closed" size={16} color={c.textMuted} />
-              <Text style={[styles.btnTexto, { color: c.textMuted }]}>
+              <Ionicons name="lock-closed" size={16} color={c.oscuro ? "#CBD5E1" : c.textMuted} />
+              <Text style={[styles.btnTexto, { color: c.oscuro ? "#CBD5E1" : c.textMuted }]}>
                 {t("misReservas.verContrato", { defaultValue: "Ver contrato" })}
               </Text>
             </View>
@@ -913,36 +925,33 @@ function HeaderDetalle({
         backgroundColor: c.bgHeader,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 12 }}>
-        <TouchableOpacity
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: c.bgInput,
-            borderWidth: 1,
-            borderColor: c.border,
-          }}
-          onPress={onVolver}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="arrow-back" size={20} color={c.textPrimary} />
-        </TouchableOpacity>
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "700",
-            color: c.textPrimary,
-            marginLeft: 12,
-            flexShrink: 1,
-          }}
-          numberOfLines={1}
-        >
-          {titulo}
-        </Text>
-      </View>
+      <TouchableOpacity
+        style={{
+          width: 36,
+          height: 36,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        onPress={onVolver}
+        activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
+      </TouchableOpacity>
+
+      <Text
+        style={{
+          flex: 1,
+          fontSize: 16,
+          fontWeight: "700",
+          color: c.textPrimary,
+          textAlign: "center",
+          marginHorizontal: 8,
+        }}
+        numberOfLines={1}
+      >
+        {titulo}
+      </Text>
 
       <TouchableOpacity
         style={{
@@ -964,6 +973,60 @@ function HeaderDetalle({
           color={temaActual === "oscuro" ? "#F59E0B" : c.textPrimary}
         />
       </TouchableOpacity>
+    </View>
+  );
+}
+
+function InfoTile({
+  icono,
+  label,
+  valor,
+  colorValor,
+  c,
+}: {
+  icono: keyof typeof Ionicons.glyphMap;
+  label: string;
+  valor: string;
+  colorValor?: string;
+  c: ReturnType<typeof useTemaColores>;
+}) {
+  const azulMarca = c.oscuro ? "#93C5FD" : "#1E3A8A";
+  const bgIcono = c.oscuro ? "rgba(147, 197, 253, 0.15)" : "rgba(30, 58, 138, 0.08)";
+
+  return (
+    <View
+      style={[
+        styles.tile,
+        {
+          backgroundColor: c.oscuro ? c.bgInput : "#F8FAFC",
+          borderColor: c.border,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.tileIconoWrap,
+          {
+            backgroundColor: bgIcono,
+          },
+        ]}
+      >
+        <Ionicons name={icono} size={18} color={azulMarca} />
+      </View>
+      <View style={styles.tileTextWrap}>
+        <Text style={[styles.tileLabel, { color: c.textSecondary }]} numberOfLines={1}>
+          {label}
+        </Text>
+        <Text
+          style={[
+            styles.tileValor,
+            { color: colorValor || c.textPrimary },
+          ]}
+          numberOfLines={2}
+        >
+          {valor}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -1022,7 +1085,70 @@ const styles = StyleSheet.create({
   procesandoTexto: { fontSize: 14 },
   tituloVacio: { fontSize: 17, fontWeight: "800", marginTop: 12, textAlign: "center" },
   textoVacio: { fontSize: 13, marginTop: 6, textAlign: "center", lineHeight: 19 },
-  scroll: { paddingHorizontal: 24, paddingBottom: 40, alignItems: "center" },
+  scroll: { paddingHorizontal: 16, paddingBottom: 40, alignItems: "center" },
+  resumenCard: {
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  fotoVehiculo: {
+    width: "100%",
+    height: 195,
+    borderRadius: 16,
+    marginBottom: 14,
+    backgroundColor: "#F1F5F9",
+  },
+  fotoVehiculoFallback: {
+    width: "100%",
+    height: 160,
+    borderRadius: 16,
+    marginBottom: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gridTiles: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 10,
+  },
+  tile: {
+    width: "48.5%",
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  tileIconoWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tileTextWrap: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  tileLabel: {
+    fontSize: 10.5,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  tileValor: {
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 16,
+  },
   iconoWrap: {
     width: 80,
     height: 80,
@@ -1039,7 +1165,7 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   titulo: { fontSize: 20, fontWeight: "800", textAlign: "center" },
-  subtitulo: { fontSize: 13.5, textAlign: "center", marginTop: 8, lineHeight: 19, marginBottom: 20 },
+  subtitulo: { fontSize: 13, textAlign: "center", marginTop: 4, lineHeight: 18, marginBottom: 16 },
   card: {
     width: "100%",
     borderWidth: 1,
