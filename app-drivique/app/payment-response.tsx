@@ -707,23 +707,25 @@ export default function PagoRespuestaScreen() {
             {!!(reserva as any).convenioWompi && (
               <View style={styles.filaInfoEfectivo}>
                 <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary, fontWeight: "700" }]}>Número de convenio:</Text>
-                <Text style={[styles.valorEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 15 }]}>{(reserva as any).convenioWompi}</Text>
+                <Text style={[styles.valorEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 16 }]}>{(reserva as any).convenioWompi}</Text>
               </View>
             )}
 
             {!!(reserva as any).referenciaWompi && (
               <View style={styles.filaInfoEfectivo}>
                 <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary, fontWeight: "700" }]}>Referencia de pago:</Text>
-                <Text style={[styles.valorRefEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 15 }]}>{(reserva as any).referenciaWompi}</Text>
+                <Text style={[styles.valorRefEfectivo, { color: primaryAccent, fontWeight: "800", fontSize: 16 }]}>{(reserva as any).referenciaWompi}</Text>
               </View>
             )}
 
-            <View style={styles.filaInfoEfectivo}>
-              <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
-                {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia de reserva" })}:
-              </Text>
-              <Text style={[styles.valorRefEfectivo, { color: c.textPrimary }]}>{reserva.referencia}</Text>
-            </View>
+            {!(reserva as any).convenioWompi && (
+              <View style={styles.filaInfoEfectivo}>
+                <Text style={[styles.etiquetaEfectivo, { color: c.textSecondary }]}>
+                  {t("reserva.confirmacion.respuesta.referencia", { defaultValue: "Referencia de reserva" })}:
+                </Text>
+                <Text style={[styles.valorRefEfectivo, { color: c.textPrimary }]}>{reserva.referencia}</Text>
+              </View>
+            )}
 
             {!(reserva as any).convenioWompi && !!sucursalNombre && (
               <View style={styles.filaInfoEfectivo}>
