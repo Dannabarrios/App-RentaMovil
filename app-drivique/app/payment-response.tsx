@@ -147,6 +147,8 @@ export default function PagoRespuestaScreen() {
               "";
           } else {
             cambios.estado = "PENDIENTE_VALIDACION";
+            cambios.convenioWompi = null;
+            cambios.referenciaWompi = null;
           }
         } else if (txData.status === "DECLINED" || txData.status === "ERROR") {
           cambios.estado = "CANCELADA";
@@ -310,12 +312,14 @@ export default function PagoRespuestaScreen() {
     );
   }
 
+  const pmTypeUpper = String(reserva.paymentMethodType || "").toUpperCase();
+  const detLower = String(reserva.metodoPagoDetalle || "").toLowerCase();
+
   const esPendienteEfectivo =
     reserva.estado === "PENDIENTE_EFECTIVO" ||
     (reserva.estado === "PENDIENTE" && reserva.metodoPago === "efectivo") ||
-    String(reserva.paymentMethodType || "").toUpperCase().includes("COLLECT") ||
-    String(reserva.metodoPagoDetalle || "").toLowerCase().includes("efectivo") ||
-    !!reserva.convenioWompi;
+    pmTypeUpper.includes("COLLECT") ||
+    detLower.includes("efectivo en bancolombia");
 
   // La firma solo se habilita para reservas pagadas/confirmadas o pendientes de validacion digital, NUNCA cuando está pendiente pago en efectivo
   const puedeFirmar = !contratoFirmado && !esPendienteEfectivo && (

@@ -133,19 +133,23 @@ export default function WompiCheckoutScreen() {
               nuevoEstado = "CONFIRMADA";
             }
 
-            const convenioFinal =
-              txData.payment_method?.extra?.business_agreement_code ||
-              (txData as any).extra?.business_agreement_code ||
-              ultimoConvenioRef.current ||
-              "00000";
+            const esCollect = pmType === "BANCOLOMBIA_COLLECT" || pmType.includes("COLLECT");
 
-            const refWompiFinal =
-              txData.payment_method?.extra?.payment_reference ||
-              txData.payment_method?.extra?.reference ||
-              txData.payment_method?.extra?.external_identifier ||
-              (txData as any).extra?.payment_reference ||
-              ultimoReferenciaWompiRef.current ||
-              "";
+            const convenioFinal = esCollect
+              ? txData.payment_method?.extra?.business_agreement_code ||
+                (txData as any).extra?.business_agreement_code ||
+                ultimoConvenioRef.current ||
+                "00000"
+              : null;
+
+            const refWompiFinal = esCollect
+              ? txData.payment_method?.extra?.payment_reference ||
+                txData.payment_method?.extra?.reference ||
+                txData.payment_method?.extra?.external_identifier ||
+                (txData as any).extra?.payment_reference ||
+                ultimoReferenciaWompiRef.current ||
+                ""
+              : null;
 
             await reservaPersistService.actualizarReserva(refDestino, {
               estado: nuevoEstado,
