@@ -770,38 +770,44 @@ export default function PagoRespuestaScreen() {
         </View>
       )}
 
-      {/* Tarjeta CTA: Firma tu Contrato (solo cuando el pago ya fue confirmado y no se ha firmado) */}
+      {/* Tarjeta CTA: Firma de Contrato (solo cuando el pago ya fue confirmado y no se ha firmado) */}
       {puedeFirmar && (
         <View
           style={[
             styles.card,
             {
-              backgroundColor: c.oscuro ? "rgba(37, 99, 235, 0.12)" : "#EFF6FF",
-              borderColor: c.oscuro ? "rgba(96, 165, 250, 0.35)" : "#BFDBFE",
+              backgroundColor: c.bgCard,
+              borderColor: c.border,
               alignItems: "center",
             },
           ]}
         >
+          {/* Logo Drivique en Badge Circular */}
           <View
             style={{
-              width: 52,
-              height: 52,
-              borderRadius: 26,
-              backgroundColor: c.oscuro ? "rgba(96, 165, 250, 0.2)" : "rgba(37, 99, 235, 0.12)",
+              width: 58,
+              height: 58,
+              borderRadius: 29,
+              backgroundColor: c.oscuro ? "rgba(255, 255, 255, 0.06)" : "#F8FAFC",
+              borderWidth: 1,
+              borderColor: c.border,
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 12,
             }}
           >
-            <Ionicons name="document-text-outline" size={26} color={primaryAccent} />
+            <Image
+              source={require("@/assets/images/logo.png")}
+              style={{ width: 36, height: 36, resizeMode: "contain" }}
+            />
           </View>
           <Text style={[styles.tituloCandado, { color: c.textPrimary, marginBottom: 6 }]}>
-            {t("misReservas.firmaContratoTitulo", { defaultValue: "Firma tu Contrato" })}
+            {t("misReservas.firmaContratoTitulo", { defaultValue: "Listo para firmar contrato" })}
           </Text>
           <Text style={[styles.textoCandado, { color: c.textSecondary, marginBottom: 16 }]}>
             {t("misReservas.firmaContratoTexto", {
               defaultValue:
-                "Tu reserva ha sido confirmada. Lee y firma el contrato de alquiler para habilitar el acceso al documento.",
+                "Tu pago ha sido confirmado con éxito. Completa la firma digital de tu contrato para acceder al documento protegido.",
             })}
           </Text>
           <TouchableOpacity
@@ -817,7 +823,7 @@ export default function PagoRespuestaScreen() {
             >
               <Ionicons name="create-outline" size={18} color="#fff" />
               <Text style={styles.btnTexto}>
-                {t("misReservas.firmaContratoBoton", { defaultValue: "Leer y Firmar Contrato" })}
+                {t("misReservas.firmaContratoBoton", { defaultValue: "Firmar contrato" })}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
