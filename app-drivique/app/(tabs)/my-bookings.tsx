@@ -587,21 +587,6 @@ function TarjetaReserva({
             {formatFechaReserva(reserva.fechaDevolucion ? String(reserva.fechaDevolucion) : null)}
           </Text>
 
-          {/* Detalles técnicos / entrega del vehículo */}
-          <View style={styles.tarjetaDetallesFila}>
-            {vehiculoSnap?.transmision ? (
-              <Text style={[styles.tarjetaDetallesTexto, { color: c.textSecondary }]} numberOfLines={1}>
-                {vehiculoSnap.transmision}
-                {vehiculoSnap.combustible ? ` · ${vehiculoSnap.combustible}` : ""}
-                {vehiculoSnap.categoria ? ` · ${vehiculoSnap.categoria}` : ""}
-              </Text>
-            ) : (
-              <Text style={[styles.tarjetaDetallesTexto, { color: c.textSecondary }]} numberOfLines={1}>
-                {reserva.lugarRetiro ? (reserva.lugarRetiro === "sucursal" ? "📍 Sucursal Principal" : "📍 Entrega a Domicilio") : "📍 Drivique Rent a Car"}
-              </Text>
-            )}
-          </View>
-
           <View style={styles.tarjetaFooter}>
             <Text style={[styles.tarjetaReferencia, { color: c.textMuted }]} numberOfLines={1}>
               #{reserva.referencia}
