@@ -266,27 +266,12 @@ export default function CalendarioRango({
     }
 
     if (!fechaRetiro || (fechaRetiro && fechaDevolucion)) {
-      // Preselección de 24 horas: sugerir por defecto devolución al día siguiente
-      const [y, m, d] = fecha.split("-").map(Number);
-      const sigDia = new Date(y, m - 1, d + 1);
-      const ySig = sigDia.getFullYear();
-      const mSig = String(sigDia.getMonth() + 1).padStart(2, "0");
-      const dSig = String(sigDia.getDate()).padStart(2, "0");
-      const fechaSig = `${ySig}-${mSig}-${dSig}`;
-      const motivoSig = ocupados.get(fechaSig);
-      onCambiarFechas(fecha, motivoSig ? null : fechaSig);
+      onCambiarFechas(fecha, null);
       return;
     }
 
     if (fecha < fechaRetiro) {
-      const [y, m, d] = fecha.split("-").map(Number);
-      const sigDia = new Date(y, m - 1, d + 1);
-      const ySig = sigDia.getFullYear();
-      const mSig = String(sigDia.getMonth() + 1).padStart(2, "0");
-      const dSig = String(sigDia.getDate()).padStart(2, "0");
-      const fechaSig = `${ySig}-${mSig}-${dSig}`;
-      const motivoSig = ocupados.get(fechaSig);
-      onCambiarFechas(fecha, motivoSig ? null : fechaSig);
+      onCambiarFechas(fecha, null);
       return;
     }
 
