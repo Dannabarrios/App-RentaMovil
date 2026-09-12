@@ -66,12 +66,25 @@ const COLOR_RESERVADO = "#EF4444";
 const COLOR_MANTENIMIENTO = "#64748B";
 const COLOR_SELECCIONADO = COLOR_MARCA;
 
+function getFechaHoyLocal(): string {
+  const ahora = new Date();
+  const year = ahora.getFullYear();
+  const month = String(ahora.getMonth() + 1).padStart(2, "0");
+  const day = String(ahora.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function getDiasEnRango(inicio: string, fin: string): string[] {
   const dias: string[] = [];
-  const cursor = new Date(inicio + "T00:00:00");
-  const finDate = new Date(fin + "T00:00:00");
+  const [y1, m1, d1] = inicio.split("-").map(Number);
+  const [y2, m2, d2] = fin.split("-").map(Number);
+  const cursor = new Date(y1, m1 - 1, d1);
+  const finDate = new Date(y2, m2 - 1, d2);
   while (cursor <= finDate) {
-    dias.push(cursor.toISOString().split("T")[0]);
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth() + 1).padStart(2, "0");
+    const d = String(cursor.getDate()).padStart(2, "0");
+    dias.push(`${y}-${m}-${d}`);
     cursor.setDate(cursor.getDate() + 1);
   }
   return dias;
@@ -202,7 +215,7 @@ export default function CalendarioRango({
     return mapa;
   }, [vehiculo.id]);
 
-  const hoy = new Date().toISOString().split("T")[0];
+  const hoy = getFechaHoyLocal();
 
   const mensajePorMotivo = (motivo: "reservado" | "mantenimiento") =>
     motivo === "mantenimiento"
