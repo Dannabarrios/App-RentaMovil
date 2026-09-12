@@ -7,7 +7,7 @@ import {
   Image,
   Modal,
   Pressable,
-  FlatList,
+  SectionList,
   StatusBar,
   StyleSheet,
   Text,
@@ -112,6 +112,46 @@ function formatFechaCompleta(fechaStr?: string | null, locale: string = "es-CO")
     year: "numeric",
   });
   return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function obtenerTituloSeccionFecha(fechaIsoStr?: string | null, locale: string = "es-CO"): string {
+  if (!fechaIsoStr) return "Otras reservas";
+  const clean = String(fechaIsoStr).split("T")[0];
+  const [y, m, d] = clean.split("-").map(Number);
+  if (!y || !m || !d) return "Otras reservas";
+
+  const ahora = new Date();
+  const yearHoy = ahora.getFullYear();
+  const mesHoy = String(ahora.getMonth() + 1).padStart(2, "0");
+  const diaHoy = String(ahora.getDate()).padStart(2, "0");
+  const hoyStr = `${yearHoy}-${mesHoy}-${diaHoy}`;
+
+  const ayerDate = new Date(ahora);
+  ayerDate.setDate(ayerDate.getDate() - 1);
+  const ayerStr = `${ayerDate.getFullYear()}-${String(ayerDate.getMonth() + 1).padStart(2, "0")}-${String(ayerDate.getDate()).padStart(2, "0")}`;
+
+  if (clean === hoyStr) {
+    return "Reservas de hoy";
+  }
+  if (clean === ayerStr) {
+    return "Ayer";
+  }
+
+  const fechaItem = new Date(y, m - 1, d);
+  const hoyMid = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+  const diffDias = Math.round((hoyMid.getTime() - fechaItem.getTime()) / (1000 * 60 * 60 * 24));
+
+  const fechaFormateada = fechaItem.toLocaleDateString(locale, {
+    day: "numeric",
+    month: "long",
+    year: ahora.getFullYear() === y ? undefined : "numeric",
+  });
+
+  if (diffDias > 1 && diffDias <= 7) {
+    return `Hace ${diffDias} días · ${fechaFormateada}`;
+  }
+
+  return fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
 }
 
 export default function MisReservasScreen() {
@@ -242,6 +282,22 @@ export default function MisReservasScreen() {
       return true;
     });
   }, [reservas, filtroGrupo, filtroMes]);
+
+  const seccionesReservas = useMemo(() => {
+    const mapa = new Map<string, ReservaGuardada[]>();
+    for (const r of reservasFiltradas) {
+      const fechaKey = String(r.fechaReserva || r.fechaRetiro || "").split("T")[0] || "desconocida";
+      const lista = mapa.get(fechaKey) || [];
+      lista.push(r);
+      mapa.set(fechaKey, lista);
+    }
+    const fechasOrdenadas = Array.from(mapa.keys()).sort((a, b) => b.localeCompare(a));
+    return fechasOrdenadas.map((fechaKey) => ({
+      fechaKey,
+      titulo: obtenerTituloSeccionFecha(fechaKey === "desconocida" ? null : fechaKey, locale),
+      data: mapa.get(fechaKey) || [],
+    }));
+  }, [reservasFiltradas, locale]);
 
   const irADetalle = (referencia: string) =>
     router.push(`/payment-response?ref=${encodeURIComponent(referencia)}`);
@@ -415,11 +471,18 @@ export default function MisReservasScreen() {
       )}
 
       {!cargando && reservas.length > 0 && reservasFiltradas.length > 0 && (
-        <FlatList
-          data={reservasFiltradas}
+        <SectionList
+          sections={seccionesReservas}
           keyExtractor={(item) => item.referencia}
           contentContainerStyle={styles.lista}
           showsVerticalScrollIndicator={false}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section: { titulo } }) => (
+            <View style={styles.seccionHeader}>
+              <View style={[styles.seccionPunto, { backgroundColor: c.primary }]} />
+              <Text style={[styles.seccionTitulo, { color: c.textPrimary }]}>{titulo}</Text>
+            </View>
+          )}
           renderItem={({ item }) => (
             <TarjetaReserva
               reserva={item}
@@ -588,8 +651,8 @@ function TarjetaReserva({
           </Text>
 
           <View style={styles.tarjetaFooter}>
-            <Text style={[styles.tarjetaReferencia, { color: c.textMuted }]} numberOfLines={1}>
-              #{reserva.referencia}
+            <Text style={[styles.tarjetaTotalLabel, { color: c.textSecondary }]}>
+              {t("reserva.confirmacion.respuesta.total", { defaultValue: "Total" })}
             </Text>
             <Text style={[styles.tarjetaTotal, { color: c.textPrimary }]}>{fmt(reserva.total)}</Text>
           </View>
@@ -747,6 +810,24 @@ const styles = StyleSheet.create({
   },
   todosMesesTexto: { fontSize: 13.5 },
 
+  seccionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 14,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  seccionPunto: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  seccionTitulo: {
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
   lista: { padding: 16, paddingBottom: 40 },
   tarjeta: {
     borderRadius: 14,
@@ -795,7 +876,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  tarjetaReferencia: { fontSize: 10, flexShrink: 1 },
+  tarjetaTotalLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
   tarjetaTotal: { fontSize: 14, fontWeight: "800" },
   reportarBtn: {
     flexDirection: "row",
