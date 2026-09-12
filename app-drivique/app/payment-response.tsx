@@ -40,6 +40,7 @@ import {
   DatosPlanes,
 } from "@/modules/reservation/types/reservation.types";
 import { fechaCorta, fmt } from "@/modules/reservation/components/BookingSummaryModal.pieces";
+import { formatHoraAmPm } from "@/modules/reservation/constants/reservation.constants";
 import { contratoService, ContratoGuardado } from "@/modules/reservation/services/contractService";
 import {
   compartirContratoPdf,
@@ -606,7 +607,7 @@ export default function PagoRespuestaScreen() {
           </View>
         )}
 
-        {/* Grid de 10 Tiles */}
+        {/* Grid de 12 Tiles */}
         <View style={styles.gridTiles}>
           <InfoTile
             icono="car-sport"
@@ -621,9 +622,29 @@ export default function PagoRespuestaScreen() {
             c={c}
           />
           <InfoTile
+            icono="time"
+            label={t("reserva.fechasLugar.horaDeRetiro", { defaultValue: "Hora de retiro" })}
+            valor={
+              fechasLugarEfectivas?.horaRetiro
+                ? formatHoraAmPm(String(fechasLugarEfectivas.horaRetiro))
+                : "—"
+            }
+            c={c}
+          />
+          <InfoTile
             icono="calendar-outline"
             label={t("misReservas.detalle.fechaFin", { defaultValue: "Fecha de devolución" })}
             valor={reserva.fechaDevolucion ? fechaCorta(String(reserva.fechaDevolucion)) : "—"}
+            c={c}
+          />
+          <InfoTile
+            icono="time-outline"
+            label={t("reserva.fechasLugar.horaDeDevolucion", { defaultValue: "Hora de devolución" })}
+            valor={
+              fechasLugarEfectivas?.horaDevolucion
+                ? formatHoraAmPm(String(fechasLugarEfectivas.horaDevolucion))
+                : "—"
+            }
             c={c}
           />
           <InfoTile

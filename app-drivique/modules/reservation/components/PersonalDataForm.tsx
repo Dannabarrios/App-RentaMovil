@@ -252,6 +252,8 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       fechaReserva: new Date().toISOString(),
       fechaRetiro: fechasLugar.fechaRetiro,
       fechaDevolucion: fechasLugar.fechaDevolucion,
+      horaRetiro: fechasLugar.horaRetiro,
+      horaDevolucion: fechasLugar.horaDevolucion,
       lugarRetiro: fechasLugar.lugarRetiro,
       lugarDevolucion: fechasLugar.lugarDevolucion,
       proteccion: planes.proteccion,
