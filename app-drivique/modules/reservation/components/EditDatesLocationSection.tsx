@@ -135,44 +135,10 @@ export default function EditDatesLocationSection({
     setModalTipo(null);
   };
 
-  useEffect(() => {
-    if (!draft.fechaRetiro || !draft.horaRetiro) return;
-    const ahora = new Date();
-    const hoyStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
-
-    if (String(draft.fechaRetiro).split("T")[0] === hoyStr) {
-      const [h, m] = draft.horaRetiro.split(":").map(Number);
-      if (!isNaN(h) && !isNaN(m)) {
-        const horaMinutos = h * 60 + m;
-        const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
-        if (horaMinutos <= ahoraMinutos) {
-          setDraft((prev) => ({ ...prev, horaRetiro: "" }));
-        }
-      }
-    }
-  }, [draft.fechaRetiro, draft.horaRetiro]);
-
   const handleElegirHora = (hora: string) => {
     const fecha = horaVisible === "retiro" ? draft.fechaRetiro : draft.fechaDevolucion;
 
     if (fecha) {
-      const ahora = new Date();
-      const hoyStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
-
-      if (String(fecha).split("T")[0] === hoyStr) {
-        const [h, m] = hora.split(":").map(Number);
-        const horaMinutos = h * 60 + m;
-        const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
-        if (horaMinutos <= ahoraMinutos) {
-          Alert.alert(
-            t("reserva.fechasLugar.horaPasadaTitulo", { defaultValue: "Hora no disponible" }),
-            t("reserva.fechasLugar.horaPasadaMensaje", {
-              defaultValue: "La hora seleccionada ya pasó hoy en tiempo real. Por favor selecciona una hora posterior.",
-            })
-          );
-          return;
-        }
-      }
 
       const horasOcupadas = getDisponibilidadVehiculo(vehiculo.id).horasOcupadas?.[fecha] ?? [];
       const bloqueo = horasOcupadas.find((h) => h.hora === hora);

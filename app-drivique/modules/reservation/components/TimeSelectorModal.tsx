@@ -38,19 +38,8 @@ export default function SelectorHoraModal({
   const { t } = useTranslation();
 
   const listaHoras = useMemo(() => {
-    const ahora = new Date();
-    const year = ahora.getFullYear();
-    const month = String(ahora.getMonth() + 1).padStart(2, "0");
-    const day = String(ahora.getDate()).padStart(2, "0");
-    const hoyStr = `${year}-${month}-${day}`;
-
-    const cleanFecha = fecha ? String(fecha).split("T")[0] : null;
-    const esHoy = cleanFecha === hoyStr;
-
-    const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
-
     let minLimiteMinutos = -1;
-    if (minHora && String(minHora).includes(":")) {
+    if (minHora && typeof minHora === "string" && minHora.includes(":")) {
       const [mh, mm] = minHora.split(":").map(Number);
       if (!isNaN(mh) && !isNaN(mm)) {
         minLimiteMinutos = mh * 60 + mm;
@@ -64,11 +53,8 @@ export default function SelectorHoraModal({
       let bloqueada = false;
       let motivo = "";
 
-      // Si la fecha es hoy y la hora ya pasó en tiempo real
-      if (esHoy && totalMin <= ahoraMinutos) {
-        bloqueada = true;
-        motivo = t("reserva.fechasLugar.horaPasadaTag", { defaultValue: "Hora pasada" });
-      } else if (minLimiteMinutos >= 0 && totalMin <= minLimiteMinutos) {
+      // Si es devolución el mismo día, debe ser posterior a la hora de retiro
+      if (minLimiteMinutos >= 0 && totalMin <= minLimiteMinutos) {
         bloqueada = true;
         motivo = t("reserva.fechasLugar.horaAnteriorTag", { defaultValue: "No disponible" });
       }
@@ -79,7 +65,7 @@ export default function SelectorHoraModal({
         motivo,
       };
     });
-  }, [fecha, minHora, t]);
+  }, [minHora, t]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCerrar}>
