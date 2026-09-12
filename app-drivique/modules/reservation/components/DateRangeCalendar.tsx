@@ -289,6 +289,16 @@ export default function CalendarioRango({
       return;
     }
 
+    if (fecha === fechaRetiro) {
+      Alert.alert(
+        t("reserva.fechasLugar.mismoDiaTitulo", { defaultValue: "Reserva de 1 día" }),
+        t("reserva.fechasLugar.mismoDiaMensaje", {
+          defaultValue: "Tu tarifa cubre 24 horas de alquiler. Puedes devolver el vehículo hoy o entregarlo mañana a la misma hora por el mismo valor.",
+        }),
+        [{ text: t("comun.entendido", { defaultValue: "Entendido" }) }]
+      );
+    }
+
     onCambiarFechas(fechaRetiro, fecha);
   };
 

@@ -562,18 +562,11 @@ export default function EditDatesLocationSection({
           {/* 4. Calendario de disponibilidad */}
           <View style={styles.headerCalendarioContainer}>
             <Ionicons name="calendar" size={14} color={primaryAccent} style={styles.iconoCalendario} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.tituloCalendario, { color: primaryAccent }]}>
-                {t("reserva.fechasLugar.calendarioDisponibilidad", {
-                  defaultValue: "Selecciona un rango de fechas en el calendario de disponibilidad",
-                })}
-              </Text>
-              <Text style={[styles.subtituloCalendario, { color: c.textMuted }]}>
-                {t("reserva.fechasLugar.calendarioAyuda24h", {
-                  defaultValue: "💡 1 día de alquiler = 24 horas (ej. de 6:00 a.m. a 6:00 a.m. de mañana).",
-                })}
-              </Text>
-            </View>
+            <Text style={[styles.tituloCalendario, { color: primaryAccent }]}>
+              {t("reserva.fechasLugar.calendarioDisponibilidad", {
+                defaultValue: "Selecciona un rango de fechas en el calendario de disponibilidad",
+              })}
+            </Text>
           </View>
           <CalendarioRango
             vehiculo={vehiculo}
@@ -700,30 +693,7 @@ export default function EditDatesLocationSection({
             </View>
           )}
 
-          {/* --- GARANTÍA DE 24 HORAS (cuando la devolución es el mismo día) --- */}
-          {draft.fechaRetiro && draft.fechaRetiro === draft.fechaDevolucion && (
-            <View
-              style={[
-                styles.garantiaCard,
-                {
-                  backgroundColor: c.oscuro ? "rgba(37, 99, 235, 0.12)" : "#EFF6FF",
-                  borderColor: c.oscuro ? "rgba(96, 165, 250, 0.35)" : "#BFDBFE",
-                },
-              ]}
-            >
-              <Ionicons name="shield-checkmark" size={15} color={primaryAccent} style={{ marginTop: 1 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.garantiaTitulo, { color: primaryAccent }]}>
-                  {t("reserva.fechasLugar.garantia24hTitulo", { defaultValue: "Garantía de 24 horas" })}
-                </Text>
-                <Text style={[styles.garantiaDesc, { color: c.textSecondary }]}>
-                  {t("reserva.fechasLugar.garantia24hDesc", {
-                    defaultValue: "Tu tarifa cubre 1 día completo (hasta 24h). Puedes extender tu devolución hasta mañana por el mismo precio si lo necesitas.",
-                  })}
-                </Text>
-              </View>
-            </View>
-          )}
+
         </View>
       </ScrollView>
 
@@ -935,11 +905,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: 0.2,
     lineHeight: 18,
-  },
-  subtituloCalendario: {
-    fontSize: 11,
-    marginTop: 2,
-    lineHeight: 15,
+    flex: 1,
   },
   domicilioCard: {
     borderWidth: 1,
@@ -1057,23 +1023,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "800",
-  },
-  garantiaCard: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "flex-start",
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 11,
-    marginTop: 10,
-  },
-  garantiaTitulo: {
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  garantiaDesc: {
-    fontSize: 11,
-    lineHeight: 15,
   },
 });
