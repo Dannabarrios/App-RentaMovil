@@ -172,7 +172,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
         const autoDev =
           fechasLugar.fechaDevolucion &&
           fechasLugar.fechaDevolucion !== fechasLugar.fechaRetiro &&
-          !fechasLugar.horaDevolucion;
+          (!fechasLugar.horaDevolucion || fechasLugar.horaDevolucion > hora);
 
         actualizarFechasLugar({
           horaRetiro: hora,
@@ -621,6 +621,15 @@ export default function FormFechasLugar({ vehiculo }: Props) {
         fecha={horaVisible === "retiro" ? fechasLugar.fechaRetiro : fechasLugar.fechaDevolucion}
         minHora={
           horaVisible === "devolucion" && fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion
+            ? fechasLugar.horaRetiro
+            : null
+        }
+        maxHora={
+          horaVisible === "devolucion" &&
+          fechasLugar.fechaRetiro &&
+          fechasLugar.fechaDevolucion &&
+          fechasLugar.fechaRetiro !== fechasLugar.fechaDevolucion &&
+          fechasLugar.horaRetiro
             ? fechasLugar.horaRetiro
             : null
         }

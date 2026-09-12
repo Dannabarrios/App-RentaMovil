@@ -24,6 +24,7 @@ interface Props {
   horaSeleccionada: string;
   fecha?: string | null;
   minHora?: string | null;
+  maxHora?: string | null;
   onSeleccionar: (hora: string) => void;
   onCerrar: () => void;
 }
@@ -41,6 +42,7 @@ export default function SelectorHoraModal({
   horaSeleccionada,
   fecha,
   minHora,
+  maxHora,
   onSeleccionar,
   onCerrar,
 }: Props) {
@@ -65,6 +67,14 @@ export default function SelectorHoraModal({
       }
     }
 
+    let maxLimiteMinutos = Infinity;
+    if (maxHora && typeof maxHora === "string" && maxHora.includes(":")) {
+      const [mh, mm] = maxHora.split(":").map(Number);
+      if (!isNaN(mh) && !isNaN(mm)) {
+        maxLimiteMinutos = mh * 60 + mm;
+      }
+    }
+
     return HORAS.map((horaStr) => {
       const [h, m] = horaStr.split(":").map(Number);
       const totalMin = h * 60 + m;
@@ -78,6 +88,8 @@ export default function SelectorHoraModal({
         bloqueada = true;
       } else if (minLimiteMinutos >= 0 && totalMin <= minLimiteMinutos) {
         bloqueada = true;
+      } else if (totalMin > maxLimiteMinutos) {
+        bloqueada = true;
       }
 
       return {
@@ -85,7 +97,7 @@ export default function SelectorHoraModal({
         bloqueada,
       };
     });
-  }, [fecha, minHora]);
+  }, [fecha, minHora, maxHora]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCerrar}>

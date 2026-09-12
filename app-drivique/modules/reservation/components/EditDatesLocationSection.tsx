@@ -216,7 +216,7 @@ export default function EditDatesLocationSection({
         const autoDev =
           draft.fechaDevolucion &&
           draft.fechaDevolucion !== draft.fechaRetiro &&
-          !draft.horaDevolucion;
+          (!draft.horaDevolucion || draft.horaDevolucion > hora);
 
         setDraft((prev) => {
           const nuevoDraft = {
@@ -743,6 +743,15 @@ export default function EditDatesLocationSection({
         fecha={horaVisible === "retiro" ? draft.fechaRetiro : draft.fechaDevolucion}
         minHora={
           horaVisible === "devolucion" && draft.fechaRetiro === draft.fechaDevolucion
+            ? draft.horaRetiro
+            : null
+        }
+        maxHora={
+          horaVisible === "devolucion" &&
+          draft.fechaRetiro &&
+          draft.fechaDevolucion &&
+          draft.fechaRetiro !== draft.fechaDevolucion &&
+          draft.horaRetiro
             ? draft.horaRetiro
             : null
         }
