@@ -135,11 +135,43 @@ export default function EditDatesLocationSection({
     setModalTipo(null);
   };
 
+  const handleAbrirHoraDevolucion = () => {
+    if (
+      draft.fechaRetiro &&
+      draft.fechaRetiro === draft.fechaDevolucion &&
+      draft.horaRetiro === "23:30"
+    ) {
+      Alert.alert(
+        t("reserva.fechasLugar.sinHorasMismoDiaTitulo", { defaultValue: "Hora de devolución" }),
+        t("reserva.fechasLugar.sinHorasMismoDiaMensaje", {
+          defaultValue: "Como la hora de retiro es a las 11:30 p.m., la devolución debe realizarse a partir del día siguiente.",
+        }),
+        [
+          { text: t("comun.cancelar", { defaultValue: "Cancelar" }), style: "cancel" },
+          {
+            text: t("reserva.fechasLugar.moverDiaSiguiente", { defaultValue: "Mover a mañana" }),
+            onPress: () => {
+              const [y, m, d] = draft.fechaRetiro!.split("-").map(Number);
+              const sigDia = new Date(y, m - 1, d + 1);
+              const ySig = sigDia.getFullYear();
+              const mSig = String(sigDia.getMonth() + 1).padStart(2, "0");
+              const dSig = String(sigDia.getDate()).padStart(2, "0");
+              const fechaSigStr = `${ySig}-${mSig}-${dSig}`;
+              setDraft((prev) => ({ ...prev, fechaDevolucion: fechaSigStr, horaDevolucion: "" }));
+              setHoraVisible("devolucion");
+            },
+          },
+        ]
+      );
+      return;
+    }
+    setHoraVisible("devolucion");
+  };
+
   const handleElegirHora = (hora: string) => {
     const fecha = horaVisible === "retiro" ? draft.fechaRetiro : draft.fechaDevolucion;
 
     if (fecha) {
-
       const horasOcupadas = getDisponibilidadVehiculo(vehiculo.id).horasOcupadas?.[fecha] ?? [];
       const bloqueo = horasOcupadas.find((h) => h.hora === hora);
 
@@ -157,13 +189,38 @@ export default function EditDatesLocationSection({
     }
 
     if (horaVisible === "retiro") {
-      setDraft((prev) => {
-        const nuevoDraft = { ...prev, horaRetiro: hora };
-        if (prev.fechaRetiro === prev.fechaDevolucion && prev.horaDevolucion && prev.horaDevolucion <= hora) {
-          nuevoDraft.horaDevolucion = "";
-        }
-        return nuevoDraft;
-      });
+      if (
+        hora === "23:30" &&
+        draft.fechaRetiro &&
+        draft.fechaRetiro === draft.fechaDevolucion
+      ) {
+        const [y, m, d] = draft.fechaRetiro.split("-").map(Number);
+        const sigDia = new Date(y, m - 1, d + 1);
+        const ySig = sigDia.getFullYear();
+        const mSig = String(sigDia.getMonth() + 1).padStart(2, "0");
+        const dSig = String(sigDia.getDate()).padStart(2, "0");
+        const fechaSigStr = `${ySig}-${mSig}-${dSig}`;
+        setDraft((prev) => ({
+          ...prev,
+          horaRetiro: hora,
+          fechaDevolucion: fechaSigStr,
+          horaDevolucion: "",
+        }));
+        Alert.alert(
+          t("reserva.fechasLugar.ajusteDevolucionTitulo", { defaultValue: "Fecha de devolución ajustada" }),
+          t("reserva.fechasLugar.ajusteDevolucionMensaje", {
+            defaultValue: "Al retirar a las 11:30 p.m., la fecha de devolución se ajustó automáticamente para el día siguiente.",
+          })
+        );
+      } else {
+        setDraft((prev) => {
+          const nuevoDraft = { ...prev, horaRetiro: hora };
+          if (prev.fechaRetiro === prev.fechaDevolucion && prev.horaDevolucion && prev.horaDevolucion <= hora) {
+            nuevoDraft.horaDevolucion = "";
+          }
+          return nuevoDraft;
+        });
+      }
     } else if (horaVisible === "devolucion") {
       setDraft((prev) => ({ ...prev, horaDevolucion: hora }));
     }
@@ -586,7 +643,7 @@ export default function EditDatesLocationSection({
               </View>
               <TouchableOpacity
                 style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
-                onPress={() => setHoraVisible("devolucion")}
+                onPress={handleAbrirHoraDevolucion}
                 activeOpacity={0.8}
               >
                 <View style={styles.selectValorRow}>

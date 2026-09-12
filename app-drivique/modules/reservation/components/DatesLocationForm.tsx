@@ -92,13 +92,43 @@ export default function FormFechasLugar({ vehiculo }: Props) {
     setModalTipo(null);
   };
 
+  const handleAbrirHoraDevolucion = () => {
+    if (
+      fechasLugar.fechaRetiro &&
+      fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion &&
+      fechasLugar.horaRetiro === "23:30"
+    ) {
+      Alert.alert(
+        t("reserva.fechasLugar.sinHorasMismoDiaTitulo", { defaultValue: "Hora de devolución" }),
+        t("reserva.fechasLugar.sinHorasMismoDiaMensaje", {
+          defaultValue: "Como la hora de retiro es a las 11:30 p.m., la devolución debe realizarse a partir del día siguiente.",
+        }),
+        [
+          { text: t("comun.cancelar", { defaultValue: "Cancelar" }), style: "cancel" },
+          {
+            text: t("reserva.fechasLugar.moverDiaSiguiente", { defaultValue: "Mover a mañana" }),
+            onPress: () => {
+              const [y, m, d] = fechasLugar.fechaRetiro!.split("-").map(Number);
+              const sigDia = new Date(y, m - 1, d + 1);
+              const ySig = sigDia.getFullYear();
+              const mSig = String(sigDia.getMonth() + 1).padStart(2, "0");
+              const dSig = String(sigDia.getDate()).padStart(2, "0");
+              const fechaSigStr = `${ySig}-${mSig}-${dSig}`;
+              actualizarFechasLugar({ fechaDevolucion: fechaSigStr, horaDevolucion: "" });
+              setHoraVisible("devolucion");
+            },
+          },
+        ]
+      );
+      return;
+    }
+    setHoraVisible("devolucion");
+  };
+
   const handleElegirHora = (hora: string) => {
     const fecha = horaVisible === "retiro" ? fechasLugar.fechaRetiro : fechasLugar.fechaDevolucion;
 
     if (fecha) {
-
-      // La disponibilidad ya no viene embebida en el vehículo — se calcula
-      // a partir de RESERVAS_MOCK (mocks/reservas.json) según su id.
       const horasOcupadas = getDisponibilidadVehiculo(vehiculo.id).horasOcupadas?.[fecha] ?? [];
       const bloqueo = horasOcupadas.find((h) => h.hora === hora);
 
@@ -116,14 +146,38 @@ export default function FormFechasLugar({ vehiculo }: Props) {
     }
 
     if (horaVisible === "retiro") {
-      actualizarFechasLugar({ horaRetiro: hora });
-      // Si la hora de devolución quedó antes o igual en el mismo día, resetearla
       if (
-        fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion &&
-        fechasLugar.horaDevolucion &&
-        fechasLugar.horaDevolucion <= hora
+        hora === "23:30" &&
+        fechasLugar.fechaRetiro &&
+        fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion
       ) {
-        actualizarFechasLugar({ horaDevolucion: "" });
+        const [y, m, d] = fechasLugar.fechaRetiro.split("-").map(Number);
+        const sigDia = new Date(y, m - 1, d + 1);
+        const ySig = sigDia.getFullYear();
+        const mSig = String(sigDia.getMonth() + 1).padStart(2, "0");
+        const dSig = String(sigDia.getDate()).padStart(2, "0");
+        const fechaSigStr = `${ySig}-${mSig}-${dSig}`;
+        actualizarFechasLugar({
+          horaRetiro: hora,
+          fechaDevolucion: fechaSigStr,
+          horaDevolucion: "",
+        });
+        Alert.alert(
+          t("reserva.fechasLugar.ajusteDevolucionTitulo", { defaultValue: "Fecha de devolución ajustada" }),
+          t("reserva.fechasLugar.ajusteDevolucionMensaje", {
+            defaultValue: "Al retirar a las 11:30 p.m., la fecha de devolución se ajustó automáticamente para el día siguiente.",
+          })
+        );
+      } else {
+        actualizarFechasLugar({ horaRetiro: hora });
+        // Si la hora de devolución quedó antes o igual en el mismo día, resetearla
+        if (
+          fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion &&
+          fechasLugar.horaDevolucion &&
+          fechasLugar.horaDevolucion <= hora
+        ) {
+          actualizarFechasLugar({ horaDevolucion: "" });
+        }
       }
     } else if (horaVisible === "devolucion") {
       actualizarFechasLugar({ horaDevolucion: hora });
@@ -498,7 +552,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
           </View>
           <TouchableOpacity
             style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
-            onPress={() => setHoraVisible("devolucion")}
+            onPress={handleAbrirHoraDevolucion}
             activeOpacity={0.8}
           >
             <View style={styles.selectValorRow}>
