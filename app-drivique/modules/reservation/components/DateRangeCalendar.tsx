@@ -188,6 +188,15 @@ function DiaCalendario({
   );
 }
 
+function getFechaMananaLocal(): string {
+  const ahora = new Date();
+  const manana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1);
+  const year = manana.getFullYear();
+  const month = String(manana.getMonth() + 1).padStart(2, "0");
+  const day = String(manana.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function CalendarioRango({
   vehiculo,
   fechaRetiro,
@@ -215,7 +224,15 @@ export default function CalendarioRango({
     return mapa;
   }, [vehiculo.id]);
 
-  const hoy = getFechaHoyLocal();
+  // Si ya pasaron las 10:00 p.m. (22:00), las sucursales ya cerraron hoy;
+  // por tanto, la fecha mínima para iniciar reserva es a partir de mañana a las 6:00 a.m.
+  const fechaMinimaRetiro = useMemo(() => {
+    const ahora = new Date();
+    if (ahora.getHours() >= 22) {
+      return getFechaMananaLocal();
+    }
+    return getFechaHoyLocal();
+  }, []);
 
   const mensajePorMotivo = (motivo: "reservado" | "mantenimiento") =>
     motivo === "mantenimiento"
@@ -230,6 +247,17 @@ export default function CalendarioRango({
 
   const handleDayPress = (day: DateData) => {
     const fecha = day.dateString;
+
+    if (fecha < fechaMinimaRetiro) {
+      Alert.alert(
+        t("reserva.fechasLugar.sucursalCerradaTitulo", { defaultValue: "Sucursal cerrada por hoy" }),
+        t("reserva.fechasLugar.sucursalCerradaMensaje", {
+          defaultValue: "Nuestras sucursales atienden de 6:00 a.m. a 10:00 p.m. Puedes reservar a partir de mañana a las 6:00 a.m.",
+        })
+      );
+      return;
+    }
+
     const motivo = ocupados.get(fecha);
 
     if (motivo) {
@@ -238,12 +266,27 @@ export default function CalendarioRango({
     }
 
     if (!fechaRetiro || (fechaRetiro && fechaDevolucion)) {
-      onCambiarFechas(fecha, null);
+      // Preselección de 24 horas: sugerir por defecto devolución al día siguiente
+      const [y, m, d] = fecha.split("-").map(Number);
+      const sigDia = new Date(y, m - 1, d + 1);
+      const ySig = sigDia.getFullYear();
+      const mSig = String(sigDia.getMonth() + 1).padStart(2, "0");
+      const dSig = String(sigDia.getDate()).padStart(2, "0");
+      const fechaSig = `${ySig}-${mSig}-${dSig}`;
+      const motivoSig = ocupados.get(fechaSig);
+      onCambiarFechas(fecha, motivoSig ? null : fechaSig);
       return;
     }
 
     if (fecha < fechaRetiro) {
-      onCambiarFechas(fecha, null);
+      const [y, m, d] = fecha.split("-").map(Number);
+      const sigDia = new Date(y, m - 1, d + 1);
+      const ySig = sigDia.getFullYear();
+      const mSig = String(sigDia.getMonth() + 1).padStart(2, "0");
+      const dSig = String(sigDia.getDate()).padStart(2, "0");
+      const fechaSig = `${ySig}-${mSig}-${dSig}`;
+      const motivoSig = ocupados.get(fechaSig);
+      onCambiarFechas(fecha, motivoSig ? null : fechaSig);
       return;
     }
 
@@ -300,8 +343,8 @@ export default function CalendarioRango({
     <View style={[styles.container, { borderColor: c.border, backgroundColor: c.bgCard }]}>
       <Calendar
         key={`${c.oscuro ? "dark" : "light"}_${langKey}`}
-        current={hoy}
-        minDate={hoy}
+        current={fechaMinimaRetiro}
+        minDate={fechaMinimaRetiro}
         markedDates={markedDates}
         firstDay={1}
         hideExtraDays={true}

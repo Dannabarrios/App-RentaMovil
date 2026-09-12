@@ -213,8 +213,17 @@ export default function EditDatesLocationSection({
           })
         );
       } else {
+        const autoDev =
+          draft.fechaDevolucion &&
+          draft.fechaDevolucion !== draft.fechaRetiro &&
+          !draft.horaDevolucion;
+
         setDraft((prev) => {
-          const nuevoDraft = { ...prev, horaRetiro: hora };
+          const nuevoDraft = {
+            ...prev,
+            horaRetiro: hora,
+            ...(autoDev ? { horaDevolucion: hora } : {}),
+          };
           if (prev.fechaRetiro === prev.fechaDevolucion && prev.horaDevolucion && prev.horaDevolucion <= hora) {
             nuevoDraft.horaDevolucion = "";
           }
@@ -680,6 +689,31 @@ export default function EditDatesLocationSection({
               <Text style={[styles.duracionValor, { color: primaryAccent }]}>{textoDuracion}</Text>
             </View>
           )}
+
+          {/* --- GARANTÍA DE 24 HORAS (cuando la devolución es el mismo día) --- */}
+          {draft.fechaRetiro && draft.fechaRetiro === draft.fechaDevolucion && (
+            <View
+              style={[
+                styles.garantiaCard,
+                {
+                  backgroundColor: c.oscuro ? "rgba(37, 99, 235, 0.12)" : "#EFF6FF",
+                  borderColor: c.oscuro ? "rgba(96, 165, 250, 0.35)" : "#BFDBFE",
+                },
+              ]}
+            >
+              <Ionicons name="shield-checkmark" size={15} color={primaryAccent} style={{ marginTop: 1 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.garantiaTitulo, { color: primaryAccent }]}>
+                  {t("reserva.fechasLugar.garantia24hTitulo", { defaultValue: "Garantía de 24 horas" })}
+                </Text>
+                <Text style={[styles.garantiaDesc, { color: c.textSecondary }]}>
+                  {t("reserva.fechasLugar.garantia24hDesc", {
+                    defaultValue: "Tu tarifa cubre 1 día completo (hasta 24h). Puedes extender tu devolución hasta mañana por el mismo precio si lo necesitas.",
+                  })}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -1009,5 +1043,23 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "800",
+  },
+  garantiaCard: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 11,
+    marginTop: 10,
+  },
+  garantiaTitulo: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  garantiaDesc: {
+    fontSize: 11,
+    lineHeight: 15,
   },
 });

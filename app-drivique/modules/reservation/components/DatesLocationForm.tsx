@@ -167,9 +167,17 @@ export default function FormFechasLugar({ vehiculo }: Props) {
           t("reserva.fechasLugar.ajusteDevolucionMensaje", {
             defaultValue: "Al retirar a las 10:00 p.m. (hora de cierre), la fecha de devolución se ajustó automáticamente para el día siguiente.",
           })
-        );
       } else {
-        actualizarFechasLugar({ horaRetiro: hora });
+        const autoDev =
+          fechasLugar.fechaDevolucion &&
+          fechasLugar.fechaDevolucion !== fechasLugar.fechaRetiro &&
+          !fechasLugar.horaDevolucion;
+
+        actualizarFechasLugar({
+          horaRetiro: hora,
+          ...(autoDev ? { horaDevolucion: hora } : {}),
+        });
+
         // Si la hora de devolución quedó antes o igual en el mismo día, resetearla
         if (
           fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion &&
@@ -595,6 +603,31 @@ export default function FormFechasLugar({ vehiculo }: Props) {
         </View>
       )}
 
+      {/* --- GARANTÍA DE 24 HORAS (cuando la devolución es el mismo día) --- */}
+      {fechasLugar.fechaRetiro && fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion && (
+        <View
+          style={[
+            styles.garantiaCard,
+            {
+              backgroundColor: c.oscuro ? "rgba(37, 99, 235, 0.12)" : "#EFF6FF",
+              borderColor: c.oscuro ? "rgba(96, 165, 250, 0.35)" : "#BFDBFE",
+            },
+          ]}
+        >
+          <Ionicons name="shield-checkmark" size={15} color={COLOR_MARCA} style={{ marginTop: 1 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.garantiaTitulo, { color: primaryAccent }]}>
+              {t("reserva.fechasLugar.garantia24hTitulo", { defaultValue: "Garantía de 24 horas" })}
+            </Text>
+            <Text style={[styles.garantiaDesc, { color: c.textSecondary }]}>
+              {t("reserva.fechasLugar.garantia24hDesc", {
+                defaultValue: "Tu tarifa cubre 1 día completo (hasta 24h). Puedes extender tu devolución hasta mañana por el mismo precio si lo necesitas.",
+              })}
+            </Text>
+          </View>
+        </View>
+      )}
+
       <SelectorSucursalModal
         visible={modalTipo !== null}
         titulo={modalTipo === "retiro" ? t("reserva.fechasLugar.lugarDeRetiroModal") : t("reserva.fechasLugar.lugarDeDevolucionModal")}
@@ -807,5 +840,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: COLOR_MARCA,
+  },
+  garantiaCard: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 11,
+    marginTop: 10,
+  },
+  garantiaTitulo: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  garantiaDesc: {
+    fontSize: 11,
+    lineHeight: 15,
   },
 });
