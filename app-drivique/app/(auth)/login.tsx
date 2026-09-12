@@ -280,6 +280,7 @@ export default function LoginScreen() {
                         onChangeText={(val) =>
                           actualizarCampo("contrasena", val)
                         }
+                        colores={c}
                         error={
                           errores.find((e) => e.campo === "contrasena")?.mensaje
                         }

@@ -23,7 +23,7 @@ interface Props extends TextInputProps {
 export function InputField({ label, error, colores: c, iconLeft, pill, ...props }: Props) {
   return (
     <View style={styles.contenedor}>
-      <Text style={[styles.label, c && { color: c.textSecondary }]}>{label}</Text>
+      <Text style={[styles.label, c && { color: c.textPrimary }]}>{label}</Text>
       <View style={[
         styles.inputWrapper,
         c && { borderColor: c.border, backgroundColor: c.bgInput },

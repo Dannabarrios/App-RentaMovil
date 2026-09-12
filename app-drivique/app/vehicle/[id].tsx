@@ -523,6 +523,8 @@ export default function VehiculoDetallePage() {
           <VehicleReviews
             comentarios={comentariosMostrar}
             calificacionPromedio={vehiculo.calificacion}
+            vehiculoId={vehiculo.id}
+            vehiculoNombre={vehiculo.nombre}
           />
         </Animated.View>
       </ScrollView>

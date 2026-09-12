@@ -14,6 +14,7 @@ interface Props {
   referencia: string;
   nombreSucursal: string;
   total: number;
+  horasLimitePago?: number;
   onIrAMisReservas?: () => void;
   onVolverAlInicio?: () => void;
   onCerrar?: () => void;
@@ -25,6 +26,7 @@ export function BranchCashPaymentModal({
   referencia,
   nombreSucursal,
   total,
+  horasLimitePago,
   onIrAMisReservas,
   onVolverAlInicio,
   onCerrar,
@@ -36,6 +38,7 @@ export function BranchCashPaymentModal({
 
   const ciudad = getCiudadPorSucursal(nombreSucursal);
   const direccion = getDireccionSucursal(nombreSucursal);
+  const esInmediata = !!horasLimitePago && horasLimitePago <= 2;
 
   const handleIrReservas = onIrAMisReservas || onCerrar;
   const handleVolverInicio = onVolverAlInicio || onCerrar;
@@ -120,11 +123,11 @@ export function BranchCashPaymentModal({
               {t("reserva.confirmacion.plazoParaPagarTitulo", { defaultValue: "PLAZO PARA PAGAR" })}
             </Text>
             <Text style={[styles.plazoTexto, { color: c.oscuro ? "#FDE68A" : "#713F12" }]}>
-              {t("reserva.confirmacion.efectivoConfirmadaMensaje", {
-                defaultValue:
-                  "Tienes 72 horas desde ahora para acercarte a la sucursal y pagar. Si no pagas dentro de este plazo, la reserva se cancelará automáticamente.",
-                horas: 72,
-              })}
+              {(() => {
+                const horas = horasLimitePago || 72;
+                const textoHoras = horas === 1 ? "1 hora" : `${horas} horas`;
+                return `Tienes aproximadamente ${textoHoras} para acercarte a la sucursal y realizar el pago. Si no realizas el pago dentro de este plazo, la reserva se cancelará automáticamente.`;
+              })()}
             </Text>
           </View>
 

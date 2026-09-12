@@ -3,7 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import { Ionicons } from "@expo/vector-icons";
 import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { useReservaStore } from "@/store/reservationStore";
-import { COLOR_MARCA, getMetodosPago } from "../constants/reservation.constants";
+import { COLOR_MARCA, formatHoraAmPm, getMetodosPago } from "../constants/reservation.constants";
 import { CIUDADES_DATA, getCiudadPorSucursal, getDireccionSucursal, getDisponibilidadVehiculo } from "@/modules/catalog/constants/catalog.constants";
 import CalendarioRango from "./DateRangeCalendar";
 import SelectorSucursalModal, { OpcionLugar } from "./BranchSelectorModal";
@@ -92,10 +92,45 @@ export default function FormFechasLugar({ vehiculo }: Props) {
     setModalTipo(null);
   };
 
+  useEffect(() => {
+    if (!fechasLugar.fechaRetiro || !fechasLugar.horaRetiro) return;
+    const ahora = new Date();
+    const hoyStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
+
+    if (String(fechasLugar.fechaRetiro).split("T")[0] === hoyStr) {
+      const [h, m] = fechasLugar.horaRetiro.split(":").map(Number);
+      if (!isNaN(h) && !isNaN(m)) {
+        const horaMinutos = h * 60 + m;
+        const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
+        if (horaMinutos <= ahoraMinutos) {
+          actualizarFechasLugar({ horaRetiro: "" });
+        }
+      }
+    }
+  }, [fechasLugar.fechaRetiro, fechasLugar.horaRetiro, actualizarFechasLugar]);
+
   const handleElegirHora = (hora: string) => {
     const fecha = horaVisible === "retiro" ? fechasLugar.fechaRetiro : fechasLugar.fechaDevolucion;
 
     if (fecha) {
+      const ahora = new Date();
+      const hoyStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
+
+      if (String(fecha).split("T")[0] === hoyStr) {
+        const [h, m] = hora.split(":").map(Number);
+        const horaMinutos = h * 60 + m;
+        const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
+        if (horaMinutos <= ahoraMinutos) {
+          Alert.alert(
+            t("reserva.fechasLugar.horaPasadaTitulo", { defaultValue: "Hora no disponible" }),
+            t("reserva.fechasLugar.horaPasadaMensaje", {
+              defaultValue: "La hora seleccionada ya pasó hoy en tiempo real. Por favor selecciona una hora posterior.",
+            })
+          );
+          return;
+        }
+      }
+
       // La disponibilidad ya no viene embebida en el vehículo — se calcula
       // a partir de RESERVAS_MOCK (mocks/reservas.json) según su id.
       const horasOcupadas = getDisponibilidadVehiculo(vehiculo.id).horasOcupadas?.[fecha] ?? [];
@@ -114,8 +149,19 @@ export default function FormFechasLugar({ vehiculo }: Props) {
       }
     }
 
-    if (horaVisible === "retiro") actualizarFechasLugar({ horaRetiro: hora });
-    else if (horaVisible === "devolucion") actualizarFechasLugar({ horaDevolucion: hora });
+    if (horaVisible === "retiro") {
+      actualizarFechasLugar({ horaRetiro: hora });
+      // Si la hora de devolución quedó antes o igual en el mismo día, resetearla
+      if (
+        fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion &&
+        fechasLugar.horaDevolucion &&
+        fechasLugar.horaDevolucion <= hora
+      ) {
+        actualizarFechasLugar({ horaDevolucion: "" });
+      }
+    } else if (horaVisible === "devolucion") {
+      actualizarFechasLugar({ horaDevolucion: hora });
+    }
   };
 
   const labelLugarRetiro =
@@ -385,6 +431,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
         </View>
       )}
 
+      {/* --- HORAS DE RETIRO Y DEVOLUCIÓN --- */}
       <View style={[styles.filaDosCols, { marginTop: 4 }]}>
         <View style={styles.columnaMedia}>
           <View style={styles.headerConIcono}>
@@ -406,7 +453,9 @@ export default function FormFechasLugar({ vehiculo }: Props) {
                 ]}
                 numberOfLines={1}
               >
-                {fechasLugar.horaRetiro || t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
+                {fechasLugar.horaRetiro
+                  ? formatHoraAmPm(fechasLugar.horaRetiro)
+                  : t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
               </Text>
               <Ionicons name="chevron-down" size={14} color={c.textMuted} />
             </View>
@@ -433,7 +482,9 @@ export default function FormFechasLugar({ vehiculo }: Props) {
                 ]}
                 numberOfLines={1}
               >
-                {fechasLugar.horaDevolucion || t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
+                {fechasLugar.horaDevolucion
+                  ? formatHoraAmPm(fechasLugar.horaDevolucion)
+                  : t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
               </Text>
               <Ionicons name="chevron-down" size={14} color={c.textMuted} />
             </View>
@@ -441,7 +492,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
         </View>
       </View>
 
-      {/* --- CALENDARIO DE DISPONIBILIDAD (justo después de la hora) --- */}
+      {/* --- CALENDARIO DE DISPONIBILIDAD --- */}
       <View style={styles.headerCalendarioContainer}>
         <Ionicons name="calendar" size={14} color={COLOR_MARCA} style={styles.iconoCalendario} />
         <Text style={styles.tituloCalendario}>
@@ -534,6 +585,12 @@ export default function FormFechasLugar({ vehiculo }: Props) {
 
       <SelectorHoraModal
         visible={horaVisible !== null}
+        fecha={horaVisible === "retiro" ? fechasLugar.fechaRetiro : fechasLugar.fechaDevolucion}
+        minHora={
+          horaVisible === "devolucion" && fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion
+            ? fechasLugar.horaRetiro
+            : null
+        }
         horaSeleccionada={horaVisible === "retiro" ? fechasLugar.horaRetiro : fechasLugar.horaDevolucion}
         onSeleccionar={handleElegirHora}
         onCerrar={() => setHoraVisible(null)}

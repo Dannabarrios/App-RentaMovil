@@ -3,14 +3,12 @@ import { StyleSheet } from 'react-native';
 export const primaryButtonStyles = StyleSheet.create({
   botonSombra: {
     borderRadius: 12,
-    marginVertical: 6,
   },
   boton: {
     borderRadius: 12,
-    paddingVertical: 14,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 50,
   },
   botonSecundario: {
     backgroundColor: 'transparent',

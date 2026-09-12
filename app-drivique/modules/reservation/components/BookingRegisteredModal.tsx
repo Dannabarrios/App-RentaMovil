@@ -4,22 +4,29 @@ import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-na
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
-import { COLOR_MARCA } from "../constants/reservation.constants";
 import { GRADIENTES, SOMBRA_BOTON_GRADIENTE } from "@/constants/gradients";
 import { useTranslation } from "react-i18next";
 
 interface Props {
   visible: boolean;
+  horasLimitePago?: number;
+  cargando?: boolean;
   onPagarWompi: () => void;
   onCerrar: () => void;
 }
 
-export default function ModalReservaRegistrada({ visible, onPagarWompi, onCerrar }: Props) {
+export default function ModalReservaRegistrada({
+  visible,
+  horasLimitePago,
+  cargando = false,
+  onPagarWompi,
+  onCerrar,
+}: Props) {
   const c = useTemaColores();
   const { t } = useTranslation();
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCerrar}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={cargando ? undefined : onCerrar}>
       <View style={styles.overlay}>
         <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
           {/* Logo Circular Superior */}
@@ -52,18 +59,63 @@ export default function ModalReservaRegistrada({ visible, onPagarWompi, onCerrar
             })}
           </Text>
 
+          {/* Badge informativo de Plazo de Pago */}
+          <View
+            style={[
+              styles.plazoBadge,
+              {
+                backgroundColor: c.oscuro ? "#261C08" : "#FEFCE8",
+                borderColor: c.oscuro ? "#785C15" : "#FDE047",
+              },
+            ]}
+          >
+            <Ionicons
+              name="time-outline"
+              size={16}
+              color={c.oscuro ? "#FCD34D" : "#854D0E"}
+              style={{ marginTop: 1 }}
+            />
+            <Text
+              style={[
+                styles.plazoTexto,
+                {
+                  color: c.oscuro ? "#FDE68A" : "#713F12",
+                },
+              ]}
+            >
+              {(() => {
+                const horas = horasLimitePago || 72;
+                const textoHoras = horas === 1 ? "1 hora" : `${horas} horas`;
+                return `Tienes aproximadamente ${textoHoras} para realizar el pago digital y confirmar tu reserva. Si no realizas el pago dentro de este plazo, la reserva se cancelará automáticamente.`;
+              })()}
+            </Text>
+          </View>
+
           {/* Botón Principal: Pagar con Wompi */}
-          <TouchableOpacity style={styles.botonWompiWrap} onPress={onPagarWompi} activeOpacity={0.88}>
+          <TouchableOpacity
+            style={styles.botonWompiWrap}
+            onPress={onPagarWompi}
+            activeOpacity={0.88}
+            disabled={cargando}
+          >
             <LinearGradient
               colors={GRADIENTES.boton.colors}
               start={GRADIENTES.boton.start}
               end={GRADIENTES.boton.end}
               style={styles.botonWompi}
             >
-              <Ionicons name="card-outline" size={17} color="#fff" />
-              <Text style={styles.botonWompiTexto}>
-                {t("reserva.confirmacion.pagarConWompi", { defaultValue: "Pagar con Wompi" })}
-              </Text>
+              {cargando ? (
+                <Text style={styles.botonWompiTexto}>
+                  {t("comun.procesando", { defaultValue: "Abriendo Wompi..." })}
+                </Text>
+              ) : (
+                <>
+                  <Ionicons name="card-outline" size={17} color="#fff" />
+                  <Text style={styles.botonWompiTexto}>
+                    {t("reserva.confirmacion.pagarConWompi", { defaultValue: "Pagar con Wompi" })}
+                  </Text>
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
 
@@ -72,6 +124,7 @@ export default function ModalReservaRegistrada({ visible, onPagarWompi, onCerrar
             style={[styles.botonCancelar, { borderColor: c.border, backgroundColor: "transparent" }]}
             onPress={onCerrar}
             activeOpacity={0.8}
+            disabled={cargando}
           >
             <Text style={[styles.botonCancelarTexto, { color: c.textSecondary }]}>
               {t("reserva.confirmacion.pagarMasTarde", { defaultValue: "Pagar más tarde" })}
@@ -96,9 +149,9 @@ const styles = StyleSheet.create({
     maxWidth: 340,
     borderRadius: 24,
     borderWidth: 1,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
+    paddingHorizontal: 22,
+    paddingTop: 28,
+    paddingBottom: 22,
     alignItems: "center",
     position: "relative",
     shadowColor: "#000",
@@ -108,12 +161,12 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   logoCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 16,
     borderWidth: 1,
     shadowColor: "#000",
     shadowOpacity: 0.08,
@@ -122,21 +175,37 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   logoImg: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
   },
   titulo: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "800",
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: "center",
   },
   descripcion: {
-    fontSize: 13.5,
+    fontSize: 13,
     textAlign: "center",
-    lineHeight: 19,
-    marginBottom: 22,
-    paddingHorizontal: 6,
+    lineHeight: 18,
+    marginBottom: 14,
+    paddingHorizontal: 4,
+  },
+  plazoBadge: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 18,
+    width: "100%",
+  },
+  plazoTexto: {
+    flex: 1,
+    fontSize: 11.5,
+    lineHeight: 15.5,
+    fontWeight: "600",
   },
   botonWompiWrap: {
     width: "100%",

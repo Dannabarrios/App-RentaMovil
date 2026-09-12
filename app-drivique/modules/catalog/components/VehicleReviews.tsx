@@ -1,17 +1,27 @@
 // modules/catalog/components/VehicleReviews.tsx
-import React, { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Image,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { Comentario } from "../types/catalog.types";
+import { resenaService, ResenaGuardada } from "@/modules/reservation/services/resenaService";
 
 interface Props {
   comentarios: Comentario[];
   calificacionPromedio?: number;
+  vehiculoId?: number | string;
+  vehiculoNombre?: string;
 }
 
-const COLOR_AZUL_TITULO = "#1E3A8A";
 const COLOR_BORDE_CARD = "#E2E8F0";
 
 function Estrellas({ valor, tamano = 14 }: { valor: number; tamano?: number }) {
@@ -37,20 +47,48 @@ function inicialesDe(nombre: string): string {
   return partes.slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join("");
 }
 
-export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
+export function VehicleReviews({ comentarios, calificacionPromedio, vehiculoId, vehiculoNombre }: Props) {
   const c = useTemaColores();
   const { t } = useTranslation();
   const [visibles, setVisibles] = useState(2);
+  const [resenasLocales, setResenasLocales] = useState<ResenaGuardada[]>([]);
+  const [fotoModalUri, setFotoModalUri] = useState<string | null>(null);
 
-  const listaComentarios = comentarios ?? [];
+  useEffect(() => {
+    let activo = true;
+    if (vehiculoId || vehiculoNombre) {
+      resenaService.obtenerPorVehiculo(vehiculoId, vehiculoNombre).then((r) => {
+        if (activo) setResenasLocales(r);
+      });
+    }
+    return () => {
+      activo = false;
+    };
+  }, [vehiculoId, vehiculoNombre]);
+
+  // Convertimos las reseñas guardadas en formato de comentarios
+  const comentariosGuardados: (Comentario & { fotos?: string[] })[] = resenasLocales.map((r) => ({
+    autor: r.usuarioNombre || "Cliente Drivique",
+    calificacion: r.calificacion,
+    texto: r.comentario,
+    fecha: r.fecha,
+    fotos: r.fotos,
+  }));
+
+  // Combinamos reseñas reales primero, luego los comentarios base
+  const listaComentarios: (Comentario & { fotos?: string[] })[] = [
+    ...comentariosGuardados,
+    ...(comentarios ?? []),
+  ];
+
   const total = listaComentarios.length;
 
   const promedio =
-    calificacionPromedio && calificacionPromedio > 0
-      ? calificacionPromedio
-      : total > 0
+    total > 0
       ? listaComentarios.reduce((acc, curr) => acc + curr.calificacion, 0) / total
-      : 4.3;
+      : calificacionPromedio && calificacionPromedio > 0
+      ? calificacionPromedio
+      : 4.5;
 
   // Conteo de estrellas de 1 a 5
   const counts = [5, 4, 3, 2, 1].map((estrella) => {
@@ -58,7 +96,6 @@ export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
     return { estrella, count };
   });
 
-  const maxCount = Math.max(...counts.map((c) => c.count), 1);
   const colorScore = c.oscuro ? "#93C5FD" : "#1E3A8A";
   const colorBorde = c.oscuro ? c.border : COLOR_BORDE_CARD;
 
@@ -73,7 +110,9 @@ export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
             {t("vehiculo.resenas.sinResenasTitulo", { defaultValue: "Este vehículo aún no tiene reseñas" })}
           </Text>
           <Text style={[s.vacioSubtitulo, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
-            {t("vehiculo.resenas.sinResenasSubtitulo", { defaultValue: "¡Anímate a reservarlo y sé el primero en compartir tu experiencia!" })}
+            {t("vehiculo.resenas.sinResenasSubtitulo", {
+              defaultValue: "¡Anímate a reservarlo y sé el primero en compartir tu experiencia!",
+            })}
           </Text>
         </View>
       </View>
@@ -104,7 +143,9 @@ export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
             const porcentaje = total > 0 ? (count / total) * 100 : 0;
             return (
               <View key={estrella} style={s.filaBarra}>
-                <Text style={[s.barraEstrellaNum, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{estrella}</Text>
+                <Text style={[s.barraEstrellaNum, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+                  {estrella}
+                </Text>
                 <Ionicons name="star" size={11} color="#F59E0B" style={{ marginRight: 6 }} />
                 <View style={[s.barraTrack, { backgroundColor: c.oscuro ? "#334155" : "#EEF2F6" }]}>
                   <View
@@ -117,7 +158,9 @@ export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
                     ]}
                   />
                 </View>
-                <Text style={[s.barraConteoNum, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{count}</Text>
+                <Text style={[s.barraConteoNum, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+                  {count}
+                </Text>
               </View>
             );
           })}
@@ -130,7 +173,13 @@ export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
       {/* Lista de Reseñas */}
       <View style={s.listaComentarios}>
         {listaComentarios.slice(0, visibles).map((r, i) => (
-          <View key={i} style={[s.comentarioItem, i > 0 && { borderTopWidth: 1, borderTopColor: colorBorde, paddingTop: 14 }]}>
+          <View
+            key={i}
+            style={[
+              s.comentarioItem,
+              i > 0 && { borderTopWidth: 1, borderTopColor: colorBorde, paddingTop: 14 },
+            ]}
+          >
             {/* Avatar circular con iniciales */}
             <View style={[s.avatarWrap, { backgroundColor: c.oscuro ? "#334155" : "#F1F5F9" }]}>
               <Text style={[s.avatarTexto, { color: c.oscuro ? "#93C5FD" : "#1E3A8A" }]}>
@@ -141,15 +190,39 @@ export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
             {/* Contenido de la reseña */}
             <View style={s.comentarioCuerpo}>
               <View style={s.comentarioHeaderRow}>
-                <Text style={[s.autorNombre, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>{r.autor}</Text>
+                <Text style={[s.autorNombre, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>
+                  {r.autor}
+                </Text>
                 <Estrellas valor={r.calificacion} tamano={13} />
               </View>
 
               {!!r.fecha && (
-                <Text style={[s.fechaTexto, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>{r.fecha}</Text>
+                <Text style={[s.fechaTexto, { color: c.oscuro ? "#94A3B8" : "#64748B" }]}>
+                  {r.fecha}
+                </Text>
               )}
 
-              <Text style={[s.comentarioTexto, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>{r.texto}</Text>
+              {!!r.texto && (
+                <Text style={[s.comentarioTexto, { color: c.oscuro ? "#F8FAFC" : "#0F172A" }]}>
+                  {r.texto}
+                </Text>
+              )}
+
+              {/* Galería de fotos si la reseña tiene imágenes */}
+              {r.fotos && r.fotos.length > 0 && (
+                <View style={s.fotosResenaFila}>
+                  {r.fotos.map((fotoUri, fIdx) => (
+                    <TouchableOpacity
+                      key={fIdx}
+                      activeOpacity={0.8}
+                      onPress={() => setFotoModalUri(fotoUri)}
+                      style={s.fotoResenaThumbWrap}
+                    >
+                      <Image source={{ uri: fotoUri }} style={s.fotoResenaThumb} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
           </View>
         ))}
@@ -172,6 +245,29 @@ export function VehicleReviews({ comentarios, calificacionPromedio }: Props) {
           </TouchableOpacity>
         </>
       )}
+
+      {/* Modal visor de foto completa */}
+      <Modal
+        visible={!!fotoModalUri}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFotoModalUri(null)}
+      >
+        <Pressable style={s.modalFotoOverlay} onPress={() => setFotoModalUri(null)}>
+          <View style={s.modalFotoContenedor}>
+            {!!fotoModalUri && (
+              <Image source={{ uri: fotoModalUri }} style={s.modalFotoImg} resizeMode="contain" />
+            )}
+            <TouchableOpacity
+              style={s.modalFotoCerrarBtn}
+              onPress={() => setFotoModalUri(null)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="close" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -319,6 +415,23 @@ const s = StyleSheet.create({
     fontWeight: "400",
     lineHeight: 18,
   },
+  fotosResenaFila: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  fotoResenaThumbWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+  },
+  fotoResenaThumb: {
+    width: "100%",
+    height: "100%",
+  },
   verMasBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -330,5 +443,35 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: "#2563EB",
+  },
+  modalFotoOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  modalFotoContenedor: {
+    width: "100%",
+    height: "80%",
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalFotoImg: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 12,
+  },
+  modalFotoCerrarBtn: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

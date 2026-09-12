@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { COLOR_MARCA, formatHoraAmPm } from "../constants/reservation.constants";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
 import { useTranslation } from "react-i18next";
@@ -19,13 +20,67 @@ const HORAS = generarHoras();
 interface Props {
   visible: boolean;
   horaSeleccionada: string;
+  fecha?: string | null;
+  minHora?: string | null;
   onSeleccionar: (hora: string) => void;
   onCerrar: () => void;
 }
 
-export default function SelectorHoraModal({ visible, horaSeleccionada, onSeleccionar, onCerrar }: Props) {
+export default function SelectorHoraModal({
+  visible,
+  horaSeleccionada,
+  fecha,
+  minHora,
+  onSeleccionar,
+  onCerrar,
+}: Props) {
   const c = useTemaColores();
   const { t } = useTranslation();
+
+  const listaHoras = useMemo(() => {
+    const ahora = new Date();
+    const year = ahora.getFullYear();
+    const month = String(ahora.getMonth() + 1).padStart(2, "0");
+    const day = String(ahora.getDate()).padStart(2, "0");
+    const hoyStr = `${year}-${month}-${day}`;
+
+    const cleanFecha = fecha ? String(fecha).split("T")[0] : null;
+    const esHoy = cleanFecha === hoyStr;
+
+    const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
+
+    let minLimiteMinutos = -1;
+    if (minHora && String(minHora).includes(":")) {
+      const [mh, mm] = minHora.split(":").map(Number);
+      if (!isNaN(mh) && !isNaN(mm)) {
+        minLimiteMinutos = mh * 60 + mm;
+      }
+    }
+
+    return HORAS.map((horaStr) => {
+      const [h, m] = horaStr.split(":").map(Number);
+      const totalMin = h * 60 + m;
+
+      let bloqueada = false;
+      let motivo = "";
+
+      // Si la fecha es hoy y la hora ya pasó en tiempo real
+      if (esHoy && totalMin <= ahoraMinutos) {
+        bloqueada = true;
+        motivo = t("reserva.fechasLugar.horaPasadaTag", { defaultValue: "Hora pasada" });
+      } else if (minLimiteMinutos >= 0 && totalMin <= minLimiteMinutos) {
+        bloqueada = true;
+        motivo = t("reserva.fechasLugar.horaAnteriorTag", { defaultValue: "No disponible" });
+      }
+
+      return {
+        hora: horaStr,
+        bloqueada,
+        motivo,
+      };
+    });
+  }, [fecha, minHora, t]);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCerrar}>
       <TouchableWithoutFeedback onPress={onCerrar}>
@@ -39,21 +94,42 @@ export default function SelectorHoraModal({ visible, horaSeleccionada, onSelecci
                 </TouchableOpacity>
               </View>
               <ScrollView style={styles.lista} showsVerticalScrollIndicator={false}>
-                {HORAS.map((hora) => {
-                  const activa = hora === horaSeleccionada;
+                {listaHoras.map(({ hora, bloqueada, motivo }) => {
+                  const activa = hora === horaSeleccionada && !bloqueada;
                   return (
                     <TouchableOpacity
                       key={hora}
-                      style={[styles.item, activa && { backgroundColor: c.primaryBg }]}
+                      disabled={bloqueada}
+                      style={[
+                        styles.item,
+                        activa && { backgroundColor: c.primaryBg },
+                        bloqueada && styles.itemBloqueado,
+                      ]}
                       onPress={() => {
+                        if (bloqueada) return;
                         onSeleccionar(hora);
                         onCerrar();
                       }}
+                      activeOpacity={bloqueada ? 1 : 0.7}
                     >
-                      {/* Se muestra con a. m. / p. m. para que no quede ambiguo */}
-                      <Text style={[styles.itemTexto, { color: c.textSecondary }, activa && styles.itemTextoActivo]}>
-                        {formatHoraAmPm(hora)}
-                      </Text>
+                      <View style={styles.itemFila}>
+                        <Text
+                          style={[
+                            styles.itemTexto,
+                            { color: bloqueada ? c.textMuted : c.textSecondary },
+                            activa && styles.itemTextoActivo,
+                            bloqueada && styles.itemTextoBloqueado,
+                          ]}
+                        >
+                          {formatHoraAmPm(hora)}
+                        </Text>
+                        {bloqueada && (
+                          <View style={styles.badgeBloqueado}>
+                            <Ionicons name="lock-closed-outline" size={11} color={c.textMuted} style={{ marginRight: 3 }} />
+                            <Text style={[styles.badgeBloqueadoTexto, { color: c.textMuted }]}>{motivo}</Text>
+                          </View>
+                        )}
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -85,7 +161,12 @@ const styles = StyleSheet.create({
   headerTitulo: { fontSize: 14, fontWeight: "800" },
   cerrarTexto: { fontSize: 13, fontWeight: "700", color: COLOR_MARCA },
   lista: { paddingHorizontal: 8, paddingTop: 4 },
-  item: { paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10 },
+  item: { paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10, marginVertical: 1 },
+  itemBloqueado: { opacity: 0.45 },
+  itemFila: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   itemTexto: { fontSize: 13, fontWeight: "600" },
   itemTextoActivo: { fontWeight: "800", color: COLOR_MARCA },
+  itemTextoBloqueado: { textDecorationLine: "line-through" },
+  badgeBloqueado: { flexDirection: "row", alignItems: "center" },
+  badgeBloqueadoTexto: { fontSize: 11, fontWeight: "500" },
 });

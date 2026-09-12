@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Vehiculo } from "@/modules/catalog/types/catalog.types";
 import { useReservaStore } from "@/store/reservationStore";
-import { COLOR_MARCA, getMetodosPago } from "../constants/reservation.constants";
+import { COLOR_MARCA, formatHoraAmPm, getMetodosPago } from "../constants/reservation.constants";
 import {
   CIUDADES_DATA,
   getCiudadPorSucursal,
@@ -135,10 +135,45 @@ export default function EditDatesLocationSection({
     setModalTipo(null);
   };
 
+  useEffect(() => {
+    if (!draft.fechaRetiro || !draft.horaRetiro) return;
+    const ahora = new Date();
+    const hoyStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
+
+    if (String(draft.fechaRetiro).split("T")[0] === hoyStr) {
+      const [h, m] = draft.horaRetiro.split(":").map(Number);
+      if (!isNaN(h) && !isNaN(m)) {
+        const horaMinutos = h * 60 + m;
+        const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
+        if (horaMinutos <= ahoraMinutos) {
+          setDraft((prev) => ({ ...prev, horaRetiro: "" }));
+        }
+      }
+    }
+  }, [draft.fechaRetiro, draft.horaRetiro]);
+
   const handleElegirHora = (hora: string) => {
     const fecha = horaVisible === "retiro" ? draft.fechaRetiro : draft.fechaDevolucion;
 
     if (fecha) {
+      const ahora = new Date();
+      const hoyStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}-${String(ahora.getDate()).padStart(2, "0")}`;
+
+      if (String(fecha).split("T")[0] === hoyStr) {
+        const [h, m] = hora.split(":").map(Number);
+        const horaMinutos = h * 60 + m;
+        const ahoraMinutos = ahora.getHours() * 60 + ahora.getMinutes();
+        if (horaMinutos <= ahoraMinutos) {
+          Alert.alert(
+            t("reserva.fechasLugar.horaPasadaTitulo", { defaultValue: "Hora no disponible" }),
+            t("reserva.fechasLugar.horaPasadaMensaje", {
+              defaultValue: "La hora seleccionada ya pasó hoy en tiempo real. Por favor selecciona una hora posterior.",
+            })
+          );
+          return;
+        }
+      }
+
       const horasOcupadas = getDisponibilidadVehiculo(vehiculo.id).horasOcupadas?.[fecha] ?? [];
       const bloqueo = horasOcupadas.find((h) => h.hora === hora);
 
@@ -155,8 +190,17 @@ export default function EditDatesLocationSection({
       }
     }
 
-    if (horaVisible === "retiro") setDraft((prev) => ({ ...prev, horaRetiro: hora }));
-    else if (horaVisible === "devolucion") setDraft((prev) => ({ ...prev, horaDevolucion: hora }));
+    if (horaVisible === "retiro") {
+      setDraft((prev) => {
+        const nuevoDraft = { ...prev, horaRetiro: hora };
+        if (prev.fechaRetiro === prev.fechaDevolucion && prev.horaDevolucion && prev.horaDevolucion <= hora) {
+          nuevoDraft.horaDevolucion = "";
+        }
+        return nuevoDraft;
+      });
+    } else if (horaVisible === "devolucion") {
+      setDraft((prev) => ({ ...prev, horaDevolucion: hora }));
+    }
   };
 
   const labelLugarRetiro =
@@ -481,7 +525,7 @@ export default function EditDatesLocationSection({
           )}
 
           {/* 4. Horas de retiro y devolución */}
-          <View style={[styles.filaDosCols, { marginTop: 4 }]}>
+          <View style={[styles.filaDosCols, { marginTop: 4, marginBottom: 0 }]}>
             <View style={styles.columnaMedia}>
               <View style={styles.headerConIcono}>
                 <Ionicons name="time" size={14} color={primaryAccent} />
@@ -499,8 +543,9 @@ export default function EditDatesLocationSection({
                     style={[styles.selectValue, { color: draft.horaRetiro ? c.textPrimary : c.textMuted }]}
                     numberOfLines={1}
                   >
-                    {draft.horaRetiro ||
-                      t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
+                    {draft.horaRetiro
+                      ? formatHoraAmPm(draft.horaRetiro)
+                      : t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
                   </Text>
                   <Ionicons name="chevron-down" size={14} color={c.textMuted} />
                 </View>
@@ -524,8 +569,9 @@ export default function EditDatesLocationSection({
                     style={[styles.selectValue, { color: draft.horaDevolucion ? c.textPrimary : c.textMuted }]}
                     numberOfLines={1}
                   >
-                    {draft.horaDevolucion ||
-                      t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
+                    {draft.horaDevolucion
+                      ? formatHoraAmPm(draft.horaDevolucion)
+                      : t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
                   </Text>
                   <Ionicons name="chevron-down" size={14} color={c.textMuted} />
                 </View>
@@ -657,6 +703,12 @@ export default function EditDatesLocationSection({
 
       <SelectorHoraModal
         visible={horaVisible !== null}
+        fecha={horaVisible === "retiro" ? draft.fechaRetiro : draft.fechaDevolucion}
+        minHora={
+          horaVisible === "devolucion" && draft.fechaRetiro === draft.fechaDevolucion
+            ? draft.horaRetiro
+            : null
+        }
         horaSeleccionada={horaVisible === "retiro" ? draft.horaRetiro : draft.horaDevolucion}
         onSeleccionar={handleElegirHora}
         onCerrar={() => setHoraVisible(null)}

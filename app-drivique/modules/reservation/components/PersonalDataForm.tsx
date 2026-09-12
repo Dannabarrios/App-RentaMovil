@@ -30,6 +30,7 @@ import {
 } from "../services/wompiService";
 import {
   HORAS_LIMITE_PAGO_EFECTIVO,
+  calcularLimitePago,
   reservaPersistService,
 } from "../services/reservationPersistService";
 import { documentosService } from "../services/documentsService";
@@ -308,7 +309,6 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
 
   const handlePagarWompi = async () => {
     if (!referenciaActual) return;
-    setModalReservaVisible(false);
     setProcesandoPago(true);
 
     try {
@@ -321,6 +321,7 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
         redirectUrl,
       });
 
+      setModalReservaVisible(false);
       limpiarReserva();
 
       if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -593,44 +594,66 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
       </View>
 
       {/* Aviso informativo previo a la confirmación */}
-      <View
-        style={[
-          styles.bannerAviso,
-          {
-            backgroundColor: c.oscuro ? "#17255433" : "#EFF6FF",
-            borderColor: c.oscuro ? "#1D4ED8" : "#BFDBFE",
-          },
-        ]}
-      >
-        <Ionicons name="information-circle-outline" size={17} color={primaryAccent} style={{ marginTop: 1 }} />
-        <Text style={[styles.bannerAvisoTexto, { color: c.oscuro ? "#93C5FD" : "#1E40AF" }]}>
-          {t("reserva.confirmacion.avisoGuardadoAutomatico", {
-            defaultValue:
-              "Al confirmar la reserva, quedará guardada automáticamente en tu cuenta. Tendrás un plazo de 72 horas para completar el pago antes de su cancelación automática.",
-          })}
-        </Text>
-      </View>
+      {(() => {
+        const limiteInfo = calcularLimitePago(fechasLugar.fechaRetiro, fechasLugar.horaRetiro);
+        const horas = limiteInfo.horasLimitePago || 72;
+        const textoHoras = horas === 1 ? "1 hora" : `${horas} horas`;
 
-      <BarraTotalConfirmar
-        total={total}
-        onConfirmar={handleConfirmarReserva}
-        onCancelar={() => setAlertaCancelarProcesoVisible(true)}
-      />
+        return (
+          <>
+            <View
+              style={[
+                styles.bannerAviso,
+                {
+                  backgroundColor: c.oscuro ? "#261C08" : "#FEFCE8",
+                  borderColor: c.oscuro ? "#785C15" : "#FDE047",
+                },
+              ]}
+            >
+              <Ionicons
+                name="time-outline"
+                size={17}
+                color={c.oscuro ? "#FCD34D" : "#854D0E"}
+                style={{ marginTop: 1 }}
+              />
+              <Text
+                style={[
+                  styles.bannerAvisoTexto,
+                  {
+                    color: c.oscuro ? "#FDE68A" : "#713F12",
+                  },
+                ]}
+              >
+                {`Al confirmar la reserva, quedará guardada automáticamente en tu cuenta. Tienes aproximadamente ${textoHoras} para realizar el pago antes de su cancelación automática.`}
+              </Text>
+            </View>
 
-      <ModalReservaRegistrada
-        visible={modalReservaVisible}
-        onPagarWompi={handlePagarWompi}
-        onCerrar={handlePagarMasTarde}
-      />
+            <BarraTotalConfirmar
+              total={total}
+              onConfirmar={handleConfirmarReserva}
+              onCancelar={() => setAlertaCancelarProcesoVisible(true)}
+            />
 
-      <BranchCashPaymentModal
-        visible={modalInstruccionesEfectivoVisible}
-        referencia={referenciaActual || ""}
-        nombreSucursal={vehiculo.sucursal || ""}
-        total={total}
-        onIrAMisReservas={handleIrAMisReservas}
-        onVolverAlInicio={handleVolverAlInicio}
-      />
+            <ModalReservaRegistrada
+              visible={modalReservaVisible}
+              horasLimitePago={limiteInfo.horasLimitePago}
+              cargando={procesandoPago}
+              onPagarWompi={handlePagarWompi}
+              onCerrar={handlePagarMasTarde}
+            />
+
+            <BranchCashPaymentModal
+              visible={modalInstruccionesEfectivoVisible}
+              referencia={referenciaActual || ""}
+              nombreSucursal={vehiculo.sucursal || ""}
+              total={total}
+              horasLimitePago={limiteInfo.horasLimitePago}
+              onIrAMisReservas={handleIrAMisReservas}
+              onVolverAlInicio={handleVolverAlInicio}
+            />
+          </>
+        );
+      })()}
 
       <AlertModal
         visible={alertaCancelarProcesoVisible}

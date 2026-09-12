@@ -54,6 +54,10 @@ import {
   WompiTransactionResponse,
 } from "@/modules/reservation/services/wompiService";
 import { documentosService, RegistroDocumentos } from "@/modules/reservation/services/documentsService";
+import { ModalCalificar } from "@/modules/reservation/components/ModalCalificar";
+import { ResenaGuardada, resenaService } from "@/modules/reservation/services/resenaService";
+import { AlertModal } from "@/components/ui/AlertModal";
+import { useUsuarioStore } from "@/store/userStore";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 
@@ -75,6 +79,15 @@ export default function PagoRespuestaScreen() {
   const [errorClave, setErrorClave] = useState("");
   const [mostrarFirma, setMostrarFirma] = useState(false);
   const [mostrarLectorContrato, setMostrarLectorContrato] = useState(false);
+  const [resenaGuardada, setResenaGuardada] = useState<ResenaGuardada | null>(null);
+  const [modalCalificarVisible, setModalCalificarVisible] = useState(false);
+  const [alertGuardadoVisible, setAlertGuardadoVisible] = useState(false);
+
+  const usuarioStore = useUsuarioStore((s) => s.usuario);
+  const usuarioKey = usuarioStore.id || usuarioStore.correo || usuarioStore.numeroDocumento || "cliente";
+  const usuarioNombre = usuarioStore.nombres
+    ? `${usuarioStore.nombres} ${usuarioStore.apellidos || ""}`.trim()
+    : "Cliente";
 
   useEffect(() => {
     let activo = true;
@@ -174,6 +187,19 @@ export default function PagoRespuestaScreen() {
       activo = false;
     };
   }, [ref, id]);
+
+  useEffect(() => {
+    if (!reserva?.referencia) return;
+    const grp = calcularGrupoReserva(reserva);
+    if (grp !== "finalizada") return;
+    let activo = true;
+    resenaService.obtenerPorReserva(reserva.referencia, usuarioKey).then((r) => {
+      if (activo) setResenaGuardada(r);
+    });
+    return () => {
+      activo = false;
+    };
+  }, [reserva, usuarioKey]);
 
   const irAMisReservas = () => router.replace("/(tabs)/my-bookings" as any);
   const irAlInicio = () => router.replace("/(tabs)/catalog" as any);
@@ -795,11 +821,11 @@ export default function PagoRespuestaScreen() {
               {t("reserva.confirmacion.plazoParaPagarTitulo", { defaultValue: "PLAZO PARA PAGAR" })}
             </Text>
             <Text style={[styles.plazoTextoEfectivo, { color: c.oscuro ? "#FDE68A" : "#713F12" }]}>
-              {t("reserva.confirmacion.efectivoConfirmadaMensaje", {
-                defaultValue:
-                  "Tienes 72 horas desde ahora para realizar el pago. Si no pagas dentro de este plazo, la reserva se cancelará automáticamente.",
-                horas: 72,
-              })}
+              {(() => {
+                const horas = reserva.horasLimitePago || 72;
+                const textoHoras = horas === 1 ? "1 hora" : `${horas} horas`;
+                return `Tienes aproximadamente ${textoHoras} desde ahora para acercarte a la sucursal y realizar el pago. Si no realizas el pago dentro de este plazo, la reserva se cancelará automáticamente.`;
+              })()}
             </Text>
           </View>
         </View>
@@ -842,6 +868,30 @@ export default function PagoRespuestaScreen() {
               <Text style={[styles.valorTotalEfectivo, { color: primaryAccent }]}>{fmt(reserva.total)} COP</Text>
             </View>
           </View>
+
+          {/* Tarjeta Informativa de Plazo de Pago */}
+          <View
+            style={[
+              styles.plazoCardEfectivo,
+              {
+                backgroundColor: c.oscuro ? "#261C08" : "#FEFCE8",
+                borderColor: c.oscuro ? "#785C15" : "#FDE047",
+                marginBottom: 16,
+              },
+            ]}
+          >
+            <Text style={[styles.plazoTituloEfectivo, { color: c.oscuro ? "#FCD34D" : "#854D0E" }]}>
+              {t("reserva.confirmacion.plazoParaPagarTitulo", { defaultValue: "PLAZO PARA PAGAR" })}
+            </Text>
+            <Text style={[styles.plazoTextoEfectivo, { color: c.oscuro ? "#FDE68A" : "#713F12" }]}>
+              {(() => {
+                const horas = reserva.horasLimitePago || 72;
+                const textoHoras = horas === 1 ? "1 hora" : `${horas} horas`;
+                return `Tienes aproximadamente ${textoHoras} desde ahora para realizar el pago digital y confirmar tu reserva. Si no realizas el pago dentro de este plazo, la reserva se cancelará automáticamente.`;
+              })()}
+            </Text>
+          </View>
+
           <TouchableOpacity style={styles.btnWrap} onPress={handlePagarWompi} activeOpacity={0.88}>
             <LinearGradient
               colors={GRADIENTES.boton.colors}
@@ -1014,8 +1064,141 @@ export default function PagoRespuestaScreen() {
         </View>
       )}
 
+      {/* Tarjeta de Calificación del Vehículo (Exclusiva para estado FINALIZADA) */}
+      {grupo === "finalizada" && (
+        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: c.primaryBg,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="star" size={22} color="#F59E0B" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: "800", color: c.textPrimary }}>
+                {resenaGuardada ? "Tu calificación del vehículo" : "Califica tu experiencia"}
+              </Text>
+              <Text style={{ fontSize: 12, color: c.textSecondary, marginTop: 2 }}>
+                {resenaGuardada
+                  ? "Gracias por compartir tu opinión sobre este vehículo."
+                  : `¿Cómo estuvo tu viaje con el ${reserva.vehiculoNombre}?`}
+              </Text>
+            </View>
+          </View>
+
+          {/* Resumen de la reseña si ya fue guardada */}
+          {resenaGuardada && (
+            <View
+              style={{
+                backgroundColor: c.bgInput,
+                borderRadius: 14,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: c.border,
+                marginBottom: 14,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <View style={{ flexDirection: "row", gap: 3 }}>
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const lleno = i < resenaGuardada.calificacion;
+                    return (
+                      <Ionicons
+                        key={i}
+                        name={lleno ? "star" : "star-outline"}
+                        size={17}
+                        color={lleno ? "#F59E0B" : "#CBD5E1"}
+                      />
+                    );
+                  })}
+                </View>
+                <Text style={{ fontSize: 12, fontWeight: "700", color: "#F59E0B" }}>
+                  {resenaGuardada.calificacion}.0 / 5.0
+                </Text>
+              </View>
+
+              {!!resenaGuardada.comentario && (
+                <Text style={{ fontSize: 13, color: c.textPrimary, fontStyle: "italic", marginTop: 4, lineHeight: 18 }}>
+                  "{resenaGuardada.comentario}"
+                </Text>
+              )}
+
+              {/* Miniaturas de fotos */}
+              {resenaGuardada.fotos && resenaGuardada.fotos.length > 0 && (
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                  {resenaGuardada.fotos.map((uri, idx) => (
+                    <Image
+                      key={idx}
+                      source={{ uri }}
+                      style={{ width: 56, height: 56, borderRadius: 10 }}
+                    />
+                  ))}
+                </View>
+              )}
+
+              <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 8 }}>
+                Publicada el {resenaGuardada.fecha}
+              </Text>
+            </View>
+          )}
+
+          {/* Botón de Acción para calificar o editar */}
+          <TouchableOpacity
+            style={styles.btnWrap}
+            onPress={() => setModalCalificarVisible(true)}
+            activeOpacity={0.88}
+          >
+            <LinearGradient
+              colors={GRADIENTES.boton.colors}
+              start={GRADIENTES.boton.start}
+              end={GRADIENTES.boton.end}
+              style={[styles.btn, { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 }]}
+            >
+              <Ionicons name={resenaGuardada ? "create-outline" : "star-outline"} size={18} color="#fff" />
+              <Text style={styles.btnTexto}>
+                {resenaGuardada ? "Editar calificación" : "⭐ Calificar vehículo"}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )}
+
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Modal para calificar / editar reseña */}
+      {grupo === "finalizada" && (
+        <>
+          <ModalCalificar
+            visible={modalCalificarVisible}
+            referenciaReserva={reserva.referencia}
+            usuarioId={usuarioKey}
+            usuarioNombre={usuarioNombre}
+            vehiculoId={reserva.vehiculoId || (vehiculoSnap as any)?.id}
+            vehiculoNombre={reserva.vehiculoNombre}
+            valorInicial={resenaGuardada}
+            onCerrar={() => setModalCalificarVisible(false)}
+            onGuardado={(nueva) => {
+              setResenaGuardada(nueva);
+              setModalCalificarVisible(false);
+              setAlertGuardadoVisible(true);
+            }}
+          />
+          <AlertModal
+            visible={alertGuardadoVisible}
+            icono="checkmark-circle-outline"
+            titulo="¡Calificación guardada!"
+            mensaje="Tu reseña y fotografías se han guardado exitosamente."
+            onCerrar={() => setAlertGuardadoVisible(false)}
+          />
+        </>
+      )}
     </View>
   );
 }

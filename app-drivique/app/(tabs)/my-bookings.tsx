@@ -677,6 +677,8 @@ function TarjetaReserva({
             visible={modalCalificarVisible}
             referenciaReserva={reserva.referencia}
             usuarioId={usuarioId}
+            vehiculoId={reserva.vehiculoId || (vehiculoSnap as any)?.id}
+            vehiculoNombre={reserva.vehiculoNombre}
             valorInicial={resena}
             onCerrar={() => setModalCalificarVisible(false)}
             onGuardado={(nuevaResena) => {

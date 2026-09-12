@@ -4,16 +4,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTemaColores } from '@/modules/i18n/hooks/useLanguage';
 import { passwordInputStyles as styles } from './PasswordInput.styles';
 
+interface ColoresTema {
+  textSecondary: string;
+  border: string;
+  bgInput: string;
+  textPrimary: string;
+}
+
 interface Props extends TextInputProps {
   label?: string;
   error?: string;
+  colores?: ColoresTema;
 }
 
-export function PasswordInput({ label, error, style, placeholderTextColor, ...props }: Props) {
+export function PasswordInput({ label, error, style, placeholderTextColor, colores: cProp, ...props }: Props) {
   const [visible, setVisible] = useState(false);
-  const c = useTemaColores();
+  const cTema = useTemaColores();
+  const c = cProp || cTema;
 
-  const colorPlaceholder = placeholderTextColor || (c.oscuro ? '#94A3B8' : '#64748B');
+  const colorPlaceholder = placeholderTextColor || (cTema.oscuro ? '#94A3B8' : '#64748B');
 
   return (
     <View style={styles.contenedor}>
@@ -22,7 +31,7 @@ export function PasswordInput({ label, error, style, placeholderTextColor, ...pr
         style={[
           styles.fila,
           {
-            backgroundColor: c.oscuro ? c.bgInput : '#F9FAFB',
+            backgroundColor: cTema.oscuro ? c.bgInput : '#F9FAFB',
             borderColor: error ? '#EF4444' : c.border,
           },
           error ? styles.filaError : undefined,
@@ -44,7 +53,7 @@ export function PasswordInput({ label, error, style, placeholderTextColor, ...pr
           <Ionicons
             name={visible ? 'eye-off-outline' : 'eye-outline'}
             size={20}
-            color={c.oscuro ? '#94A3B8' : '#64748B'}
+            color={cTema.oscuro ? '#94A3B8' : '#64748B'}
           />
         </TouchableOpacity>
       </View>

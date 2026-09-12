@@ -166,7 +166,7 @@ export const loginStyles = StyleSheet.create({
 
   // ── Formulario ───────────────────────────────────────────────
   formulario: {
-    gap: 6,
+    gap: 0,
   },
   enlaceOlvide: {
     alignSelf: "flex-end",

@@ -153,6 +153,7 @@ export default function RegistroScreen() {
                       placeholder={t('auth.registro.contrasenaPlaceholder', 'Escribe tu contraseña')}
                       value={form.contrasena}
                       onChangeText={val => actualizarCampo('contrasena', val)}
+                      colores={c}
                       error={getError('contrasena')}
                     />
                     <PasswordRequirements password={form.contrasena} />
@@ -161,6 +162,7 @@ export default function RegistroScreen() {
                       placeholder={t('auth.registro.confirmarContrasenaPlaceholder', 'Confirma tu contraseña')}
                       value={form.confirmarContrasena}
                       onChangeText={val => actualizarCampo('confirmarContrasena', val)}
+                      colores={c}
                       error={getError('confirmarContrasena')}
                     />
 
