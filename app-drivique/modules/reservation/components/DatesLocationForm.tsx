@@ -167,6 +167,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
           t("reserva.fechasLugar.ajusteDevolucionMensaje", {
             defaultValue: "Al retirar a las 10:00 p.m. (hora de cierre), la fecha de devolución se ajustó automáticamente para el día siguiente.",
           })
+        );
       } else {
         const autoDev =
           fechasLugar.fechaDevolucion &&
