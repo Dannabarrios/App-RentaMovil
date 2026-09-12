@@ -96,12 +96,12 @@ export default function FormFechasLugar({ vehiculo }: Props) {
     if (
       fechasLugar.fechaRetiro &&
       fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion &&
-      fechasLugar.horaRetiro === "23:30"
+      fechasLugar.horaRetiro === "22:00"
     ) {
       Alert.alert(
         t("reserva.fechasLugar.sinHorasMismoDiaTitulo", { defaultValue: "Hora de devolución" }),
         t("reserva.fechasLugar.sinHorasMismoDiaMensaje", {
-          defaultValue: "Como la hora de retiro es a las 11:30 p.m., la devolución debe realizarse a partir del día siguiente.",
+          defaultValue: "Como la hora de retiro es a las 10:00 p.m. (cierre de sucursal), la devolución debe realizarse a partir del día siguiente.",
         }),
         [
           { text: t("comun.cancelar", { defaultValue: "Cancelar" }), style: "cancel" },
@@ -147,7 +147,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
 
     if (horaVisible === "retiro") {
       if (
-        hora === "23:30" &&
+        hora === "22:00" &&
         fechasLugar.fechaRetiro &&
         fechasLugar.fechaRetiro === fechasLugar.fechaDevolucion
       ) {
@@ -165,7 +165,7 @@ export default function FormFechasLugar({ vehiculo }: Props) {
         Alert.alert(
           t("reserva.fechasLugar.ajusteDevolucionTitulo", { defaultValue: "Fecha de devolución ajustada" }),
           t("reserva.fechasLugar.ajusteDevolucionMensaje", {
-            defaultValue: "Al retirar a las 11:30 p.m., la fecha de devolución se ajustó automáticamente para el día siguiente.",
+            defaultValue: "Al retirar a las 10:00 p.m. (hora de cierre), la fecha de devolución se ajustó automáticamente para el día siguiente.",
           })
         );
       } else {

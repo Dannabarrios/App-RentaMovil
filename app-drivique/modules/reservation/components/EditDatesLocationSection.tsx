@@ -139,12 +139,12 @@ export default function EditDatesLocationSection({
     if (
       draft.fechaRetiro &&
       draft.fechaRetiro === draft.fechaDevolucion &&
-      draft.horaRetiro === "23:30"
+      draft.horaRetiro === "22:00"
     ) {
       Alert.alert(
         t("reserva.fechasLugar.sinHorasMismoDiaTitulo", { defaultValue: "Hora de devolución" }),
         t("reserva.fechasLugar.sinHorasMismoDiaMensaje", {
-          defaultValue: "Como la hora de retiro es a las 11:30 p.m., la devolución debe realizarse a partir del día siguiente.",
+          defaultValue: "Como la hora de retiro es a las 10:00 p.m. (cierre de sucursal), la devolución debe realizarse a partir del día siguiente.",
         }),
         [
           { text: t("comun.cancelar", { defaultValue: "Cancelar" }), style: "cancel" },
@@ -190,7 +190,7 @@ export default function EditDatesLocationSection({
 
     if (horaVisible === "retiro") {
       if (
-        hora === "23:30" &&
+        hora === "22:00" &&
         draft.fechaRetiro &&
         draft.fechaRetiro === draft.fechaDevolucion
       ) {
@@ -209,7 +209,7 @@ export default function EditDatesLocationSection({
         Alert.alert(
           t("reserva.fechasLugar.ajusteDevolucionTitulo", { defaultValue: "Fecha de devolución ajustada" }),
           t("reserva.fechasLugar.ajusteDevolucionMensaje", {
-            defaultValue: "Al retirar a las 11:30 p.m., la fecha de devolución se ajustó automáticamente para el día siguiente.",
+            defaultValue: "Al retirar a las 10:00 p.m. (hora de cierre), la fecha de devolución se ajustó automáticamente para el día siguiente.",
           })
         );
       } else {

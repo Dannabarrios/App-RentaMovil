@@ -7,8 +7,10 @@ import { useTranslation } from "react-i18next";
 
 function generarHoras(): string[] {
   const horas: string[] = [];
-  for (let h = 0; h < 24; h++) {
+  // Horario de atención estándar de sucursales: 6:00 a.m. a 10:00 p.m.
+  for (let h = 6; h <= 22; h++) {
     for (const m of [0, 30]) {
+      if (h === 22 && m === 30) continue; // Cierre de sucursal a las 10:00 p.m.
       horas.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }
   }
