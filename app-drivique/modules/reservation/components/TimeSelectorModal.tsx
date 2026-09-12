@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLOR_MARCA, formatHoraAmPm } from "../constants/reservation.constants";
 import { useTemaColores } from "@/modules/i18n/hooks/useLanguage";
@@ -68,85 +68,83 @@ export default function SelectorHoraModal({
       const totalMin = h * 60 + m;
 
       let bloqueada = false;
-      let motivo = "";
 
       // Si la fecha elegida es hoy y la hora ya pasó en tiempo real
       if (esPasado) {
         bloqueada = true;
-        motivo = t("reserva.fechasLugar.horaPasadaTag", { defaultValue: "Hora pasada" });
       } else if (esHoy && totalMin <= ahoraMinutos) {
         bloqueada = true;
-        motivo = t("reserva.fechasLugar.horaPasadaTag", { defaultValue: "Hora pasada" });
       } else if (minLimiteMinutos >= 0 && totalMin <= minLimiteMinutos) {
         bloqueada = true;
-        motivo = t("reserva.fechasLugar.horaAnteriorTag", { defaultValue: "No disponible" });
       }
 
       return {
         hora: horaStr,
         bloqueada,
-        motivo,
       };
     });
-  }, [fecha, minHora, t]);
+  }, [fecha, minHora]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCerrar}>
-      <TouchableWithoutFeedback onPress={onCerrar}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={[styles.card, { backgroundColor: c.bgCard }]}>
-              <View style={[styles.header, { borderBottomColor: c.border }]}>
-                <Text style={[styles.headerTitulo, { color: c.textPrimary }]}>{t("reserva.fechasLugar.seleccionaHora")}</Text>
-                <TouchableOpacity onPress={onCerrar} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.cerrarTexto}>{t("reserva.resumen.cerrar")}</Text>
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.lista} showsVerticalScrollIndicator={false}>
-                {listaHoras.map(({ hora, bloqueada, motivo }) => {
-                  const activa = hora === horaSeleccionada && !bloqueada;
-                  return (
-                    <TouchableOpacity
-                      key={hora}
-                      disabled={bloqueada}
+      <View style={styles.overlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCerrar} />
+        <View style={[styles.card, { backgroundColor: c.bgCard }]}>
+          <View style={[styles.header, { borderBottomColor: c.border }]}>
+            <Text style={[styles.headerTitulo, { color: c.textPrimary }]}>{t("reserva.fechasLugar.seleccionaHora")}</Text>
+            <TouchableOpacity onPress={onCerrar} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.cerrarTexto}>{t("reserva.resumen.cerrar")}</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            style={styles.lista}
+            contentContainerStyle={styles.listaContenido}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+            keyboardShouldPersistTaps="handled"
+          >
+            {listaHoras.map(({ hora, bloqueada }) => {
+              const activa = hora === horaSeleccionada && !bloqueada;
+              return (
+                <TouchableOpacity
+                  key={hora}
+                  disabled={bloqueada}
+                  style={[
+                    styles.item,
+                    activa && { backgroundColor: c.primaryBg },
+                    bloqueada && styles.itemBloqueado,
+                  ]}
+                  onPress={() => {
+                    if (bloqueada) return;
+                    onSeleccionar(hora);
+                    onCerrar();
+                  }}
+                  activeOpacity={bloqueada ? 1 : 0.7}
+                >
+                  <View style={styles.itemFila}>
+                    <Text
                       style={[
-                        styles.item,
-                        activa && { backgroundColor: c.primaryBg },
-                        bloqueada && styles.itemBloqueado,
+                        styles.itemTexto,
+                        { color: bloqueada ? c.textMuted : c.textSecondary },
+                        activa && styles.itemTextoActivo,
+                        bloqueada && styles.itemTextoBloqueado,
                       ]}
-                      onPress={() => {
-                        if (bloqueada) return;
-                        onSeleccionar(hora);
-                        onCerrar();
-                      }}
-                      activeOpacity={bloqueada ? 1 : 0.7}
                     >
-                      <View style={styles.itemFila}>
-                        <Text
-                          style={[
-                            styles.itemTexto,
-                            { color: bloqueada ? c.textMuted : c.textSecondary },
-                            activa && styles.itemTextoActivo,
-                            bloqueada && styles.itemTextoBloqueado,
-                          ]}
-                        >
-                          {formatHoraAmPm(hora)}
-                        </Text>
-                        {bloqueada && (
-                          <View style={styles.badgeBloqueado}>
-                            <Ionicons name="lock-closed-outline" size={11} color={c.textMuted} style={{ marginRight: 3 }} />
-                            <Text style={[styles.badgeBloqueadoTexto, { color: c.textMuted }]}>{motivo}</Text>
-                          </View>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
+                      {formatHoraAmPm(hora)}
+                    </Text>
+                    {bloqueada && (
+                      <Ionicons name="lock-closed-outline" size={13} color={c.textMuted} />
+                    )}
+                    {activa && (
+                      <Ionicons name="checkmark-circle" size={16} color={COLOR_MARCA} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 }
@@ -156,7 +154,8 @@ const styles = StyleSheet.create({
   card: {
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
-    maxHeight: "65%",
+    height: "68%",
+    maxHeight: 520,
     paddingBottom: 8,
   },
   header: {
@@ -169,13 +168,12 @@ const styles = StyleSheet.create({
   },
   headerTitulo: { fontSize: 14, fontWeight: "800" },
   cerrarTexto: { fontSize: 13, fontWeight: "700", color: COLOR_MARCA },
-  lista: { paddingHorizontal: 8, paddingTop: 4 },
+  lista: { flex: 1, paddingHorizontal: 8, paddingTop: 4 },
+  listaContenido: { paddingBottom: 24 },
   item: { paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10, marginVertical: 1 },
-  itemBloqueado: { opacity: 0.45 },
+  itemBloqueado: { opacity: 0.4 },
   itemFila: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   itemTexto: { fontSize: 13, fontWeight: "600" },
   itemTextoActivo: { fontWeight: "800", color: COLOR_MARCA },
   itemTextoBloqueado: { textDecorationLine: "line-through" },
-  badgeBloqueado: { flexDirection: "row", alignItems: "center" },
-  badgeBloqueadoTexto: { fontSize: 11, fontWeight: "500" },
 });
