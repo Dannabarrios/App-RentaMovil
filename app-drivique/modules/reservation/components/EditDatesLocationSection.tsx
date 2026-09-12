@@ -524,8 +524,67 @@ export default function EditDatesLocationSection({
             </View>
           )}
 
-          {/* 4. Horas de retiro y devolución */}
-          <View style={[styles.filaDosCols, { marginTop: 4, marginBottom: 0 }]}>
+          {/* 4. Calendario de disponibilidad */}
+          <View style={styles.headerCalendarioContainer}>
+            <Ionicons name="calendar" size={14} color={primaryAccent} style={styles.iconoCalendario} />
+            <Text style={[styles.tituloCalendario, { color: primaryAccent }]}>
+              {t("reserva.fechasLugar.calendarioDisponibilidad", {
+                defaultValue: "Selecciona un rango de fechas en el calendario de disponibilidad",
+              })}
+            </Text>
+          </View>
+          <CalendarioRango
+            vehiculo={vehiculo}
+            fechaRetiro={draft.fechaRetiro}
+            fechaDevolucion={draft.fechaDevolucion}
+            onCambiarFechas={(retiro, devolucion) =>
+              setDraft((prev) => ({ ...prev, fechaRetiro: retiro, fechaDevolucion: devolucion }))
+            }
+          />
+
+          {/* 5. Fechas automáticas seleccionadas */}
+          <View style={[styles.filaDosCols, { marginTop: 14, marginBottom: 0 }]}>
+            <View style={styles.columnaMedia}>
+              <View style={styles.headerConIcono}>
+                <Ionicons name="calendar" size={14} color={primaryAccent} />
+                <Text style={[styles.tituloHeaderConIcono, { color: primaryAccent }]} numberOfLines={1}>
+                  {t("reserva.fechasLugar.fechaDeRetiro", { defaultValue: "Fecha de retiro" })}
+                </Text>
+              </View>
+              <View
+                style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+              >
+                <Text
+                  style={[styles.selectValue, { color: draft.fechaRetiro ? c.textPrimary : c.textMuted }]}
+                  numberOfLines={1}
+                >
+                  {draft.fechaRetiro || t("reserva.fechasLugar.seleccionar", { defaultValue: "Seleccionar" })}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.columnaMedia}>
+              <View style={styles.headerConIcono}>
+                <Ionicons name="calendar" size={14} color={primaryAccent} />
+                <Text style={[styles.tituloHeaderConIcono, { color: primaryAccent }]} numberOfLines={1}>
+                  {t("reserva.fechasLugar.fechaDeDevolucion", { defaultValue: "Fecha de devolución" })}
+                </Text>
+              </View>
+              <View
+                style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+              >
+                <Text
+                  style={[styles.selectValue, { color: draft.fechaDevolucion ? c.textPrimary : c.textMuted }]}
+                  numberOfLines={1}
+                >
+                  {draft.fechaDevolucion || t("reserva.fechasLugar.seleccionar", { defaultValue: "Seleccionar" })}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 6. Horas de retiro y devolución */}
+          <View style={[styles.filaDosCols, { marginTop: 12, marginBottom: 0 }]}>
             <View style={styles.columnaMedia}>
               <View style={styles.headerConIcono}>
                 <Ionicons name="time" size={14} color={primaryAccent} />
@@ -576,65 +635,6 @@ export default function EditDatesLocationSection({
                   <Ionicons name="chevron-down" size={14} color={c.textMuted} />
                 </View>
               </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* 5. Calendario de disponibilidad */}
-          <View style={styles.headerCalendarioContainer}>
-            <Ionicons name="calendar" size={14} color={primaryAccent} style={styles.iconoCalendario} />
-            <Text style={[styles.tituloCalendario, { color: primaryAccent }]}>
-              {t("reserva.fechasLugar.calendarioDisponibilidad", {
-                defaultValue: "Selecciona un rango de fechas en el calendario de disponibilidad",
-              })}
-            </Text>
-          </View>
-          <CalendarioRango
-            vehiculo={vehiculo}
-            fechaRetiro={draft.fechaRetiro}
-            fechaDevolucion={draft.fechaDevolucion}
-            onCambiarFechas={(retiro, devolucion) =>
-              setDraft((prev) => ({ ...prev, fechaRetiro: retiro, fechaDevolucion: devolucion }))
-            }
-          />
-
-          {/* 6. Fechas automáticas seleccionadas */}
-          <View style={[styles.filaDosCols, { marginTop: 14, marginBottom: 0 }]}>
-            <View style={styles.columnaMedia}>
-              <View style={styles.headerConIcono}>
-                <Ionicons name="calendar" size={14} color={primaryAccent} />
-                <Text style={[styles.tituloHeaderConIcono, { color: primaryAccent }]} numberOfLines={1}>
-                  {t("reserva.fechasLugar.fechaDeRetiro", { defaultValue: "Fecha de retiro" })}
-                </Text>
-              </View>
-              <View
-                style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
-              >
-                <Text
-                  style={[styles.selectValue, { color: draft.fechaRetiro ? c.textPrimary : c.textMuted }]}
-                  numberOfLines={1}
-                >
-                  {draft.fechaRetiro || t("reserva.fechasLugar.seleccionar", { defaultValue: "Seleccionar" })}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.columnaMedia}>
-              <View style={styles.headerConIcono}>
-                <Ionicons name="calendar" size={14} color={primaryAccent} />
-                <Text style={[styles.tituloHeaderConIcono, { color: primaryAccent }]} numberOfLines={1}>
-                  {t("reserva.fechasLugar.fechaDeDevolucion", { defaultValue: "Fecha de devolución" })}
-                </Text>
-              </View>
-              <View
-                style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
-              >
-                <Text
-                  style={[styles.selectValue, { color: draft.fechaDevolucion ? c.textPrimary : c.textMuted }]}
-                  numberOfLines={1}
-                >
-                  {draft.fechaDevolucion || t("reserva.fechasLugar.seleccionar", { defaultValue: "Seleccionar" })}
-                </Text>
-              </View>
             </View>
           </View>
 

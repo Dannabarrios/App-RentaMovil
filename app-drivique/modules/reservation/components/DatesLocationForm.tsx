@@ -431,67 +431,6 @@ export default function FormFechasLugar({ vehiculo }: Props) {
         </View>
       )}
 
-      {/* --- HORAS DE RETIRO Y DEVOLUCIÓN --- */}
-      <View style={[styles.filaDosCols, { marginTop: 4 }]}>
-        <View style={styles.columnaMedia}>
-          <View style={styles.headerConIcono}>
-            <Ionicons name="time" size={14} color={COLOR_MARCA} />
-            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
-              {t("reserva.fechasLugar.horaDeRetiro")}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
-            onPress={() => setHoraVisible("retiro")}
-            activeOpacity={0.8}
-          >
-            <View style={styles.selectValorRow}>
-              <Text
-                style={[
-                  styles.selectValue,
-                  { color: fechasLugar.horaRetiro ? c.textPrimary : c.textMuted },
-                ]}
-                numberOfLines={1}
-              >
-                {fechasLugar.horaRetiro
-                  ? formatHoraAmPm(fechasLugar.horaRetiro)
-                  : t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
-              </Text>
-              <Ionicons name="chevron-down" size={14} color={c.textMuted} />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.columnaMedia}>
-          <View style={styles.headerConIcono}>
-            <Ionicons name="time" size={14} color={COLOR_MARCA} />
-            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
-              {t("reserva.fechasLugar.horaDeDevolucion")}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
-            onPress={() => setHoraVisible("devolucion")}
-            activeOpacity={0.8}
-          >
-            <View style={styles.selectValorRow}>
-              <Text
-                style={[
-                  styles.selectValue,
-                  { color: fechasLugar.horaDevolucion ? c.textPrimary : c.textMuted },
-                ]}
-                numberOfLines={1}
-              >
-                {fechasLugar.horaDevolucion
-                  ? formatHoraAmPm(fechasLugar.horaDevolucion)
-                  : t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
-              </Text>
-              <Ionicons name="chevron-down" size={14} color={c.textMuted} />
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       {/* --- CALENDARIO DE DISPONIBILIDAD --- */}
       <View style={styles.headerCalendarioContainer}>
         <Ionicons name="calendar" size={14} color={COLOR_MARCA} style={styles.iconoCalendario} />
@@ -550,6 +489,67 @@ export default function FormFechasLugar({ vehiculo }: Props) {
               {fechasLugar.fechaDevolucion || t("reserva.fechasLugar.seleccionar", { defaultValue: "Seleccionar" })}
             </Text>
           </View>
+        </View>
+      </View>
+
+      {/* --- HORAS DE RETIRO Y DEVOLUCIÓN --- */}
+      <View style={[styles.filaDosCols, { marginTop: 12, marginBottom: 0 }]}>
+        <View style={styles.columnaMedia}>
+          <View style={styles.headerConIcono}>
+            <Ionicons name="time" size={14} color={COLOR_MARCA} />
+            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
+              {t("reserva.fechasLugar.horaDeRetiro")}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+            onPress={() => setHoraVisible("retiro")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.selectValorRow}>
+              <Text
+                style={[
+                  styles.selectValue,
+                  { color: fechasLugar.horaRetiro ? c.textPrimary : c.textMuted },
+                ]}
+                numberOfLines={1}
+              >
+                {fechasLugar.horaRetiro
+                  ? formatHoraAmPm(fechasLugar.horaRetiro)
+                  : t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={c.textMuted} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.columnaMedia}>
+          <View style={styles.headerConIcono}>
+            <Ionicons name="time" size={14} color={COLOR_MARCA} />
+            <Text style={styles.tituloHeaderConIcono} numberOfLines={1}>
+              {t("reserva.fechasLugar.horaDeDevolucion")}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.selectBox, { borderColor: c.border, backgroundColor: c.oscuro ? c.bgInput : "#FFFFFF" }]}
+            onPress={() => setHoraVisible("devolucion")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.selectValorRow}>
+              <Text
+                style={[
+                  styles.selectValue,
+                  { color: fechasLugar.horaDevolucion ? c.textPrimary : c.textMuted },
+                ]}
+                numberOfLines={1}
+              >
+                {fechasLugar.horaDevolucion
+                  ? formatHoraAmPm(fechasLugar.horaDevolucion)
+                  : t("reserva.fechasLugar.seleccionarHora", { defaultValue: "Seleccionar hora" })}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={c.textMuted} />
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
 
