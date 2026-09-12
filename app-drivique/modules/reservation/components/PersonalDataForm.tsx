@@ -605,26 +605,26 @@ export default function FormDatosPersonales({ vehiculo }: Props) {
               style={[
                 styles.bannerAviso,
                 {
-                  backgroundColor: c.oscuro ? "#261C08" : "#FEFCE8",
-                  borderColor: c.oscuro ? "#785C15" : "#FDE047",
+                  backgroundColor: c.oscuro ? "rgba(30, 64, 175, 0.15)" : "#EFF6FF",
+                  borderColor: c.oscuro ? "#1E40AF" : "#BFDBFE",
                 },
               ]}
             >
               <Ionicons
-                name="time-outline"
-                size={17}
-                color={c.oscuro ? "#FCD34D" : "#854D0E"}
+                name="information-circle-outline"
+                size={18}
+                color={c.oscuro ? "#60A5FA" : "#1E40AF"}
                 style={{ marginTop: 1 }}
               />
               <Text
                 style={[
                   styles.bannerAvisoTexto,
                   {
-                    color: c.oscuro ? "#FDE68A" : "#713F12",
+                    color: c.oscuro ? "#93C5FD" : "#1E40AF",
                   },
                 ]}
               >
-                {`Al confirmar la reserva, quedará guardada automáticamente en tu cuenta. Tienes aproximadamente ${textoHoras} para realizar el pago antes de su cancelación automática.`}
+                {`Al confirmar la reserva, quedará guardada automáticamente en tu cuenta. Tendrás un plazo de ${textoHoras} para completar el pago antes de su cancelación automática.`}
               </Text>
             </View>
 
