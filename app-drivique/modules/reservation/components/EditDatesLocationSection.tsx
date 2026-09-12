@@ -271,11 +271,14 @@ export default function EditDatesLocationSection({
       if (dias > 0 && horas > 0) {
         return `${dias} ${diaTexto(dias)} - ${horas} ${horaTexto(horas)}`;
       }
-      if (dias > 0 && horas === 0) {
+      if (dias === 1 && horas === 0) {
+        return `24 horas (${diaTexto(1)})`;
+      }
+      if (dias > 1 && horas === 0) {
         return `${dias} ${diaTexto(dias)}`;
       }
       if (dias === 0 && horas > 0) {
-        return `${horas} ${horaTexto(horas)}`;
+        return `${horas} ${horaTexto(horas)} (tarifa 1 día)`;
       }
     }
 
@@ -559,11 +562,18 @@ export default function EditDatesLocationSection({
           {/* 4. Calendario de disponibilidad */}
           <View style={styles.headerCalendarioContainer}>
             <Ionicons name="calendar" size={14} color={primaryAccent} style={styles.iconoCalendario} />
-            <Text style={[styles.tituloCalendario, { color: primaryAccent }]}>
-              {t("reserva.fechasLugar.calendarioDisponibilidad", {
-                defaultValue: "Selecciona un rango de fechas en el calendario de disponibilidad",
-              })}
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.tituloCalendario, { color: primaryAccent }]}>
+                {t("reserva.fechasLugar.calendarioDisponibilidad", {
+                  defaultValue: "Selecciona un rango de fechas en el calendario de disponibilidad",
+                })}
+              </Text>
+              <Text style={[styles.subtituloCalendario, { color: c.textMuted }]}>
+                {t("reserva.fechasLugar.calendarioAyuda24h", {
+                  defaultValue: "💡 1 día de alquiler = 24 horas (ej. de 6:00 a.m. a 6:00 a.m. de mañana).",
+                })}
+              </Text>
+            </View>
           </View>
           <CalendarioRango
             vehiculo={vehiculo}
@@ -924,8 +934,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     letterSpacing: 0.2,
-    flex: 1,
     lineHeight: 18,
+  },
+  subtituloCalendario: {
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 15,
   },
   domicilioCard: {
     borderWidth: 1,
